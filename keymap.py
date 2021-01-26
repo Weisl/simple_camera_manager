@@ -39,7 +39,7 @@ def add_hotkey(context=None):
 
         km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(idname='wm.call_panel', type='C', value='PRESS', shift=True)
-        kmi.properties.name = 'OBJECT_PT_camera_manager'
+        kmi.properties.name = 'OBJECT_PT_camera_manager_popup'
         kmi.active = True
 
         # kmi.properties.direction = 'BACKWARD'

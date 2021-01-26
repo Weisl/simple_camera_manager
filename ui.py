@@ -23,8 +23,6 @@ class SceneButtonsPanel:
 class CameraManagerPanel(SceneButtonsPanel, bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager"
     bl_label = "Camera Manager"
-    bl_ui_units_x = 40
-    bl_options = {'DRAW_BOX'}
 
     def draw(self, context):
         layout = self.layout
@@ -45,6 +43,27 @@ class CameraManagerPanel(SceneButtonsPanel, bpy.types.Panel):
         row.operator("utilities.cycle_cameras_backward", text="next", icon='TRIA_RIGHT')
         row = layout.row()
         row.operator("utilities.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
+
+        # template_list now takes two new args.
+        # The first one is the identifier of the registered UIList to use (if you want only the default list,
+        # with no custom draw code, use "UI_UL_list").
+        layout.template_list("CAMERA_UL_cameraslots", "compact", scene, "objects", scene, "camera_list_index",
+                             type='COMPACT')
+
+
+class CameraManagerPopup(SceneButtonsPanel, bpy.types.Panel):
+    bl_idname = "OBJECT_PT_camera_manager_popup"
+    bl_label = "Camera Manager"
+    bl_ui_units_x = 40
+    bl_options = {'DRAW_BOX'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row()
+        row.label(text="Camera Manager")
+
+        scene = context.scene
 
         # template_list now takes two new args.
         # The first one is the identifier of the registered UIList to use (if you want only the default list,
@@ -70,12 +89,12 @@ class CameraPanel(CameraButtonsPanel, bpy.types.Panel):
 
 classes = (
     CameraManagerPanel,
+    CameraManagerPopup,
     CameraPanel,
 )
 
 
 def register():
-
     from bpy.utils import register_class
 
     for cls in classes:

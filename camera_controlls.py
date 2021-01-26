@@ -9,8 +9,20 @@ from gpu_extras.batch import batch_for_shader
 from mathutils import Vector
 
 
-# TODO: default resolution from scene settings
-# TODO: Vertigo
+def make_collection(context, collection_name, parent_collection):
+    '''
+    return existing collection if a collection with the according name exists, otherwise return a newly created one
+    :param collection_name:
+    :param parent_collection:
+    :return:
+    '''
+    if collection_name in bpy.data.collections:
+        col = bpy.data.collections[collection_name]
+    else:
+        col = bpy.data.collections.new(collection_name)
+        parent_collection.children.link(col)
+    return col
+
 
 def distance_vec(point1: Vector, point2: Vector):
     """Calculate distance between two points."""
@@ -168,21 +180,6 @@ class CAMERA_OT_dolly_zoom(bpy.types.Operator):
             return {'CANCELLED'}
 
 
-def register():
-    bpy.utils.register_class(ModalOperator)
-
-
-def unregister():
-    bpy.utils.unregister_class(ModalOperator)
-
-
-if __name__ == "__main__":
-    register()
-
-    # test call
-    bpy.ops.object.modal_operator('INVOKE_DEFAULT')
-
-
 def cycleCamera(context, direction):
     scene = context.scene
     cam_objects = [ob for ob in scene.objects if ob.type == 'CAMERA']
@@ -199,6 +196,40 @@ def cycleCamera(context, direction):
     bpy.ops.utilites.change_scene_camera(camera_name=cam_objects[new_idx].name)
     # scene.camera = cam_objects[new_idx]
     return True
+
+
+def lock_camera(obj, lock):
+    obj.lock_location[0] = lock
+    obj.lock_location[1] = lock
+    obj.lock_location[2] = lock
+
+    obj.lock_rotation[0] = lock
+    obj.lock_rotation[1] = lock
+    obj.lock_rotation[2] = lock
+
+    obj.lock_scale[0] = lock
+    obj.lock_scale[1] = lock
+    obj.lock_scale[2] = lock
+
+
+class LockCameras(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "utilities.lock_unlcok_camera"
+    bl_label = "Lock/Unlock Camera"
+
+    camera_name: bpy.props.StringProperty()
+    cam_lock: bpy.props.BoolProperty(name="lock", default=True)
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        if self.camera_name and bpy.data.objects[self.camera_name]:
+            obj = bpy.data.objects[self.camera_name]
+            lock_camera(obj, self.cam_lock)
+
+        return {'FINISHED'}
 
 
 class VIEW3D_OT_cycle_cameras_next(bpy.types.Operator):
@@ -268,6 +299,21 @@ class ResolutionFromBackgroundImg(bpy.types.Operator):
         return {'CANCELLED'}
 
 
+class Hide_Unhide_Camera(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "camera.hide_unhide"
+    bl_label = "Hide Unhide Camera"
+
+    camera_name: bpy.props.StringProperty()
+    cam_hide: bpy.props.BoolProperty(name="hide", default=True)
+
+    def execute(self, context):
+        if self.camera_name and bpy.data.objects[self.camera_name]:
+            obj = bpy.data.objects[self.camera_name]
+            obj.hide_set(self.cam_hide)
+        return {'FINISHED'}
+
+
 class ChangeCamera(bpy.types.Operator):
     """Set camera as scene camera and update the resolution accordingly. The camera is set as active object and selected."""
     bl_idname = "utilites.change_scene_camera"
@@ -276,19 +322,39 @@ class ChangeCamera(bpy.types.Operator):
     camera_name: bpy.props.StringProperty()
 
     def execute(self, context):
-        if self.camera_name and bpy.data.objects[self.camera_name]:
-            camera = bpy.data.objects[self.camera_name]
+        scene = context.scene
+        if self.camera_name and scene.objects[self.camera_name]:
+            camera = scene.objects[self.camera_name]
 
             if camera.data.resolution:
                 resolution = camera.data.resolution
-                context.scene.render.resolution_x = resolution[0]
-                context.scene.render.resolution_y = resolution[1]
+                scene.render.resolution_x = resolution[0]
+                scene.render.resolution_y = resolution[1]
 
-            context.scene.camera = camera
+            scene.camera = camera
 
             context.view_layer.objects.active = camera
             bpy.ops.object.select_all(action='DESELECT')
             camera.select_set(True)
+
+            objectlist = list(bpy.context.scene.objects)
+            idx = objectlist.index(camera)
+
+            scene.camera_list_index = idx
+
+        return {'FINISHED'}
+
+
+class Camera_add_collection(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "cameras.add_collection"
+    bl_label = "Simple Object Operator"
+
+    camera_name: bpy.props.StringProperty()
+    collection_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+
         return {'FINISHED'}
 
 
@@ -364,23 +430,41 @@ class CAMERA_UL_cameraslots(bpy.types.UIList):
                 op = c.operator("utilites.change_scene_camera", text='', icon='FORWARD')
                 op.camera_name = obj.name
 
-                split = split.split(factor=0.4)
+                split = split.split(factor=0.3)
                 c = split.column()
                 c.prop(obj, 'name', text='')
 
-                split = split.split(factor=0.4, align=True)
+                split = split.split(factor=0.2)
+                c = split.column()
+                c.prop(cam, 'lens', text='')
+
+                split = split.split(factor=0.5, align=True)
                 c = split.column(align=True)
                 c.prop(cam, "resolution", text="")
 
                 split = split.split()
                 c = split.column()
                 row = c.row(align=True)
-                op = row.operator("utilites.camera_resolutio_from_image", text="B").camera_name = cam.name
-                op = row.operator("utilites.camera_resolutio_from_image", text="B").camera_name = cam.name
-                op = row.operator("utilites.camera_resolutio_from_image", text="B").camera_name = cam.name
-                op = row.operator("utilites.camera_resolutio_from_image", text="B").camera_name = cam.name
-                op = row.operator("utilites.camera_resolutio_from_image", text="B").camera_name = cam.name
-                op = row.operator("utilites.camera_resolutio_from_image", text="B").camera_name = cam.name
+
+                icon = 'HIDE_OFF' if obj.visible_get() else 'HIDE_ON'
+
+                op = row.operator("camera.hide_unhide", icon=icon, text='')
+                op.camera_name = obj.name
+                op.cam_hide = obj.visible_get()
+
+                op = row.prop(obj, "hide_viewport", text='')
+                op = row.prop(obj, "hide_select", text='')
+
+                op = row.operator("utilities.lock_unlcok_camera", icon='LOCKED', text='')
+                op.camera_name = obj.name
+                op.cam_lock = True
+                op = row.operator("utilities.lock_unlcok_camera", icon='UNLOCKED', text='')
+                op.camera_name = obj.name
+                op.cam_lock = False
+
+                op = row.operator("utilites.camera_resolutio_from_image", text="",
+                                  icon='IMAGE_BACKGROUND').camera_name = cam.name
+
             else:
                 layout.label(text=obj.name)
 
@@ -404,7 +488,8 @@ class CAMERA_UL_cameraslots(bpy.types.UIList):
 
                 split = split.split()
                 c = split.column()
-                op = c.operator("utilites.camera_resolutio_from_image", text="B").camera_name = cam.name
+                op = c.operator("utilites.camera_resolutio_from_image", text="",
+                                icon='IMAGE_BACKGROUND').camera_name = cam.name
             else:
                 layout.label(text=obj.name)
 
@@ -420,8 +505,17 @@ classes = (
     ChangeCamera,
     VIEW3D_OT_cycle_cameras_next,
     VIEW3D_OT_cycle_cameras_backward,
-    CAMERA_OT_dolly_zoom
+    CAMERA_OT_dolly_zoom,
+    LockCameras,
+    Hide_Unhide_Camera
 )
+
+
+def update_func(self, context):
+    print("ENTERED" + bpy.context.scene.camera.name + " " + self.name)
+    if bpy.context.scene.camera.data.name == self.name:
+        bpy.context.scene.render.resolution_x = self.resolution[0]
+        bpy.context.scene.render.resolution_y = self.resolution[1]
 
 
 def register():
@@ -435,7 +529,7 @@ def register():
     cam = bpy.types.Camera
     cam.resolution = bpy.props.IntVectorProperty(name='Resolution', description='', default=(1920, 1080),
                                                  min=4, max=2 ** 31 - 1, soft_min=800, soft_max=8096,
-                                                 subtype='COORDINATES', size=2, update=None, get=None, set=None)
+                                                 subtype='COORDINATES', size=2, update=update_func, get=None, set=None)
 
     from bpy.utils import register_class
 
