@@ -68,6 +68,7 @@ class CAMERA_OT_dolly_zoom(bpy.types.Operator):
     """Dolly Zoom"""
     bl_idname = "utilities.modal_camera_dolly_zoom"
     bl_label = "Dolly Zoom"
+    bl_options = {'REGISTER', 'UNDO'}
 
     # Initial mouse position
     mouse_initial_x: IntProperty()
@@ -320,6 +321,7 @@ class ChangeCamera(bpy.types.Operator):
     bl_label = "Change Scene Camera"
 
     camera_name: bpy.props.StringProperty()
+    switch_to_cam: bpy.props.BoolProperty(default=False)
 
     def execute(self, context):
         scene = context.scene
@@ -331,6 +333,13 @@ class ChangeCamera(bpy.types.Operator):
                 scene.render.resolution_x = resolution[0]
                 scene.render.resolution_y = resolution[1]
 
+            if camera.data.world.world_material:
+                try:
+                    world = camera.data.world.world_material
+                    bpy.context.scene.world = world
+                except KeyError:
+                    pass
+
             scene.camera = camera
 
             context.view_layer.objects.active = camera
@@ -340,6 +349,9 @@ class ChangeCamera(bpy.types.Operator):
             objectlist = list(bpy.context.scene.objects)
             idx = objectlist.index(camera)
 
+            if self.switch_to_cam:
+                if context.area.type == 'VIEW_3D':
+                    bpy.context.screen.areas.spaces[0].region_3d.view_perspective = 'CAMERA'
             scene.camera_list_index = idx
 
         return {'FINISHED'}
@@ -354,7 +366,6 @@ class Camera_add_collection(bpy.types.Operator):
     collection_name: bpy.props.StringProperty()
 
     def execute(self, context):
-
         return {'FINISHED'}
 
 
@@ -425,20 +436,25 @@ class CAMERA_UL_cameraslots(bpy.types.UIList):
                 c = layout.column()
                 row = c.row()
 
-                split = row.split(factor=0.05)
+                split = row.split(factor=0.06)
                 c = split.column()
-                op = c.operator("utilites.change_scene_camera", text='', icon='FORWARD')
+                row = c.row(align=True)
+                op = row.operator("utilites.change_scene_camera", text='', icon='FORWARD')
                 op.camera_name = obj.name
-
-                split = split.split(factor=0.3)
-                c = split.column()
-                c.prop(obj, 'name', text='')
+                op.switch_to_cam = False
+                op = row.operator("utilites.change_scene_camera", text='', icon='VIEW_CAMERA')
+                op.camera_name = obj.name
+                op.switch_to_cam = True
 
                 split = split.split(factor=0.2)
                 c = split.column()
+                c.prop(obj, 'name', text='')
+
+                split = split.split(factor=0.15)
+                c = split.column()
                 c.prop(cam, 'lens', text='')
 
-                split = split.split(factor=0.5, align=True)
+                split = split.split(factor=0.2, align=True)
                 c = split.column(align=True)
                 c.prop(cam, "resolution", text="")
 
@@ -464,6 +480,15 @@ class CAMERA_UL_cameraslots(bpy.types.UIList):
 
                 op = row.operator("utilites.camera_resolutio_from_image", text="",
                                   icon='IMAGE_BACKGROUND').camera_name = cam.name
+
+                scene = context.scene
+                row.prop_search(cam.world, "world_material", bpy.data, "worlds", text='')
+
+                split = split.split(factor=0.5, align=True)
+                c = split.column(align=True)
+                c.prop(cam, "clip_start",text="")
+                c.prop(cam, "clip_end", text="")
+
 
             else:
                 layout.label(text=obj.name)
@@ -499,7 +524,31 @@ class CAMERA_UL_cameraslots(bpy.types.UIList):
             layout.label(text=obj.name)
 
 
+def resolution_update_func(self, context):
+    print("ENTERED" + bpy.context.scene.camera.name + " " + self.name)
+    if bpy.context.scene.camera.data.name == self.name:
+        bpy.context.scene.render.resolution_x = self.resolution[0]
+        bpy.context.scene.render.resolution_y = self.resolution[1]
+
+
+def world_update_funce(self, context):
+    if bpy.context.scene.camera.data.name == self.name:
+        bpy.context.scene.world = self.world.world_material
+
+
+def world_set_func(self, value):
+    return
+
+
+class WorldMaterialProperty(bpy.types.PropertyGroup):
+    world_material: bpy.props.PointerProperty(
+        name="World",
+        type=bpy.types.World,
+    )
+
+
 classes = (
+    WorldMaterialProperty,
     CAMERA_UL_cameraslots,
     ResolutionFromBackgroundImg,
     ChangeCamera,
@@ -511,30 +560,26 @@ classes = (
 )
 
 
-def update_func(self, context):
-    print("ENTERED" + bpy.context.scene.camera.name + " " + self.name)
-    if bpy.context.scene.camera.data.name == self.name:
-        bpy.context.scene.render.resolution_x = self.resolution[0]
-        bpy.context.scene.render.resolution_y = self.resolution[1]
-
-
 def register():
     scene = bpy.types.Scene
     scene.camera_list_index = bpy.props.IntProperty(name="Index for lis one", default=0)
 
     # properties stored in blender scene
-    scene.dolly_zoom_sensitivity: FloatProperty(default=0.0008, name="Mouse Sensitivity")
+    scene.dolly_zoom_sensitivity = FloatProperty(default=0.0008, name="Mouse Sensitivity")
 
     # data stored in camera
     cam = bpy.types.Camera
     cam.resolution = bpy.props.IntVectorProperty(name='Resolution', description='', default=(1920, 1080),
                                                  min=4, max=2 ** 31 - 1, soft_min=800, soft_max=8096,
-                                                 subtype='COORDINATES', size=2, update=update_func, get=None, set=None)
-
+                                                 subtype='COORDINATES', size=2, update=resolution_update_func, get=None,
+                                                 set=None)
     from bpy.utils import register_class
 
     for cls in classes:
         register_class(cls)
+
+    # The PointerProperty has to be after registering the classes to know about the custom property type
+    cam.world = bpy.props.PointerProperty(name="World", type=WorldMaterialProperty, update=world_update_funce)
 
 
 def unregister():
