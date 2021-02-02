@@ -15,17 +15,21 @@ if "bpy" in locals():
     import importlib
 
     importlib.reload(camera_controlls)
+    importlib.reload(dolly_zoom)
     importlib.reload(keymap)
     importlib.reload(preferences)
     importlib.reload(ui)
     importlib.reload(addon_updater_ops)
+    importlib.reload(pie_menu)
 
 else:
     from . import camera_controlls
+    from . import dolly_zoom
     from . import ui
     from . import keymap
     from . import preferences
     from . import addon_updater_ops
+    from . import pie_menu
 
 
 def register():
@@ -36,7 +40,11 @@ def register():
 
     # call the register functions from the other files
     camera_controlls.register()
+    dolly_zoom.register()
     ui.register()
+    pie_menu.register()
+
+    #keymap and preferences should be last
     keymap.register()
     preferences.register()
 
@@ -49,4 +57,7 @@ def unregister():
     ui.unregister()
     camera_controlls.unregister()
     preferences.unregister()
+    dolly_zoom.unregister()
+    pie_menu.unregister()
     keymap.unregister()
+
