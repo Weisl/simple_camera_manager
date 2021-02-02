@@ -23,6 +23,7 @@ class SceneButtonsPanel:
 class CameraManagerPanel(SceneButtonsPanel, bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager"
     bl_label = "Camera Manager"
+    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         layout = self.layout
