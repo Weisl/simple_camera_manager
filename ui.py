@@ -36,15 +36,26 @@ class CameraManagerPanel(SceneButtonsPanel, bpy.types.Panel):
         row = layout.row()
         row.prop(scene, "camera")
 
-        # row = layout.row()
-        # row.prop(context.space_data, "lock_camera")
-
         row = layout.row()
+        # template_list now takes two new args.
+        # The first one is the identifier of the registered UIList to use (if you want only the default list,
+        # with no custom draw code, use "UI_UL_list").
+        layout.template_list("CAMERA_UL_cameras_scene", "", scene, "objects", scene, "camera_list_index")
+
+        layout.separator()
+
+        row = layout.row(align=True)
         row.operator("utilities.cycle_cameras_next", text="previous", icon='TRIA_LEFT')
         row.operator("utilities.cycle_cameras_backward", text="next", icon='TRIA_RIGHT')
         # row = layout.row()
         # row.operator("utilities.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
+        if scene.camera:
+            cam = scene.camera
 
+            row = layout.row(align=True)
+            row.prop(cam, "resolution", text="")
+            op = row.operator("utilites.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
+            op.camera_name = cam.name
 
         row = layout.row(align=True)
         row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='Camera Collection')
@@ -53,13 +64,7 @@ class CameraManagerPanel(SceneButtonsPanel, bpy.types.Panel):
         row = layout.row()
         row.operator('cameras.all_to_collection')
 
-        layout.separator()
 
-        row = layout.row()
-        # template_list now takes two new args.
-        # The first one is the identifier of the registered UIList to use (if you want only the default list,
-        # with no custom draw code, use "UI_UL_list").
-        layout.template_list("CAMERA_UL_cameras_scene", "", scene, "objects", scene, "camera_list_index")
 
 
 class CameraManagerPopup(bpy.types.Panel):

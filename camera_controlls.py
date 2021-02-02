@@ -220,6 +220,10 @@ class ChangeCamera(bpy.types.Operator):
                     bpy.context.screen.areas.spaces[0].region_3d.view_perspective = 'CAMERA'
             scene.camera_list_index = idx
 
+            if camera.data.slot <= len(bpy.data.images[0].render_slots):
+                # subtract by one to make 1 the first slot 'Slot1' and not user input 0
+                bpy.data.images[0].render_slots.active_index = camera.data.slot - 1
+
         return {'FINISHED'}
 
 
@@ -285,6 +289,24 @@ def filter_list(self, context):
             flt_flags[idx] &= ~self.bitflag_filter_item
 
     return flt_flags, flt_neworder
+
+
+class CustomRender(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "cameras.custom_render"
+    bl_label = "Render"
+
+    camera_name: bpy.props.StringProperty()
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.camera is not None
+
+    def execute(self, context):
+        bpy.ops.utilites.change_scene_camera(camera_name=self.camera_name, switch_to_cam=False)
+        bpy.ops.render.render('INVOKE_DEFAULT', animation=False, write_still=True, use_viewport=False)
+
+        return {'FINISHED'}
 
 
 class CAMERA_UL_cameras_popup(bpy.types.UIList):
@@ -381,8 +403,15 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 row.prop_search(cam.world, "world_material", bpy.data, "worlds", text='')
 
                 row = col_04.row(align=True)
-                op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION')
-                op.object_name = obj.name
+                # op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION')
+                # op.object_name = obj.name
+
+                op = row.operator('cameras.custom_render', text='', icon='RENDER_STILL')
+                op.camera_name = obj.name
+
+                row.prop(cam, "slot")
+                row.prop_search(bpy.data.images[0].render_slots, "active_index", text="Slot")
+
 
             else:
                 layout.label(text=obj.name)
@@ -478,6 +507,13 @@ def world_update_funce(self, context):
         bpy.context.scene.world = self.world.world_material
 
 
+def render_slot_update_funce(self, context):
+    if bpy.context.scene.camera.data.name == self.name:
+        if self.slot <= len(bpy.data.images[0].render_slots):
+            # subtract by one to make 1 the first slot 'Slot1' and not user input 0
+            bpy.data.images[0].render_slots.active_index = self.slot - 1
+
+
 def world_set_func(self, value):
     return
 
@@ -486,6 +522,7 @@ classes = (
     Camera_add_collection,
     CreateCollectionOperator,
     WorldMaterialProperty,
+    CustomRender,
     CAMERA_UL_cameras_popup,
     CAMERA_UL_cameras_scene,
     ResolutionFromBackgroundImg,
@@ -516,6 +553,8 @@ def register():
 
     # The PointerProperty has to be after registering the classes to know about the custom property type
     cam.world = bpy.props.PointerProperty(name="World", type=WorldMaterialProperty, update=world_update_funce)
+
+    cam.slot = bpy.props.IntProperty(name="Slot", default=1, min=1, soft_max=8, update=render_slot_update_funce)
 
 
 def unregister():

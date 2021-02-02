@@ -12,6 +12,7 @@ Resolution is stored for each camera.
 ![img](images/ThHeC41aQQ.gif)
 Having different camera resolutions makes the work with different image planes much easier. You can quickly toggle between the cameras without changing the scene settings every time you change the camera.
 
+
 ### The Camera Overview (Ctrl + Shift + C)
 
 This menu lists all cameras in your scene. It provides a quick overview of the most important settings and a quick way of adjusting them. 
