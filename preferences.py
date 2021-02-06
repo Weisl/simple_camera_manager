@@ -6,7 +6,7 @@ from .keymap import get_hotkey_entry_item
 
 
 # addon Preferences
-class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
+class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
     """Contains the blender addon preferences"""
     # this must match the addon name, use '__package__'
     # when defining this in a submodule of a python package.
@@ -79,8 +79,8 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
         km = kc.keymaps['3D View']
 
         kmis = []
-        kmis.append(get_hotkey_entry_item(km, 'utilities.cycle_cameras_next'))
-        kmis.append(get_hotkey_entry_item(km, 'utilities.cycle_cameras_backward'))
+        kmis.append(get_hotkey_entry_item(km, 'cam_manager.cycle_cameras_next'))
+        kmis.append(get_hotkey_entry_item(km, 'cam_manager.cycle_cameras_backward'))
         kmis.append(get_hotkey_entry_item(km, 'VIEW3D_PT_tools_type_suffix'))
 
         for kmi in kmis:
@@ -89,11 +89,11 @@ class VIEW3D_OT_renaming_preferences(bpy.types.AddonPreferences):
                 rna_keymap_ui.draw_kmi([], kc, km, kmi, col, 0)
             else:
                 col.label(text="No hotkey entry found")
-                col.operator("utilities.add_hotkey", text="Add hotkey entry", icon='ADD')
+                col.operator("cam_manager.add_hotkey", text="Add hotkey entry", icon='ADD')
 
 
 classes = (
-    VIEW3D_OT_renaming_preferences,
+    CAM_MANAGER_OT_renaming_preferences,
 )
 
 

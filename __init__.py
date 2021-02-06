@@ -1,13 +1,13 @@
 bl_info = {
-    "name": "Camera Manager",
+    "name": "Cam Manager",
     "author": "Matthias Patscheider",
     "version": (1, 0),
     "blender": (2, 91, 0),
-    "location": "View3D > Object",
-    "description": "A collection of some Utilities ",
-    "warning": "",
-    "wiki_url": "",
-    "category": "Object",
+    "location": "Shift + C > (Cam Overview Panel), Alt + C > (Cam Adjustment Panel), Properties Panel > Scene > Quick Overview ",
+    "description": "Tools for managing multiple cameras",
+    "wiki_url": "https://github.com/Weisl/CameraManager",
+    "tracker_url": "https://github.com/Weisl/CameraManager/issues",
+    "category": "3D View",
 }
 
 # support reloading sub-modules
@@ -38,13 +38,12 @@ def register():
     # so that users can revert back to a working version
     addon_updater_ops.register(bl_info)
 
-    # call the register functions from the other files
     camera_controlls.register()
     dolly_zoom.register()
     ui.register()
     pie_menu.register()
 
-    #keymap and preferences should be last
+    # keymap and preferences should be last
     keymap.register()
     preferences.register()
 
@@ -60,4 +59,3 @@ def unregister():
     dolly_zoom.unregister()
     pie_menu.unregister()
     keymap.unregister()
-
