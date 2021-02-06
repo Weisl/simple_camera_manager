@@ -55,41 +55,34 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         mainrow = layout.row()
         col = mainrow.column()
 
-        # updater draw function
-        # could also pass in col as third arg
-        addon_updater_ops.update_settings_ui(self, context)
-
-        # Alternate draw function, which is more condensed and can be
-        # placed within an existing draw function. Only contains:
-        #   1) check for update/update now buttons
-        #   2) toggle for auto-check (interval will be equal to what is set above)
-        # addon_updater_ops.update_settings_ui_condensed(self, context, col)
-
-        # Adding another column to help show the above condensed ui as one column
-        # col = mainrow.column()
-        # col.scale_y = 2
-        # col.operator("wm.url_open","Open webpage ").url=addon_updater_ops.updater.website
-
         box = layout.box()
         split = box.split()
         col = box.column()
 
         wm = context.window_manager
         kc = wm.keyconfigs.addon
-        km = kc.keymaps['3D View']
+        km = kc.keymaps['3D View Camera Manager']
 
         kmis = []
+        # Operators
         kmis.append(get_hotkey_entry_item(km, 'cam_manager.cycle_cameras_next'))
         kmis.append(get_hotkey_entry_item(km, 'cam_manager.cycle_cameras_backward'))
-        kmis.append(get_hotkey_entry_item(km, 'VIEW3D_PT_tools_type_suffix'))
+        # Menus and Pies
+        kmis.append(get_hotkey_entry_item(km, 'wm.call_panel', 'OBJECT_PT_camera_manager_popup'))
+        kmis.append(get_hotkey_entry_item(km, 'wm.call_menu_pie', 'CAMERA_pie_menu'))
 
         for kmi in kmis:
             if kmi:
                 col.context_pointer_set("keymap", km)
                 rna_keymap_ui.draw_kmi([], kc, km, kmi, col, 0)
+
             else:
                 col.label(text="No hotkey entry found")
                 col.operator("cam_manager.add_hotkey", text="Add hotkey entry", icon='ADD')
+
+        # updater draw function
+        # could also pass in col as third arg
+        addon_updater_ops.update_settings_ui(self, context)
 
 
 classes = (

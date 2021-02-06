@@ -277,7 +277,7 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
 
 class CAM_MANAGER_PT_popup(bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager_popup"
-    bl_label = "Camera Manager"
+    bl_label = "Camera Manager Popup"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
     bl_context = "empty"
@@ -309,7 +309,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
 
 
 class CAM_MANAGER_PT_camera_properties(CAM_MANAGER_PT_camera_buttons_panel, bpy.types.Panel):
-    bl_label = "Camera Manager"
+    bl_label = "Camera Manager PIE Menu"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
 
     def draw(self, context):

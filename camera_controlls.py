@@ -40,6 +40,7 @@ def cycleCamera(context, direction):
     :param direction: string with 'FORWARD' or 'BACKWARD' to define the direction
     :return: Bool for either successful or unsuccesful try
     '''
+
     scene = context.scene
     cam_objects = [ob for ob in scene.objects if ob.type == 'CAMERA']
 
@@ -320,7 +321,7 @@ def resolution_update_func(self, context):
     Updating scene resolution when changing the resolution of the active camera
     :param self:
     :param context:
-    :return:
+    :return: None
     '''
     if bpy.context.scene.camera.data.name == self.name:
         bpy.context.scene.render.resolution_x = self.resolution[0]
@@ -332,7 +333,7 @@ def world_update_funce(self, context):
     Updating the world material when changing the world material for the active camera
     :param self:
     :param context:
-    :return:
+    :return: None
     '''
     if bpy.context.scene.camera.data.name == self.name:
         bpy.context.scene.world = self.world.world_material
@@ -340,15 +341,28 @@ def world_update_funce(self, context):
 
 def render_slot_update_funce(self, context):
     '''
-    Update the render slot when changing render slot for the active camera
+    Update the render slot when changing render slot for the active camera. A new render slot will
+    be created if the number is higher than the number of current renderslots. The newly created
+    render slots gets assigned automatically.
     :param self:
     :param context:
-    :return:
+    :return: None
     '''
+    new_slot = False
+    render_result = bpy.data.images[0]
+    # Create new slot if the input is higher than the current number of render slots
+    if self.slot > len(bpy.data.images[0].render_slots):
+        render_result.render_slots.new()
+        new_slot = True
+
     if bpy.context.scene.camera.data.name == self.name:
-        if self.slot <= len(bpy.data.images[0].render_slots):
+        if new_slot:
+            new_render_slot_nr = len(bpy.data.images[0].render_slots)
+            render_result.render_slots.active_index = new_render_slot_nr
+            self.slot = new_render_slot_nr
+        else:
             # subtract by one to make 1 the first slot 'Slot1' and not user input 0
-            bpy.data.images[0].render_slots.active_index = self.slot - 1
+            render_result.render_slots.active_index = self.slot - 1
 
 
 classes = (
@@ -372,8 +386,9 @@ def register():
 
     # data stored in camera
     cam = bpy.types.Camera
-    cam.resolution = bpy.props.IntVectorProperty(name='Camera Resolution', description='Camera resolution in px', default=(1920, 1080),
-                                                 min=4, max=2 ** 31 - 1, soft_min=800, soft_max=8096,
+    cam.resolution = bpy.props.IntVectorProperty(name='Camera Resolution', description='Camera resolution in px',
+                                                 default=(1920, 1080),
+                                                 min=4, soft_min=800, soft_max=8096,
                                                  subtype='COORDINATES', size=2, update=resolution_update_func, get=None,
                                                  set=None)
 
@@ -383,9 +398,11 @@ def register():
         register_class(cls)
 
     # The PointerProperty has to be after registering the classes to know about the custom property type
-    cam.world = bpy.props.PointerProperty(name="World Material", description='World material assigned to the camera', type=WorldMaterialProperty, update=world_update_funce)
+    cam.world = bpy.props.PointerProperty(name="World Material", description='World material assigned to the camera',
+                                          type=WorldMaterialProperty, update=world_update_funce)
 
-    cam.slot = bpy.props.IntProperty(name="Slot", default=1, description='Render slot, used when rendering this camera', min=1, soft_max=8, update=render_slot_update_funce)
+    cam.slot = bpy.props.IntProperty(name="Slot", default=1, description='Render slot, used when rendering this camera',
+                                     min=1, soft_max=15, update=render_slot_update_funce)
 
 
 def unregister():
