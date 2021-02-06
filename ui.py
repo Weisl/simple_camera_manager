@@ -82,8 +82,8 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 split_right = split.column().split(factor=0.33)
                 col_03 = split_right.column()
                 split_right_02 = split_right.split(factor=0.5)
-                col_04 = split_right.column()
-                col_05 = split_right.column()
+                col_04 = split_right_02.column()
+                col_05 = split_right_02.column()
 
                 # Col01
                 row = col_01.row(align=True)

@@ -143,8 +143,8 @@ class CAM_MANAGER_OT_cycle_cameras_backward(bpy.types.Operator):
 class CAM_MANAGER_OT_create_collection(bpy.types.Operator):
     """Creates a new collection"""
     bl_idname = "camera.create_collection"
-    bl_label = "Create Collection"
-    bl_description = "Create a new collection and add it to the scene"
+    bl_label = "Create Camera Collection"
+    bl_description = "Create a cameras collection and add it to the scene"
     bl_options = {'REGISTER'}
 
     collection_name: bpy.props.StringProperty(name='Name', default='Cameras')
@@ -152,7 +152,9 @@ class CAM_MANAGER_OT_create_collection(bpy.types.Operator):
     def execute(self, context):
         parent_collection = context.scene.collection
         collection_name = self.collection_name
-        make_collection(collection_name, parent_collection)
+        col = make_collection(collection_name, parent_collection)
+
+        context.scene.cam_collection.collection = col
         return {'FINISHED'}
 
 
