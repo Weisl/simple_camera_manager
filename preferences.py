@@ -61,7 +61,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
         wm = context.window_manager
         kc = wm.keyconfigs.addon
-        km = kc.keymaps['3D View Camera Manager']
+        km = kc.keymaps['3D View']
 
         kmis = []
         # Operators
@@ -69,7 +69,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         kmis.append(get_hotkey_entry_item(km, 'cam_manager.cycle_cameras_backward'))
         # Menus and Pies
         kmis.append(get_hotkey_entry_item(km, 'wm.call_panel', 'OBJECT_PT_camera_manager_popup'))
-        kmis.append(get_hotkey_entry_item(km, 'wm.call_menu_pie', 'CAMERA_pie_menu'))
+        kmis.append(get_hotkey_entry_item(km, 'wm.call_menu_pie', 'CAMERA_MT_pie_menu'))
 
         for kmi in kmis:
             if kmi:

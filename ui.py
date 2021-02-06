@@ -126,6 +126,10 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 row.prop_search(cam.world, "world_material", bpy.data, "worlds", text='')
 
                 row = col_04.row(align=True)
+                # dof = cam.dof
+                # row.prop(dof, 'use_dof')
+                # row.prop(dof, "focus_distance", text="Focus Distance")
+
                 op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION')
                 op.object_name = obj.name
 
@@ -232,7 +236,7 @@ class CAM_MANAGER_PT_scene_panel:
 
 class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager"
-    bl_label = "Camera Manager"
+    bl_label = "Cam Manager"
     bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
@@ -250,16 +254,18 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
         # template_list now takes two new args.
         # The first one is the identifier of the registered UIList to use (if you want only the default list,
         # with no custom draw code, use "UI_UL_list").
-        layout.template_list("CAMERA_UL_cameras_scene", "", scene, "objects", scene, "camera_list_index")
+
+        row = layout.row()
+        row.template_list("CAMERA_UL_cameras_scene", "", scene, "objects", scene, "camera_list_index")
+        col = row.column(align=True)
+        col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
+        col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
 
         layout.separator()
-
-        row = layout.row(align=True)
-        row.operator("cam_manager.cycle_cameras_next", text="previous", icon='TRIA_LEFT')
-        row.operator("cam_manager.cycle_cameras_backward", text="next", icon='TRIA_RIGHT')
         # row = layout.row()
         # row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
         if scene.camera:
+            layout.label(text='Active Camera')
             cam = scene.camera
 
             row = layout.row(align=True)
@@ -267,9 +273,12 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
             op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
             op.camera_name = cam.name
 
+        layout.separator()
+        layout.label(text='All Cameras')
+
         row = layout.row(align=True)
         row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='Camera Collection')
-        row.operator("camera.create_collection", text='', icon='COLLECTION_NEW')
+        row.operator("camera.create_collection", text='All cameras to collection', icon='COLLECTION_NEW')
 
         row = layout.row()
         row.operator('cameras.all_to_collection')
@@ -277,7 +286,7 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
 
 class CAM_MANAGER_PT_popup(bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager_popup"
-    bl_label = "Camera Manager Popup"
+    bl_label = "Cam Manager Popup"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
     bl_context = "empty"
@@ -291,25 +300,34 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         row.label(text="Camera Manager")
 
         scene = context.scene
-        split = layout.split(factor=0.5)
-        col = split.column()
-        row = col.row(align=True)
-        row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='Camera Collection')
+        split = layout.split(factor=0.333)
+        col_01 = split.column()
+        split = split.split(factor=0.5)
+        col_02 = split.column()
+        col_03 = split.column()
+
+        # Collections
+        row = col_01.row(align=True)
+        row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='')
         row.operator("camera.create_collection", text='', icon='COLLECTION_NEW')
-        row = col.row()
-        row.operator('cameras.all_to_collection')
-        row = col.row()
-        row.operator("view3d.view_camera", text="Camera", icon='VIEW_CAMERA')
+        col_01.operator('cameras.all_to_collection')
+
+        # Camera Settings
+        col_03.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
 
         layout.separator()
         # template_list now takes two new args.
         # The first one is the identifier of the registered UIList to use (if you want only the default list,
         # with no custom draw code, use "UI_UL_list").
-        layout.template_list("CAMERA_UL_cameras_popup", "", scene, "objects", scene, "camera_list_index")
+        row = layout.row()
+        row.template_list("CAMERA_UL_cameras_popup", "", scene, "objects", scene, "camera_list_index")
+        col = row.column(align=True)
+        col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
+        col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
 
 
 class CAM_MANAGER_PT_camera_properties(CAM_MANAGER_PT_camera_buttons_panel, bpy.types.Panel):
-    bl_label = "Camera Manager PIE Menu"
+    bl_label = "Cam Manager Menu"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
 
     def draw(self, context):
@@ -350,7 +368,9 @@ def register():
 
     scene = bpy.types.Scene
     # The PointerProperty has to be after registering the classes to know about the custom property type
-    scene.cam_collection = bpy.props.PointerProperty(name="Camera Collection", description='User collection dedicated for the cameras', type=CameraCollectionProperty)
+    scene.cam_collection = bpy.props.PointerProperty(name="Camera Collection",
+                                                     description='User collection dedicated for the cameras',
+                                                     type=CameraCollectionProperty)
 
 
 def unregister():

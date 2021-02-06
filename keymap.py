@@ -12,6 +12,7 @@ def remove_hotkey():
             if kmi.properties.name in ['cam_manager.cycle_cameras_next', 'cam_manager.cycle_cameras_backward']:
                 km.keymap_items.remove(kmi)
 
+    addon_keymaps.clear()
 
 def add_hotkey(context=None):
     '''Add default hotkey konfiguration'''
@@ -22,27 +23,27 @@ def add_hotkey(context=None):
     kc = wm.keyconfigs.addon
 
     if kc:
-        km = wm.keyconfigs.addon.keymaps.new(name='3D View Camera Manager', space_type='VIEW_3D')
+        km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new("cam_manager.cycle_cameras_next", 'RIGHT_ARROW', 'PRESS', ctrl=True, shift=True)
         # kmi.properties.direction = 'FORWARD'
         kmi.active = True
         addon_keymaps.append((km, kmi))
 
-        km = wm.keyconfigs.addon.keymaps.new(name='3D View Camera Manager', space_type='VIEW_3D')
+        km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new("cam_manager.cycle_cameras_backward", 'LEFT_ARROW', 'PRESS', ctrl=True, shift=True)
         kmi.active = True
         # kmi.properties.direction = 'BACKWARD'
         addon_keymaps.append((km, kmi))
 
-        km = wm.keyconfigs.addon.keymaps.new(name='3D View Camera Manager', space_type='VIEW_3D')
+        km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(idname='wm.call_panel', type='C', value='PRESS', shift=True)
         kmi.properties.name = 'OBJECT_PT_camera_manager_popup'
         kmi.active = True
         addon_keymaps.append((km, kmi))
 
-        km = kc.keymaps.new(name="3D View Camera Manager", space_type='VIEW_3D')
+        km = kc.keymaps.new(name="3D View", space_type='VIEW_3D')
         kmi = km.keymap_items.new(idname='wm.call_menu_pie', type='C', value='PRESS', alt=True)
-        kmi.properties.name = "CAMERA_pie_menu"
+        kmi.properties.name = "CAMERA_MT_pie_menu"
         kmi.active = True
         addon_keymaps.append((km, kmi))
 

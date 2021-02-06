@@ -7,8 +7,8 @@ from bpy.types import Menu
 
 class CAM_MANAGER_MT_PIE_camera_settings(Menu):
     # label is displayed at the center of the pie menu.
-    bl_label = "Camera Manager"
-    bl_idname = "CAMERA_pie_menu"
+    bl_label = "Cam Manager Pie Menu"
+    bl_idname = "CAMERA_MT_pie_menu"
 
     def draw(self, context):
         layout = self.layout
