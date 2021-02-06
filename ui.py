@@ -1,4 +1,19 @@
+import os
+import subprocess
+
 import bpy
+
+
+class CAMERA_OT_open_in_explorer(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "cameras.open_in_explorer"
+    bl_label = "Open Render Folder"
+
+    def execute(self, context):
+        # TODO: Might cause issues on Linux and Mac
+        filepath = os.path.abspath(context.scene.render.filepath)
+        subprocess.Popen(["explorer.exe", filepath])
+        return {'FINISHED'}
 
 
 def filter_list(self, context):
@@ -9,6 +24,7 @@ def filter_list(self, context):
     :return: flt_flags is a bit-flag containing the filtering and flt
             flt_neworder defines the order of all cameras
     '''
+    helper_funcs = bpy.types.UI_UL_list
 
     # Default return values.
     flt_flags = []
@@ -26,6 +42,8 @@ def filter_list(self, context):
             flt_flags[idx] |= self.CAMERA_FILTER
         else:
             flt_flags[idx] &= ~self.bitflag_filter_item
+
+    flt_neworder = helper_funcs.sort_items_by_name(objects, "name")
 
     return flt_flags, flt_neworder
 
@@ -133,11 +151,11 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION')
                 op.object_name = obj.name
 
+                # Render
                 row = col_05.row(align=True)
+                row.prop(cam, "slot")
                 op = row.operator('cameras.custom_render', text='', icon='RENDER_STILL')
                 op.camera_name = obj.name
-
-                row.prop(cam, "slot")
 
 
             else:
@@ -312,6 +330,11 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         row.operator("camera.create_collection", text='', icon='COLLECTION_NEW')
         col_01.operator('cameras.all_to_collection')
 
+        col_01.separator()
+        col_01.prop(scene, 'output_render')
+        col_01.prop(context.scene.render, 'filepath')
+        col_01.operator('cameras.open_in_explorer')
+
         # Camera Settings
         col_03.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
 
@@ -352,6 +375,7 @@ class CameraCollectionProperty(bpy.types.PropertyGroup):
 
 classes = (
     CameraCollectionProperty,
+    CAMERA_OT_open_in_explorer,
     CAMERA_UL_cameras_popup,
     CAMERA_UL_cameras_scene,
     CAM_MANAGER_PT_scene_properties,
@@ -371,6 +395,8 @@ def register():
     scene.cam_collection = bpy.props.PointerProperty(name="Camera Collection",
                                                      description='User collection dedicated for the cameras',
                                                      type=CameraCollectionProperty)
+
+    scene.output_render = bpy.props.BoolProperty(name="Save Render", description="Save renders to disk", default=True)
 
 
 def unregister():

@@ -302,9 +302,9 @@ class CAM_MANAGER_OT_render(bpy.types.Operator):
         return context.scene.camera is not None
 
     def execute(self, context):
+        scene = context.scene
         bpy.ops.cam_manager.change_scene_camera(camera_name=self.camera_name, switch_to_cam=False)
-        bpy.ops.render.render('INVOKE_DEFAULT', animation=False, write_still=True, use_viewport=False)
-
+        bpy.ops.render.render('INVOKE_DEFAULT', animation=False, write_still=scene.output_render, use_viewport=False)
         return {'FINISHED'}
 
 
@@ -354,6 +354,7 @@ def render_slot_update_funce(self, context):
     if self.slot > len(bpy.data.images[0].render_slots):
         render_result.render_slots.new()
         new_slot = True
+        self.slot = len(bpy.data.images[0].render_slots)
 
     if bpy.context.scene.camera.data.name == self.name:
         if new_slot:
