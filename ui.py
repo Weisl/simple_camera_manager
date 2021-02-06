@@ -75,13 +75,15 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
             # Note "data" names should never be translated!
             if obj.type == 'CAMERA':
 
-                split = layout.split(factor=0.7)
-                split_left = split.column().split(factor=0.5)
+                split = layout.split(factor=0.6)
+                split_left = split.column().split(factor=0.45)
                 col_01 = split_left.column()
                 col_02 = split_left.column()
-                split_right = split.column().split(factor=0.5)
+                split_right = split.column().split(factor=0.33)
                 col_03 = split_right.column()
+                split_right_02 = split_right.split(factor=0.5)
                 col_04 = split_right.column()
+                col_05 = split_right.column()
 
                 # Col01
                 row = col_01.row(align=True)
@@ -124,14 +126,14 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 row.prop_search(cam.world, "world_material", bpy.data, "worlds", text='')
 
                 row = col_04.row(align=True)
-                # op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION')
-                # op.object_name = obj.name
+                op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION')
+                op.object_name = obj.name
 
+                row = col_05.row(align=True)
                 op = row.operator('cameras.custom_render', text='', icon='RENDER_STILL')
                 op.camera_name = obj.name
 
                 row.prop(cam, "slot")
-                row.prop_search(bpy.data.images[0].render_slots, "active_index", text="Slot")
 
 
             else:
@@ -261,7 +263,7 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
             cam = scene.camera
 
             row = layout.row(align=True)
-            row.prop(cam, "resolution", text="")
+            row.prop(cam.data, "resolution", text="")
             op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
             op.camera_name = cam.name
 
@@ -279,7 +281,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
     bl_context = "empty"
-    bl_ui_units_x = 40
+    bl_ui_units_x = 45
     bl_options = {'DRAW_BOX'}
 
     def draw(self, context):
@@ -348,7 +350,7 @@ def register():
 
     scene = bpy.types.Scene
     # The PointerProperty has to be after registering the classes to know about the custom property type
-    scene.cam_collection = bpy.props.PointerProperty(name="Camera Collection", type=CameraCollectionProperty)
+    scene.cam_collection = bpy.props.PointerProperty(name="Camera Collection", description='User collection dedicated for the cameras', type=CameraCollectionProperty)
 
 
 def unregister():

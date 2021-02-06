@@ -177,7 +177,7 @@ def register():
     scene = bpy.types.Scene
 
     # properties stored in blender scene
-    scene.dolly_zoom_sensitivity = FloatProperty(default=0.0008, name="Mouse Sensitivity")
+    scene.dolly_zoom_sensitivity = FloatProperty(default=0.0008, description='Mouse sensitivity for controlling the dolly zoom', name="Mouse Sensitivity")
 
     from bpy.utils import register_class
 

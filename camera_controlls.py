@@ -287,7 +287,7 @@ class CAM_MANAGER_OT_all_cameras_to_collection(bpy.types.Operator):
 
 
 class CAM_MANAGER_OT_render(bpy.types.Operator):
-    """Tooltip"""
+    """Switch camera and render"""
     bl_idname = "cameras.custom_render"
     bl_label = "Render"
     bl_description = "Switch camera and start a render"
@@ -306,6 +306,7 @@ class CAM_MANAGER_OT_render(bpy.types.Operator):
 
 
 class WorldMaterialProperty(bpy.types.PropertyGroup):
+    ''' Custom property storing the background (world) information per camera '''
     world_material: bpy.props.PointerProperty(
         name="World",
         type=bpy.types.World,
@@ -313,18 +314,35 @@ class WorldMaterialProperty(bpy.types.PropertyGroup):
 
 
 def resolution_update_func(self, context):
-    print("ENTERED" + bpy.context.scene.camera.name + " " + self.name)
+    '''
+    Updating scene resolution when changing the resolution of the active camera
+    :param self:
+    :param context:
+    :return:
+    '''
     if bpy.context.scene.camera.data.name == self.name:
         bpy.context.scene.render.resolution_x = self.resolution[0]
         bpy.context.scene.render.resolution_y = self.resolution[1]
 
 
 def world_update_funce(self, context):
+    '''
+    Updating the world material when changing the world material for the active camera
+    :param self:
+    :param context:
+    :return:
+    '''
     if bpy.context.scene.camera.data.name == self.name:
         bpy.context.scene.world = self.world.world_material
 
 
 def render_slot_update_funce(self, context):
+    '''
+    Update the render slot when changing render slot for the active camera
+    :param self:
+    :param context:
+    :return:
+    '''
     if bpy.context.scene.camera.data.name == self.name:
         if self.slot <= len(bpy.data.images[0].render_slots):
             # subtract by one to make 1 the first slot 'Slot1' and not user input 0
@@ -352,7 +370,7 @@ def register():
 
     # data stored in camera
     cam = bpy.types.Camera
-    cam.resolution = bpy.props.IntVectorProperty(name='Resolution', description='', default=(1920, 1080),
+    cam.resolution = bpy.props.IntVectorProperty(name='Camera Resolution', description='Camera resolution in px', default=(1920, 1080),
                                                  min=4, max=2 ** 31 - 1, soft_min=800, soft_max=8096,
                                                  subtype='COORDINATES', size=2, update=resolution_update_func, get=None,
                                                  set=None)
@@ -363,9 +381,9 @@ def register():
         register_class(cls)
 
     # The PointerProperty has to be after registering the classes to know about the custom property type
-    cam.world = bpy.props.PointerProperty(name="World", type=WorldMaterialProperty, update=world_update_funce)
+    cam.world = bpy.props.PointerProperty(name="World Material", description='World material assigned to the camera', type=WorldMaterialProperty, update=world_update_funce)
 
-    cam.slot = bpy.props.IntProperty(name="Slot", default=1, min=1, soft_max=8, update=render_slot_update_funce)
+    cam.slot = bpy.props.IntProperty(name="Slot", default=1, description='Render slot, used when rendering this camera', min=1, soft_max=8, update=render_slot_update_funce)
 
 
 def unregister():
