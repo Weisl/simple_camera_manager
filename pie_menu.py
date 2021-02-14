@@ -75,8 +75,6 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         # SouthEast
 
 
-
-
 classes = (
     CAM_MANAGER_MT_PIE_camera_settings,
 )

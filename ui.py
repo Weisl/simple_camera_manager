@@ -5,13 +5,14 @@ import bpy
 
 
 class CAMERA_OT_open_in_explorer(bpy.types.Operator):
-    """Tooltip"""
+    """Open render output directory in Explorer"""
     bl_idname = "cameras.open_in_explorer"
     bl_label = "Open Render Folder"
+    bl_description = "Open the render output folder in explorer"
 
     def execute(self, context):
         # TODO: Might cause issues on Linux and Mac
-        filepath = os.path.abspath(context.scene.render.filepath)
+        filepath = os.path.dirname(os.path.abspath(context.scene.render.filepath))
         subprocess.Popen(["explorer.exe", filepath])
         return {'FINISHED'}
 
@@ -233,18 +234,6 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
             layout.label(text=obj.name)
 
 
-class CAM_MANAGER_PT_camera_buttons_panel:
-    '''Properties Panel in the camera data tab'''
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "data"
-
-    @classmethod
-    def poll(cls, context):
-        engine = context.engine
-        return context.camera and (engine in cls.COMPAT_ENGINES)
-
-
 class CAM_MANAGER_PT_scene_panel:
     '''Properties Panel in the scene tab'''
     bl_space_type = 'PROPERTIES'
@@ -333,7 +322,8 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         col_01.separator()
         col_01.prop(scene, 'output_render')
         col_01.prop(context.scene.render, 'filepath')
-        col_01.operator('cameras.open_in_explorer')
+        # col_01.operator('cameras.open_in_explorer')
+        layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
 
         # Camera Settings
         col_03.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
@@ -349,21 +339,22 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
 
 
-class CAM_MANAGER_PT_camera_properties(CAM_MANAGER_PT_camera_buttons_panel, bpy.types.Panel):
+class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
     bl_label = "Cam Manager Menu"
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "data"
+    bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
         layout = self.layout
 
         cam = context.camera
 
-        row = layout.row()
-        row.prop(cam, "resolution")
-
-        row = layout.row()
-        op = layout.operator("cam_manager.camera_resolutio_from_image",
-                             text="Resoltuion from image").camera_name = cam.name
+        row = layout.row(align=True)
+        row.prop(cam, "resolution", text="")
+        op = row.operator("cam_manager.camera_resolutio_from_image",
+                             text="", icon='IMAGE_BACKGROUND').camera_name = cam.name
 
 
 class CameraCollectionProperty(bpy.types.PropertyGroup):
