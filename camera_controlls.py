@@ -223,6 +223,7 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
                     world = camera.data.world
                     context.scene.world = world
                 except KeyError:
+                    self.report({'WARNING'}, 'World material could not be found')
                     pass
 
             scene.camera = camera
@@ -342,6 +343,7 @@ def world_update_func(self, context):
 
     if context.scene.camera.data.name == self.name:
         context.scene.world = self.world
+        self.world.use_fake_user = True
 
     return None
 
