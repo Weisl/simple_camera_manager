@@ -5,10 +5,10 @@ from bpy.types import Menu
 # spawn an edit mode selection pie (run while object is in edit mode to get a valid output)
 
 
-class VIEW3D_MT_PIE_camera_settings(Menu):
+class CAM_MANAGER_MT_PIE_camera_settings(Menu):
     # label is displayed at the center of the pie menu.
-    bl_label = "Camera Manager"
-    bl_idname = "CAMERA_pie_menu"
+    bl_label = "Cam Manager Pie Menu"
+    bl_idname = "CAMERA_MT_pie_menu"
 
     def draw(self, context):
         layout = self.layout
@@ -22,9 +22,9 @@ class VIEW3D_MT_PIE_camera_settings(Menu):
         obj = context.object
 
         # West
-        pie.operator("utilities.cycle_cameras_next", text="previous", icon='TRIA_LEFT')
+        pie.operator("cam_manager.cycle_cameras_next", text="previous", icon='TRIA_LEFT')
         # East
-        pie.operator("utilities.cycle_cameras_backward", text="next", icon='TRIA_RIGHT')
+        pie.operator("cam_manager.cycle_cameras_backward", text="next", icon='TRIA_RIGHT')
 
         # South
         pie.prop(view, "lock_camera")
@@ -32,11 +32,11 @@ class VIEW3D_MT_PIE_camera_settings(Menu):
         # SouthWest
         if obj.type == 'CAMERA':
             if obj.get('lock'):
-                op = pie.operator("utilities.lock_unlcok_camera", icon='LOCKED', text='')
+                op = pie.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
                 op.camera_name = obj.name
                 op.cam_lock = False
             else:
-                op = pie.operator("utilities.lock_unlcok_camera", icon='UNLOCKED', text='')
+                op = pie.operator("cam_manager.lock_unlock_camera", icon='UNLOCKED', text='')
                 op.camera_name = obj.name
                 op.cam_lock = True
 
@@ -50,7 +50,7 @@ class VIEW3D_MT_PIE_camera_settings(Menu):
 
             # NorthWest
 
-            op = pie.operator("utilites.change_scene_camera", text='', icon='VIEW_CAMERA')
+            op = pie.operator("cam_manager.change_scene_camera", text='', icon='VIEW_CAMERA')
             op.camera_name = obj.name
             op.switch_to_cam = False
 
@@ -75,10 +75,8 @@ class VIEW3D_MT_PIE_camera_settings(Menu):
         # SouthEast
 
 
-
-
 classes = (
-    VIEW3D_MT_PIE_camera_settings,
+    CAM_MANAGER_MT_PIE_camera_settings,
 )
 
 

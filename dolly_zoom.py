@@ -50,9 +50,9 @@ def draw_callback_px(self, context):
     bgl.glDisable(bgl.GL_BLEND)
 
 
-class CAMERA_OT_dolly_zoom(bpy.types.Operator):
+class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
     """Modlar operator that keeps the object size in viewport when changing the focal lenght """
-    bl_idname = "utilities.modal_camera_dolly_zoom"
+    bl_idname = "cam_manager.modal_camera_dolly_zoom"
     bl_label = "Dolly Zoom"
     bl_description = "Change focal lenght while keeping the target object at the same size in the camera view"
     bl_options = {'REGISTER', 'UNDO'}
@@ -169,7 +169,7 @@ class CAMERA_OT_dolly_zoom(bpy.types.Operator):
 
 
 classes = (
-    CAMERA_OT_dolly_zoom,
+    CAM_MANAGER_OT_dolly_zoom,
 )
 
 
@@ -177,7 +177,7 @@ def register():
     scene = bpy.types.Scene
 
     # properties stored in blender scene
-    scene.dolly_zoom_sensitivity = FloatProperty(default=0.0008, name="Mouse Sensitivity")
+    scene.dolly_zoom_sensitivity = FloatProperty(default=0.0008, description='Mouse sensitivity for controlling the dolly zoom', name="Mouse Sensitivity")
 
     from bpy.utils import register_class
 

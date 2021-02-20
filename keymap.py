@@ -9,12 +9,10 @@ def remove_hotkey():
     # only works for menues and pie menus
     for km, kmi in addon_keymaps:
         if hasattr(kmi.properties, 'name'):
-            if kmi.properties.name in ['utilities.cycle_cameras_next', 'utilities.cycle_cameras_backward',
-                                       'VIEW3D_PT_tools_type_suffix']:
+            if kmi.properties.name in ['cam_manager.cycle_cameras_next', 'cam_manager.cycle_cameras_backward']:
                 km.keymap_items.remove(kmi)
 
     addon_keymaps.clear()
-
 
 def add_hotkey(context=None):
     '''Add default hotkey konfiguration'''
@@ -26,13 +24,13 @@ def add_hotkey(context=None):
 
     if kc:
         km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
-        kmi = km.keymap_items.new("utilities.cycle_cameras_next", 'RIGHT_ARROW', 'PRESS', ctrl=True, shift=True)
+        kmi = km.keymap_items.new("cam_manager.cycle_cameras_next", 'RIGHT_ARROW', 'PRESS', ctrl=True, shift=True)
         # kmi.properties.direction = 'FORWARD'
         kmi.active = True
         addon_keymaps.append((km, kmi))
 
         km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
-        kmi = km.keymap_items.new("utilities.cycle_cameras_backward", 'LEFT_ARROW', 'PRESS', ctrl=True, shift=True)
+        kmi = km.keymap_items.new("cam_manager.cycle_cameras_backward", 'LEFT_ARROW', 'PRESS', ctrl=True, shift=True)
         kmi.active = True
         # kmi.properties.direction = 'BACKWARD'
         addon_keymaps.append((km, kmi))
@@ -41,14 +39,16 @@ def add_hotkey(context=None):
         kmi = km.keymap_items.new(idname='wm.call_panel', type='C', value='PRESS', shift=True)
         kmi.properties.name = 'OBJECT_PT_camera_manager_popup'
         kmi.active = True
-        # kmi.properties.direction = 'BACKWARD'
         addon_keymaps.append((km, kmi))
 
-        km = kc.keymaps.new(name="3D View", space_type='VIEW_3D', region_type='WINDOW')
+        km = kc.keymaps.new(name="3D View", space_type='VIEW_3D')
         kmi = km.keymap_items.new(idname='wm.call_menu_pie', type='C', value='PRESS', alt=True)
-        kmi.properties.name = "CAMERA_pie_menu"
+        kmi.properties.name = "CAMERA_MT_pie_menu"
         kmi.active = True
         addon_keymaps.append((km, kmi))
+
+
+
 
 def get_hotkey_entry_item(km, kmi_name, kmi_value=None):
     ''' returns hotkey of specific type, with specific properties.name (keymap is not a dict, so referencing by keys is not enough
@@ -68,9 +68,9 @@ def get_hotkey_entry_item(km, kmi_name, kmi_value=None):
     return None
 
 
-class RENAMING_OT_add_hotkey_renaming(bpy.types.Operator):
+class CAM_MANAGER_OT_add_hotkey_renaming(bpy.types.Operator):
     ''' Add hotkey entry '''
-    bl_idname = "utilities.add_hotkey"
+    bl_idname = "cam_manager.add_hotkey"
     bl_label = "Addon Preferences Example"
     bl_options = {'REGISTER', 'INTERNAL'}
 
@@ -80,7 +80,7 @@ class RENAMING_OT_add_hotkey_renaming(bpy.types.Operator):
 
 
 classes = (
-    RENAMING_OT_add_hotkey_renaming,
+    CAM_MANAGER_OT_add_hotkey_renaming,
 )
 
 
