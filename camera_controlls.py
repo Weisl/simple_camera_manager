@@ -1,5 +1,7 @@
 import bpy
 
+cam_collection_name = 'Cameras'
+
 
 def make_collection(collection_name, parent_collection):
     '''
@@ -148,9 +150,15 @@ class CAM_MANAGER_OT_create_collection(bpy.types.Operator):
     bl_description = "Create a cameras collection and add it to the scene"
     bl_options = {'REGISTER'}
 
-    collection_name: bpy.props.StringProperty(name='Name', default='Cameras')
+    collection_name: bpy.props.StringProperty(name='Name', default='')
 
     def execute(self, context):
+        global cam_collection_name
+
+        'use default from global variable defined at the top'
+        if not self.collection_name:
+            self.collection_name = cam_collection_name
+
         parent_collection = context.scene.collection
         collection_name = self.collection_name
         col = make_collection(collection_name, parent_collection)
@@ -259,8 +267,12 @@ class CAM_MANAGER_OT_camera_to_collection(bpy.types.Operator):
         scene = context.scene
 
         if not scene.cam_collection.collection:
-            self.report({'WARNING'}, 'Please specify a collection')
-            return {'CANCELLED'}
+            global cam_collection_name
+
+            'use default from global variable defined at the top'
+            self.report({'INFO'}, 'A new camera collection was created')
+            parent_collection = context.scene.collection
+            scene.cam_collection.collection = make_collection(cam_collection_name, parent_collection)
 
         if self.object_name and scene.objects[self.object_name]:
             camera = scene.objects[self.object_name]
@@ -280,8 +292,13 @@ class CAM_MANAGER_OT_all_cameras_to_collection(bpy.types.Operator):
         scene = context.scene
 
         if not scene.cam_collection.collection:
-            self.report({'WARNING'}, 'Please specify a collection')
-            return {'CANCELLED'}
+            global cam_collection_name
+
+            'use default from global variable defined at the top'
+            self.report({'INFO'}, 'A new camera collection was created')
+            parent_collection = context.scene.collection
+            scene.cam_collection.collection = make_collection(cam_collection_name, parent_collection)
+
         for obj in bpy.data.objects:
             if obj.type == 'CAMERA':
                 cam_collection = scene.cam_collection.collection

@@ -96,15 +96,18 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
 
                 split = layout.split(factor=0.6)
                 split_left = split.column().split(factor=0.45)
+                # Camera name
                 col_01 = split_left.column()
                 col_02 = split_left.column()
-                split_right = split.column().split(factor=0.33)
+                split_right = split.column().split(factor=0.5)
                 col_03 = split_right.column()
                 split_right_02 = split_right.split(factor=0.5)
                 col_04 = split_right_02.column()
                 col_05 = split_right_02.column()
 
-                # Col01
+                ###### Col01 #####
+                # Camera name and visibility
+
                 row = col_01.row(align=True)
                 icon = 'VIEW_CAMERA' if obj == bpy.context.scene.camera else 'FORWARD'
                 op = row.operator("cam_manager.change_scene_camera", text='', icon=icon)
@@ -112,7 +115,6 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 op.switch_to_cam = False
                 row.prop(obj, 'name', text='')
 
-                # Col02
                 icon = 'HIDE_OFF' if obj.visible_get() else 'HIDE_ON'
                 op = row.operator("camera.hide_unhide", icon=icon, text='')
                 op.camera_name = obj.name
@@ -129,7 +131,7 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                     op.camera_name = obj.name
                     op.cam_lock = True
 
-                # #COLUMN 03 Lens and resolution
+                ###### Col02 #####
                 row = col_02.row()
                 c = row.column(align=True)
                 c.prop(cam, 'lens', text='')
@@ -141,10 +143,12 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 c.prop(cam, "clip_start", text="")
                 c.prop(cam, "clip_end", text="")
 
+                ###### Col03 #####
                 row = col_03.row(align=True)
                 row.prop_search(cam, "world", bpy.data, "worlds", text='')
                 row.prop(cam, 'exposure', text='EXP')
 
+                ###### Col04 #####
                 row = col_04.row(align=True)
                 # dof = cam.dof
                 # row.prop(dof, 'use_dof')
@@ -153,7 +157,7 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION')
                 op.object_name = obj.name
 
-                # Render
+                ###### Col05 #####
                 row = col_05.row(align=True)
                 row.prop(cam, "slot")
                 op = row.operator('cameras.custom_render', text='', icon='RENDER_STILL')
@@ -320,12 +324,6 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         row.operator("camera.create_collection", text='', icon='COLLECTION_NEW')
         col_01.operator('cameras.all_to_collection')
 
-        col_01.separator()
-        col_01.prop(scene, 'output_render')
-        col_01.prop(context.scene.render, 'filepath')
-        # col_01.operator('cameras.open_in_explorer')
-        layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
-
         # Camera Settings
         col_03.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
 
@@ -333,11 +331,51 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         # template_list now takes two new args.
         # The first one is the identifier of the registered UIList to use (if you want only the default list,
         # with no custom draw code, use "UI_UL_list").
+
+        layout.separator()
+
+        split = layout.split(factor=0.6)
+        split_left = split.column().split(factor=0.45)
+        # Camera name
+        col_01 = split_left.column()
+        col_02 = split_left.column()
+        split_right = split.column().split(factor=0.5)
+        col_03 = split_right.column()
+        split_right_02 = split_right.split(factor=0.5)
+        col_04 = split_right_02.column()
+        col_05 = split_right_02.column()
+
+        row = col_01.row(align=True)
+        row.label(text="Camera")
+        row.label(text="Visibility")
+        # col_02.label(text="Focal Length, Resolution, Clipping")
+        row = col_02.row(align=True)
+        row.label(text="Focal Length")
+        row.label(text="Resolution")
+        row.label(text="Clipping")
+        # col_03.label(text="World & Exposure")
+        row = col_03.row(align=True)
+        row.label(text="World")
+        row.label(text="Exposure")
+        row = col_04.row(align=True)
+        row.label(text="Collection")
+        row = col_05.row(align=True)
+        row.label(text="Render")
+
         row = layout.row()
         row.template_list("CAMERA_UL_cameras_popup", "", scene, "objects", scene, "camera_list_index")
         col = row.column(align=True)
         col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
+
+        row = layout.row()
+        row.prop(scene, 'output_render')
+        row = layout.row()
+        row.prop(context.scene.render, 'filepath')
+        # col_01.operator('cameras.open_in_explorer')
+        row = layout.row()
+        # layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
+
 
 
 class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
@@ -352,6 +390,7 @@ class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         engine = context.engine
+        # Check if the properties data panel is for the camera or not
         return context.camera and (engine in cls.COMPAT_ENGINES)
 
     def draw(self, context):
@@ -362,7 +401,7 @@ class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(cam, "resolution", text="")
         op = row.operator("cam_manager.camera_resolutio_from_image",
-                             text="", icon='IMAGE_BACKGROUND').camera_name = cam.name
+                          text="", icon='IMAGE_BACKGROUND').camera_name = cam.name
 
 
 class CameraCollectionProperty(bpy.types.PropertyGroup):
