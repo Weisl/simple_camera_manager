@@ -142,7 +142,8 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 c.prop(cam, "clip_end", text="")
 
                 row = col_03.row(align=True)
-                row.prop_search(cam.world, "world_material", bpy.data, "worlds", text='')
+                row.prop_search(cam, "world", bpy.data, "worlds", text='')
+                row.prop(cam, 'exposure', text='EXP')
 
                 row = col_04.row(align=True)
                 # dof = cam.dof
@@ -340,11 +341,18 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
 
 
 class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
+    bl_idname = "CAMERA_PT_manager_menu"
     bl_label = "Cam Manager Menu"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "data"
     bl_options = {'HIDE_HEADER'}
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.engine
+        return context.camera and (engine in cls.COMPAT_ENGINES)
 
     def draw(self, context):
         layout = self.layout

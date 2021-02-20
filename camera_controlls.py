@@ -172,7 +172,7 @@ class CAM_MANAGER_OT_resolution_from_img(bpy.types.Operator):
             camera = bpy.data.cameras[self.camera_name]
 
             if len(bpy.data.cameras[self.camera_name].background_images) > 0:
-                resolution = camera.background_images[0].image.size
+                resolution = camera.background_images['Render Result'].image.size
                 camera.resolution = resolution
                 return {'FINISHED'}
             else:
@@ -218,10 +218,10 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
                 scene.render.resolution_x = resolution[0]
                 scene.render.resolution_y = resolution[1]
 
-            if camera.data.world.world_material:
+            if camera.data.world:
                 try:
-                    world = camera.data.world.world_material
-                    bpy.context.scene.world = world
+                    world = camera.data.world
+                    context.scene.world = world
                 except KeyError:
                     pass
 
@@ -231,17 +231,17 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
             bpy.ops.object.select_all(action='DESELECT')
             camera.select_set(True)
 
-            objectlist = list(bpy.context.scene.objects)
+            objectlist = list(context.scene.objects)
             idx = objectlist.index(camera)
 
             if self.switch_to_cam:
                 if context.area.type == 'VIEW_3D':
-                    bpy.context.screen.areas.spaces[0].region_3d.view_perspective = 'CAMERA'
+                    context.screen.areas.spaces[0].region_3d.view_perspective = 'CAMERA'
             scene.camera_list_index = idx
 
-            if camera.data.slot <= len(bpy.data.images[0].render_slots):
+            if camera.data.slot <= len(bpy.data.images['Render Result'].render_slots):
                 # subtract by one to make 1 the first slot 'Slot1' and not user input 0
-                bpy.data.images[0].render_slots.active_index = camera.data.slot - 1
+                bpy.data.images['Render Result'].render_slots.active_index = camera.data.slot - 1
 
         return {'FINISHED'}
 
@@ -308,14 +308,6 @@ class CAM_MANAGER_OT_render(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class WorldMaterialProperty(bpy.types.PropertyGroup):
-    ''' Custom property storing the background (world) information per camera '''
-    world_material: bpy.props.PointerProperty(
-        name="World",
-        type=bpy.types.World,
-    )
-
-
 def resolution_update_func(self, context):
     '''
     Updating scene resolution when changing the resolution of the active camera
@@ -323,21 +315,35 @@ def resolution_update_func(self, context):
     :param context:
     :return: None
     '''
-    if bpy.context.scene.camera.data.name == self.name:
-        bpy.context.scene.render.resolution_x = self.resolution[0]
-        bpy.context.scene.render.resolution_y = self.resolution[1]
+    if context.scene.camera.data.name == self.name:
+        context.scene.render.resolution_x = self.resolution[0]
+        context.scene.render.resolution_y = self.resolution[1]
 
 
-def world_update_funce(self, context):
+def exposure_update_func(self, context):
+    '''
+    Updating scene exposure when changing the exposure of the active camera
+    :param self:
+    :param context:
+    :return: None
+    '''
+
+    if context.scene.camera.data.name == self.name:
+        context.scene.view_settings.exposure = self.exposure
+
+
+def world_update_func(self, context):
     '''
     Updating the world material when changing the world material for the active camera
     :param self:
     :param context:
     :return: None
     '''
-    if bpy.context.scene.camera.data.name == self.name:
-        bpy.context.scene.world = self.world.world_material
 
+    if context.scene.camera.data.name == self.name:
+        context.scene.world = self.world
+
+    return None
 
 def render_slot_update_funce(self, context):
     '''
@@ -348,17 +354,19 @@ def render_slot_update_funce(self, context):
     :param context:
     :return: None
     '''
+
     new_slot = False
-    render_result = bpy.data.images[0]
+    render_result = bpy.data.images['Render Result']
+
     # Create new slot if the input is higher than the current number of render slots
-    if self.slot > len(bpy.data.images[0].render_slots):
+    if self.slot > len(bpy.data.images['Render Result'].render_slots):
         render_result.render_slots.new()
         new_slot = True
-        self.slot = len(bpy.data.images[0].render_slots)
+        self.slot = len(bpy.data.images['Render Result'].render_slots)
 
-    if bpy.context.scene.camera.data.name == self.name:
+    if context.scene.camera.data.name == self.name:
         if new_slot:
-            new_render_slot_nr = len(bpy.data.images[0].render_slots)
+            new_render_slot_nr = len(bpy.data.images['Render Result'].render_slots)
             render_result.render_slots.active_index = new_render_slot_nr
             self.slot = new_render_slot_nr
         else:
@@ -366,8 +374,8 @@ def render_slot_update_funce(self, context):
             render_result.render_slots.active_index = self.slot - 1
 
 
+
 classes = (
-    WorldMaterialProperty,
     CAM_MANAGER_OT_camera_to_collection,
     CAM_MANAGER_OT_create_collection,
     CAM_MANAGER_OT_render,
@@ -393,17 +401,21 @@ def register():
                                                  subtype='COORDINATES', size=2, update=resolution_update_func, get=None,
                                                  set=None)
 
+    cam.exposure = bpy.props.FloatProperty(name='exposure', description='Camera exposure', default=0, soft_min=-10,
+                                           soft_max=10, update=exposure_update_func)
+
+    cam.slot = bpy.props.IntProperty(name="Slot", default=1, description='Render slot, used when rendering this camera',
+                                     min=1, soft_max=15, update=render_slot_update_funce)
+
     from bpy.utils import register_class
 
     for cls in classes:
         register_class(cls)
 
     # The PointerProperty has to be after registering the classes to know about the custom property type
-    cam.world = bpy.props.PointerProperty(name="World Material", description='World material assigned to the camera',
-                                          type=WorldMaterialProperty, update=world_update_funce)
+    cam.world = bpy.props.PointerProperty( update=world_update_func, type=bpy.types.World, name="World Material") # type=WorldMaterialProperty, name="World Material", description='World material assigned to the camera',
 
-    cam.slot = bpy.props.IntProperty(name="Slot", default=1, description='Render slot, used when rendering this camera',
-                                     min=1, soft_max=15, update=render_slot_update_funce)
+
 
 
 def unregister():
@@ -413,4 +425,6 @@ def unregister():
         unregister_class(cls)
 
     cam = bpy.types.Camera
+
     del cam.resolution
+    del cam.slot
