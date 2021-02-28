@@ -54,60 +54,6 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         # 9 - TOP - RIGHT
         pie.separator()
 
-        # # North
-        # box = pie.split()
-        # b = box.box()
-        # column = b.column()
-        # column.prop(obj.data, "lens")
-        # column.prop(obj.data, "clip_start")
-        # column.prop(obj.data, "clip_end")
-
-
-        # op = column.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
-
-        #
-        # if obj.type == 'CAMERA':
-        #     if obj.get('lock'):
-        #         op = column.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
-        #         op.camera_name = obj.name
-        #         op.cam_lock = False
-        #     else:
-        #         op = column.operator("cam_manager.lock_unlock_camera", icon='UNLOCKED', text='')
-        #         op.camera_name = obj.name
-        #         op.cam_lock = True
-        #
-
-        #
-        #
-        #
-        #     # NorthWest
-        #
-        #     pie.separator()
-        #     box = pie.split()
-        #     op = box.operator("cam_manager.change_scene_camera", text='', icon='VIEW_CAMERA')
-        #     op.camera_name = obj.name
-        #     op.switch_to_cam = False
-        #
-        # # Northeast
-        # if obj.type == 'CAMERA':
-        #     row = pie.column()
-        #     row.prop(obj.data, "show_composition_thirds")
-        #     row.prop(obj.data, "show_composition_center")
-        #     row.prop(obj.data, "show_composition_center_diagonal")
-        #     row.prop(obj.data, "show_composition_golden")
-        #     row.prop(obj.data, "show_composition_golden_tria_a")
-        #     row.prop(obj.data, "show_composition_golden_tria_b")
-        #     row.prop(obj.data, "show_composition_harmony_tri_a")
-        #     row.prop(obj.data, "show_composition_harmony_tri_b")
-        #
-        # if obj.type == 'CAMERA' and len(context.object.data.background_images) > 0:
-        #     row = pie.column()
-        #     row.prop(obj.data.background_images[0], "display_depth")
-        #     row.prop(obj.data.background_images[0], "alpha")
-        #
-        #
-        # # SouthEast
-
     def draw_left_column(self, context, col):
         col.scale_x = 2
 
@@ -131,17 +77,6 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.prop(obj.data, "show_composition_harmony_tri_a")
         row = col.row()
         row.prop(obj.data, "show_composition_harmony_tri_b")
-        row = col.row()
-
-        # row = col.split()
-        # row.operator("machin3.make_cam_active")
-        # row.prop(scene, "camera", text="")
-        #
-        # row = col.split()
-        # row.operator("view3d.camera_to_view", text="Cam to view", icon='VIEW_CAMERA')
-        #
-        # text, icon = ("Unlock from View", "UNLOCKED") if view.lock_camera else ("Lock to View", "LOCKED")
-        # row.operator("wm.context_toggle", text=text, icon=icon).data_path = "space_data.lock_camera"
 
     def draw_center_column(self, context, col):
         col.scale_y = 1.5
