@@ -281,6 +281,23 @@ class CAM_MANAGER_OT_camera_to_collection(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class CAM_MANAGER_OT_select_active_cam(bpy.types.Operator):
+    """Selects the currently active camera and sets it to be the active object"""
+    bl_idname = "cameras.select_active_cam"
+    bl_label = "Select active camera"
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.camera is not None
+
+    def execute(self, context):
+        bpy.ops.object.select_all(action='DESELECT')
+
+        cam = context.scene.camera
+        cam.select_set(True)
+        context.view_layer.objects.active = cam
+        return {'FINISHED'}
+
 
 class CAM_MANAGER_OT_all_cameras_to_collection(bpy.types.Operator):
     """Moves all camera to another collection"""
@@ -404,7 +421,8 @@ classes = (
     CAM_MANAGER_OT_cycle_cameras_backward,
     CAM_MANAGER_OT_lock_cameras,
     CAM_MANAGER_OT_hide_unhide_camera,
-    CAM_MANAGER_OT_all_cameras_to_collection
+    CAM_MANAGER_OT_all_cameras_to_collection,
+    CAM_MANAGER_OT_select_active_cam
 )
 
 

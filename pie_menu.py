@@ -29,11 +29,10 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         # East
         pie.operator("cam_manager.cycle_cameras_backward", text="next", icon='TRIA_RIGHT')
 
-        # South
+        # South lock camrea to view
         pie.prop(view, "lock_camera")
 
         # North
-
         box = pie.split()
 
         if cam_obj:
@@ -54,6 +53,13 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
             column.label(text="Please specify a scene camera", icon='ERROR')
 
         # North West
+        pie.separator()
+
+        # North East
+        pie.separator()
+
+
+        #South West
         if cam_obj:
             if cam_obj.get('lock'):
                 op = pie.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
@@ -66,8 +72,10 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         else:
             pie.separator()
 
-        # 9 - North East
-        pie.separator()
+        #South East
+        pie.operator('cameras.select_active_cam')
+
+        # pie.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
 
     def draw_left_column(self, context, col, cam_obj):
         row = col.row()
@@ -174,6 +182,9 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.active = cam.show_passepartout
         row.prop(cam, "passepartout_alpha", text="")
         row.prop_decorator(cam, "passepartout_alpha")
+
+        row = col.row(align=True)
+        row.prop(cam, 'show_name')
 
         row = col.row()
         row.prop(cam, "show_composition_thirds")
