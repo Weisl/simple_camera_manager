@@ -146,8 +146,9 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         dof = cam.dof
         row.prop(dof, 'use_dof')
 
-        row = col.row(align=True)
-        row.prop(dof, "focus_object", text="Focus on Object")
+        # Picker does not work from pie menu
+        # row = col.row(align=True)
+        # row.prop(dof, "focus_object", text="Focus on Object")
 
         row = col.row(align=True)
         if dof.focus_object is None:
