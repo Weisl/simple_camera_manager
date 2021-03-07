@@ -116,6 +116,8 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
             for img in cam.background_images:
                 row = col.row(align=True)
                 row.prop(img, "show_background_image")
+                op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
+                op.camera_name = cam.name
                 row = col.row(align=True)
                 row.prop(img, "alpha")
                 row = col.row(align=True)

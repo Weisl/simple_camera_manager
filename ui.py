@@ -255,7 +255,7 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
         layout = self.layout
 
         row = layout.row()
-        row.label(text="Camera Manager")
+        row.label(text="Cam-Manager")
 
         scene = context.scene
 
@@ -276,21 +276,22 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
         layout.separator()
         # row = layout.row()
         # row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
-        if scene.camera:
-            layout.label(text='Active Camera')
-            cam = scene.camera
 
-            row = layout.row(align=True)
-            row.prop(cam.data, "resolution", text="")
-            op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
-            op.camera_name = cam.name
+        # if scene.camera:
+        #     layout.label(text='Active Camera')
+        #     cam = scene.camera
+        #
+        #     row = layout.row(align=True)
+        #     row.prop(cam.data, "resolution", text="")
+        #     op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
+        #     op.camera_name = cam.name
 
         layout.separator()
         layout.label(text='All Cameras')
 
         row = layout.row(align=True)
         row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='Camera Collection')
-        row.operator("camera.create_collection", text='All cameras to collection', icon='COLLECTION_NEW')
+        row.operator("camera.create_collection", text='New Collection', icon='COLLECTION_NEW')
 
         row = layout.row()
         row.operator('cameras.all_to_collection')
@@ -309,7 +310,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         layout = self.layout
 
         row = layout.row()
-        row.label(text="Camera Manager")
+        row.label(text="Cam-Manager")
 
         scene = context.scene
         split = layout.split(factor=0.333)

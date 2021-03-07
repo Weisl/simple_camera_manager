@@ -180,7 +180,7 @@ class CAM_MANAGER_OT_resolution_from_img(bpy.types.Operator):
             camera = bpy.data.cameras[self.camera_name]
 
             if len(bpy.data.cameras[self.camera_name].background_images) > 0:
-                resolution = camera.background_images['Render Result'].image.size
+                resolution = camera.background_images[0].image.size
                 camera.resolution = resolution
                 return {'FINISHED'}
             else:

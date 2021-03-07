@@ -1389,7 +1389,7 @@ def register(bl_info):
 	# as a part of the pattern list below so they will always be overwritten by an
 	# update. If a pattern file is not found in new update, no action is taken
 	# This does NOT detele anything, only defines what is allowed to be overwritten
-	updater.overwrite_patterns = ["*.png","*.jpg","README.md","LICENSE.txt"]
+	updater.overwrite_patterns = ["*.png","*.jpg","renaming.md","LICENSE.txt"]
 	# updater.overwrite_patterns = []
 	# other examples:
 	# ["*"] means ALL files/folders will be overwritten by update, was the behavior pre updater v1.0.4
@@ -1397,7 +1397,7 @@ def register(bl_info):
 	#    e.g. if existing install and update both have a resource.blend file, the existing installed one will remain
 	# ["some.py"] means if some.py is found in addon update, it will overwrite any existing some.py in current addon install, if any
 	# ["*.json"] means all json files found in addon update will overwrite those of same name in current install
-	# ["*.png","README.md","LICENSE.txt"] means the readme, license, and all pngs will be overwritten by update
+	# ["*.png","renaming.md","LICENSE.txt"] means the readme, license, and all pngs will be overwritten by update
 
 	# Patterns for files to actively remove prior to running update
 	# Useful if wanting to remove old code due to changes in filenames
