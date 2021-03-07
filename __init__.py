@@ -5,8 +5,8 @@ bl_info = {
     "blender": (2, 92, 0),
     "location": "Shift + C > (Cam Overview Panel), Alt + C > (Cam Adjustment Panel), Properties Panel > Scene > Quick Overview ",
     "description": "Tools for managing multiple cameras",
-    "wiki_url": "https://github.com/Weisl/CameraManager",
-    "tracker_url": "https://github.com/Weisl/CameraManager/issues",
+    "wiki_url": "https://weisl.github.io/Cam-Manager_Overview/",
+    "tracker_url": "https://github.com/Weisl/Cam-Manager/issues",
     "category": "3D View",
 }
 
