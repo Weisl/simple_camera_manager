@@ -1,4 +1,4 @@
-# Cam-Manager Overview
+# Cam-Manager
 
 ![img](images/cam-Manager.png)
 
