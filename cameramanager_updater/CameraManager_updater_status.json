@@ -1,9 +1,15 @@
 {
-    "last_check": "2021-03-07 16:00:18.852314",
-    "backup_date": "",
-    "update_ready": false,
+    "last_check": "2021-03-09 00:03:35.652493",
+    "backup_date": "March-9-2021",
+    "update_ready": true,
     "ignore": false,
     "just_restored": false,
     "just_updated": false,
-    "version_text": {}
+    "version_text": {
+        "link": "https://api.github.com/repos/Weisl/CameraManager/zipball/master",
+        "version": [
+            0,
+            4
+        ]
+    }
 }
