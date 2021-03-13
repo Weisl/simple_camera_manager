@@ -4,6 +4,7 @@ import bgl
 import blf
 import bpy
 import gpu
+
 from bpy.props import IntProperty, FloatProperty
 from bpy.types import (
     Gizmo,
@@ -12,6 +13,9 @@ from bpy.types import (
 from gpu_extras.batch import batch_for_shader
 from mathutils import Vector
 
+from bpy.props import (
+    FloatVectorProperty,
+)
 
 def distance_vec(point1: Vector, point2: Vector):
     """Calculates distance between two points."""
@@ -54,123 +58,6 @@ def draw_callback_px(self, context):
     bgl.glDisable(bgl.GL_BLEND)
 
 
-class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
-    """Modlar operator that keeps the object size in viewport when changing the focal lenght """
-    bl_idname = "cam_manager.modal_camera_dolly_zoom"
-    bl_label = "Dolly Zoom"
-    bl_description = "Change focal lenght while keeping the target object at the same size in the camera view"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    # Initial mouse position
-    mouse_initial_x: IntProperty()
-
-    # camera position. Only using Y Axis for now
-    camera_location: FloatProperty()
-
-    # FOV changes
-    current_camera_fov: FloatProperty()
-    initial_camera_fov: FloatProperty()
-
-    # target object
-    target_width: FloatProperty(default=4, name="Width")
-
-    def modal(self, context, event):
-        '''Calculate the FOV from the changed location to the target object '''
-
-        camera = self.camera
-        cameraObj = self.cameraObj
-
-        scene = context.scene
-        # cancel operator
-        if event.type in {'RIGHTMOUSE', 'ESC'}:
-            self.cameraObj.location.y = self.camera_location_initial
-            return {'CANCELLED'}
-
-        # apply operator
-        elif event.type == 'LEFTMOUSE':
-            return {'FINISHED'}
-
-
-
-        elif event.type == 'UP_ARROW':
-            # Increase Mouse sensitivity
-
-            scene.dolly_zoom_sensitivity *= 1.5
-
-        elif event.type == 'DOWN_ARROW':
-            # Decrease Mouse Sensitivity
-            scene.dolly_zoom_sensitivity /= 1.5
-
-        elif event.type == 'MOUSEMOVE':
-
-            # calculate mouse movement and offset camera
-            delta = self.mouse_initial_x - event.mouse_x
-
-            # Camera offset in y axis
-            # cameraObj.location.y = self.camera_location + delta * self.mouse_sensitivity
-
-            # one blender unit in x-direction
-            vec = Vector((0.0, 0.0, delta * scene.dolly_zoom_sensitivity))
-
-            # get world matrix and invert
-            inv = cameraObj.matrix_world.copy()
-            inv.invert()
-
-            # vec aligned to local axis in Blender 2.8+
-            vec_rot = vec @ inv
-
-            cameraObj.location = cameraObj.location + vec_rot
-
-            # get camera world position and target position
-            cam_pos = self.cameraObj.matrix_world.to_translation()
-            cam_vector = Vector(cam_pos)
-            target_pos = self.target
-
-            distance = distance_vec(cam_vector, target_pos)
-            self.distance = distance
-            print("distance = " + str(distance))
-
-            # Dolly Zoom computation
-            field_of_view = 2 * math.atan(self.target_width / distance)
-
-            # Set camera field of view and
-            camera.angle = field_of_view
-            self.current_camera_fov = field_of_view
-            self.camera_focal_length = camera.lens
-
-        return {'RUNNING_MODAL'}
-
-    def invoke(self, context, event):
-        if context.scene.camera:
-            camera = context.scene.camera
-
-            self.cameraObj = camera
-            self.camera = camera.data
-
-            self.target = Vector((0.0, 0.0, 0.0))
-            self.mouse_initial_x = event.mouse_x
-
-            self.camera_location_initial = camera.location.y
-            self.camera_location = camera.location.y
-
-            # debug values
-            self.current_camera_fov = camera.data.angle
-            self.distance = 0
-
-            # the arguments we pass the the callback
-            args = (self, context)
-            # Add the region OpenGL drawing callback
-            # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-            self._handle = bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
-
-            context.window_manager.modal_handler_add(self)
-            return {'RUNNING_MODAL'}
-
-        else:
-
-            self.report({'WARNING'}, "No scene camera assigned")
-            return {'CANCELLED'}
-
 class MyCameraWidgetGroup(GizmoGroup):
     bl_idname = "OBJECT_GGT_test_camera"
     bl_label = "Object Camera Test Widget"
@@ -186,8 +73,8 @@ class MyCameraWidgetGroup(GizmoGroup):
     def setup(self, context):
         # Run an operator using the dial gizmo
         ob = context.object
-        gz = self.gizmos.new("GIZMO_GT_arrow_3d")
-        props = gz.target_set_operator("transform.transform")
+        gz = self.gizmos.new("GIZMO_GT_dial_3d")
+        props = gz.target_set_operator("transform.rotate")
         props.constraint_axis = False, False, True
         props.orient_type = 'LOCAL'
         props.release_confirm = True
@@ -207,10 +94,6 @@ class MyCameraWidgetGroup(GizmoGroup):
         ob = context.object
         gz = self.roll_gizmo
         gz.matrix_basis = ob.matrix_world.normalized()
-
-    def _update_offset_matrix(self):
-        # offset behind the camera
-        self.matrix_offset.col[3][2] = self.target_get_value("offset") / -10
 
 
 # Coordinates (each one is a triangle).
@@ -266,9 +149,14 @@ custom_shape_verts = (
 )
 
 
-class CustomCamWidget(Gizmo):
-    # Contains Gizmo info
-    bl_idname = "VIEW3D_GT_distance_dolly"
+class CAM_MANAGER_OT_dolly_zoom(Gizmo):
+    """Modal operator that keeps the object size in viewport when changing the focal lenght """
+
+    bl_idname = "cam_manager.modal_camera_dolly_zoom"
+    # bl_label = "Dolly Zoom"
+    # bl_description = "Change focal lenght while keeping the target object at the same size in the camera view"
+    # bl_options = {'REGISTER', 'UNDO'}
+
     bl_target_properties = (
         {"id": "offset", "type": 'FLOAT', "array_length": 1},
     )
@@ -280,11 +168,30 @@ class CustomCamWidget(Gizmo):
         "init_value",
     )
 
+    # Initial mouse position
+    mouse_initial_x: IntProperty()
+
+    # camera position. Only using Y Axis for now
+    camera_location: FloatProperty()
+
+    # FOV changes
+    current_camera_fov: FloatProperty()
+    initial_camera_fov: FloatProperty()
+
+    # target object
+    target_width: FloatProperty(default=4, name="Width")
+
+    target_loc: FloatVectorProperty(
+        size=3,
+        default=(0, 0, 0),
+    )
+
     def _update_offset_matrix(self):
         # offset behind the camera
-        self.matrix_offset.col[3][2] = self.target_get_value("offset") / -20
+        self.matrix_offset.col[3][2] = self.target_get_value("offset") / -10
 
     def draw(self, context):
+        #draw updated gizmo
         self._update_offset_matrix()
         self.draw_custom_shape(self.custom_shape)
 
@@ -293,22 +200,31 @@ class CustomCamWidget(Gizmo):
         self.draw_custom_shape(self.custom_shape, select_id=select_id)
 
     def setup(self):
+        # create custom shape
         if not hasattr(self, "custom_shape"):
             self.custom_shape = self.new_custom_shape('TRIS', custom_shape_verts)
-
-    def invoke(self, context, event):
-        self.init_mouse_y = event.mouse_y
-        self.init_value = self.target_get_value("offset")
-        return {'RUNNING_MODAL'}
 
     def exit(self, context, cancel):
         context.area.header_text_set(None)
         if cancel:
             self.target_set_value("offset", self.init_value)
 
-    def modal(self, context, event, tweak):
+
+    def modal(self, context, event):
+        '''Calculate the FOV from the changed location to the target object '''
+
+        camera = self.camera
+        cameraObj = self.cameraObj
 
         scene = context.scene
+        # cancel operator
+        if event.type in {'RIGHTMOUSE', 'ESC'}:
+            self.cameraObj.location.y = self.camera_location_initial
+            return {'CANCELLED'}
+
+        # apply operator
+        elif event.type == 'LEFTMOUSE':
+            return {'FINISHED'}
 
         if event.type == 'UP_ARROW':
             # Increase Mouse sensitivity
@@ -317,18 +233,89 @@ class CustomCamWidget(Gizmo):
             # Decrease Mouse Sensitivity
             scene.dolly_zoom_sensitivity_02 *= 0.5
 
+
         # default was 10
         delta = (event.mouse_y - self.init_mouse_y) / scene.dolly_zoom_sensitivity_02
-        if 'SNAP' in tweak:
-            delta = round(delta)
-        if 'PRECISE' in tweak:
-            # default was 10
-            delta /= 0.01
+
+        # if 'SNAP' in tweak:
+        #     delta = round(delta)
+        # if 'PRECISE' in tweak:
+        #     # default was 10
+        #     delta /= 0.01
+
+        # one blender unit in z-direction
+        vec = Vector((0.0, 0.0, delta * scene.dolly_zoom_sensitivity))
+
+        # get world matrix and invert
+        inv = cameraObj.matrix_world.copy()
+        inv.invert()
+
+        # vec aligned to local axis in Blender 2.8+
+        vec_rot = vec @ inv
+
+        cameraObj.location = cameraObj.location + vec_rot
+
+        # get camera world position and target position
+        cam_pos = self.cameraObj.matrix_world.to_translation()
+        cam_vector = Vector(cam_pos)
+        target_pos =
+
+        distance = distance_vec(cam_vector, target_pos)
+        self.distance = distance
+        print("distance = " + str(distance))
+
+        # Dolly Zoom computation
+        field_of_view = 2 * math.atan(self.target_width / distance)
+
+        # Set camera field of view and
+        camera.angle = field_of_view
+        self.current_camera_fov = field_of_view
+        self.camera_focal_length = camera.lens
+
         value = self.init_value - delta
         self.target_set_value("offset", value)
         context.area.header_text_set("My Gizmo: %.4f Sensitivity: %.4f " % (value, scene.dolly_zoom_sensitivity_02))
 
+
         return {'RUNNING_MODAL'}
+
+
+
+    def invoke(self, context, event):
+        if context.scene.camera:
+            camera = context.scene.camera
+
+            self.cameraObj = camera
+            self.camera = camera.data
+
+            self.target = Vector((0.0, 0.0, 0.0))
+            self.mouse_initial_x = event.mouse_x
+
+            self.camera_location_initial = camera.location.y
+            self.camera_location = camera.location.y
+
+            # debug values
+            self.current_camera_fov = camera.data.angle
+            self.distance = 0
+
+            # the arguments we pass the the callback
+            args = (self, context)
+            # Add the region OpenGL drawing callback
+            # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
+            self._handle = bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
+
+            self.init_mouse_y = event.mouse_y
+            self.init_value = self.target_get_value("offset")
+
+            context.window_manager.modal_handler_add(self)
+            return {'RUNNING_MODAL'}
+
+        else:
+
+            self.report({'WARNING'}, "No scene camera assigned")
+            return {'CANCELLED'}
+
+
 
 
 class CustomCamWidgetGroup(GizmoGroup):
@@ -343,11 +330,20 @@ class CustomCamWidgetGroup(GizmoGroup):
         ob = context.object
         return (ob and ob.type == 'CAMERA')
 
+    # Helper functions
+    @staticmethod
+    def my_target_operator(context):
+        wm = context.window_manager
+        op = wm.operators[-1] if wm.operators else None
+        if isinstance(op, CAM_MANAGER_OT_dolly_zoom):
+            return op
+        return None
+
     def setup(self, context):
         ob = context.object
 
         # Gizmo settings
-        gz = self.gizmos.new(CustomCamWidget.bl_idname)
+        gz = self.gizmos.new(CAM_MANAGER_OT_dolly_zoom.bl_idname)
         gz.target_set_prop("offset", ob.data, "angle")
 
         # Color
@@ -361,19 +357,16 @@ class CustomCamWidgetGroup(GizmoGroup):
         gz.scale_basis = 0.1
         gz.use_draw_modal = True
 
-        self.angle_gizmo = gz
+        self.dolly_zoom_gizmo = gz
 
     def refresh(self, context):
         ob = context.object
-        gz = self.angle_gizmo
+        gz = self.dolly_zoom_gizmo
         gz.matrix_basis = ob.matrix_world.normalized()
-        self.matrix_offset.col[3][2] = self.target_get_value("offset") / -10
-
 
 
 classes = (
     CAM_MANAGER_OT_dolly_zoom,
-    CustomCamWidget,
     CustomCamWidgetGroup,
     MyCameraWidgetGroup
 )
