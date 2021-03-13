@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Cam-Manager",
     "author": "Matthias Patscheider",
-    "version": (1, 0),
+    "version": (1, 1),
     "blender": (2, 92, 0),
     "location": "Shift + C > (Cam Overview Panel), Alt + C > (Cam Adjustment Panel), Properties Panel > Scene > Quick Overview ",
     "description": "Tools for managing multiple cameras",

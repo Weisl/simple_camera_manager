@@ -5,6 +5,10 @@ import blf
 import bpy
 import gpu
 from bpy.props import IntProperty, FloatProperty
+from bpy.types import (
+    Gizmo,
+    GizmoGroup,
+)
 from gpu_extras.batch import batch_for_shader
 from mathutils import Vector
 
@@ -167,9 +171,205 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.report({'WARNING'}, "No scene camera assigned")
             return {'CANCELLED'}
 
+class MyCameraWidgetGroup(GizmoGroup):
+    bl_idname = "OBJECT_GGT_test_camera"
+    bl_label = "Object Camera Test Widget"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'WINDOW'
+    bl_options = {'3D', 'PERSISTENT'}
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.object
+        return (ob and ob.type == 'CAMERA')
+
+    def setup(self, context):
+        # Run an operator using the dial gizmo
+        ob = context.object
+        gz = self.gizmos.new("GIZMO_GT_dial_3d")
+        props = gz.target_set_operator("transform.rotate")
+        props.constraint_axis = False, False, True
+        props.orient_type = 'LOCAL'
+        props.release_confirm = True
+
+        gz.matrix_basis = ob.matrix_world.normalized()
+        gz.line_width = 3
+
+        gz.color = 0.8, 0.8, 0.8
+        gz.alpha = 0.5
+
+        gz.color_highlight = 1.0, 1.0, 1.0
+        gz.alpha_highlight = 1.0
+
+        self.roll_gizmo = gz
+
+    def refresh(self, context):
+        ob = context.object
+        gz = self.roll_gizmo
+        gz.matrix_basis = ob.matrix_world.normalized()
+
+
+# Coordinates (each one is a triangle).
+custom_shape_verts = (
+    (3.0, 1.0, -1.0), (2.0, 2.0, -1.0), (3.0, 3.0, -1.0),
+    (1.0, 3.0, 1.0), (3.0, 3.0, -1.0), (1.0, 3.0, -1.0),
+    (3.0, 3.0, 1.0), (3.0, 1.0, -1.0), (3.0, 3.0, -1.0),
+    (2.0, 0.0, 1.0), (3.0, 1.0, -1.0), (3.0, 1.0, 1.0),
+    (2.0, 0.0, -1.0), (2.0, 2.0, 1.0), (2.0, 2.0, -1.0),
+    (2.0, 2.0, -1.0), (0.0, 2.0, 1.0), (0.0, 2.0, -1.0),
+    (1.0, 3.0, 1.0), (2.0, 2.0, 1.0), (3.0, 3.0, 1.0),
+    (0.0, 2.0, -1.0), (1.0, 3.0, 1.0), (1.0, 3.0, -1.0),
+    (2.0, 2.0, 1.0), (3.0, 1.0, 1.0), (3.0, 3.0, 1.0),
+    (2.0, 2.0, -1.0), (1.0, 3.0, -1.0), (3.0, 3.0, -1.0),
+    (-3.0, -1.0, -1.0), (-2.0, -2.0, -1.0), (-3.0, -3.0, -1.0),
+    (-1.0, -3.0, 1.0), (-3.0, -3.0, -1.0), (-1.0, -3.0, -1.0),
+    (-3.0, -3.0, 1.0), (-3.0, -1.0, -1.0), (-3.0, -3.0, -1.0),
+    (-2.0, 0.0, 1.0), (-3.0, -1.0, -1.0), (-3.0, -1.0, 1.0),
+    (-2.0, 0.0, -1.0), (-2.0, -2.0, 1.0), (-2.0, -2.0, -1.0),
+    (-2.0, -2.0, -1.0), (0.0, -2.0, 1.0), (0.0, -2.0, -1.0),
+    (-1.0, -3.0, 1.0), (-2.0, -2.0, 1.0), (-3.0, -3.0, 1.0),
+    (0.0, -2.0, -1.0), (-1.0, -3.0, 1.0), (-1.0, -3.0, -1.0),
+    (-2.0, -2.0, 1.0), (-3.0, -1.0, 1.0), (-3.0, -3.0, 1.0),
+    (-2.0, -2.0, -1.0), (-1.0, -3.0, -1.0), (-3.0, -3.0, -1.0),
+    (1.0, -1.0, 0.0), (-1.0, -1.0, 0.0), (0.0, 0.0, -5.0),
+    (-1.0, -1.0, 0.0), (1.0, -1.0, 0.0), (0.0, 0.0, 5.0),
+    (1.0, -1.0, 0.0), (1.0, 1.0, 0.0), (0.0, 0.0, 5.0),
+    (1.0, 1.0, 0.0), (-1.0, 1.0, 0.0), (0.0, 0.0, 5.0),
+    (-1.0, 1.0, 0.0), (-1.0, -1.0, 0.0), (0.0, 0.0, 5.0),
+    (-1.0, -1.0, 0.0), (-1.0, 1.0, 0.0), (0.0, 0.0, -5.0),
+    (-1.0, 1.0, 0.0), (1.0, 1.0, 0.0), (0.0, 0.0, -5.0),
+    (1.0, 1.0, 0.0), (1.0, -1.0, 0.0), (0.0, 0.0, -5.0),
+    (3.0, 1.0, -1.0), (2.0, 0.0, -1.0), (2.0, 2.0, -1.0),
+    (1.0, 3.0, 1.0), (3.0, 3.0, 1.0), (3.0, 3.0, -1.0),
+    (3.0, 3.0, 1.0), (3.0, 1.0, 1.0), (3.0, 1.0, -1.0),
+    (2.0, 0.0, 1.0), (2.0, 0.0, -1.0), (3.0, 1.0, -1.0),
+    (2.0, 0.0, -1.0), (2.0, 0.0, 1.0), (2.0, 2.0, 1.0),
+    (2.0, 2.0, -1.0), (2.0, 2.0, 1.0), (0.0, 2.0, 1.0),
+    (1.0, 3.0, 1.0), (0.0, 2.0, 1.0), (2.0, 2.0, 1.0),
+    (0.0, 2.0, -1.0), (0.0, 2.0, 1.0), (1.0, 3.0, 1.0),
+    (2.0, 2.0, 1.0), (2.0, 0.0, 1.0), (3.0, 1.0, 1.0),
+    (2.0, 2.0, -1.0), (0.0, 2.0, -1.0), (1.0, 3.0, -1.0),
+    (-3.0, -1.0, -1.0), (-2.0, 0.0, -1.0), (-2.0, -2.0, -1.0),
+    (-1.0, -3.0, 1.0), (-3.0, -3.0, 1.0), (-3.0, -3.0, -1.0),
+    (-3.0, -3.0, 1.0), (-3.0, -1.0, 1.0), (-3.0, -1.0, -1.0),
+    (-2.0, 0.0, 1.0), (-2.0, 0.0, -1.0), (-3.0, -1.0, -1.0),
+    (-2.0, 0.0, -1.0), (-2.0, 0.0, 1.0), (-2.0, -2.0, 1.0),
+    (-2.0, -2.0, -1.0), (-2.0, -2.0, 1.0), (0.0, -2.0, 1.0),
+    (-1.0, -3.0, 1.0), (0.0, -2.0, 1.0), (-2.0, -2.0, 1.0),
+    (0.0, -2.0, -1.0), (0.0, -2.0, 1.0), (-1.0, -3.0, 1.0),
+    (-2.0, -2.0, 1.0), (-2.0, 0.0, 1.0), (-3.0, -1.0, 1.0),
+    (-2.0, -2.0, -1.0), (0.0, -2.0, -1.0), (-1.0, -3.0, -1.0),
+)
+
+
+class CustomCamWidget(Gizmo):
+    # Contains Gizmo info
+    bl_idname = "VIEW3D_GT_distance_dolly"
+    bl_target_properties = (
+        {"id": "offset", "type": 'FLOAT', "array_length": 1},
+    )
+
+    # advanced python magic from the blender python template
+    __slots__ = (
+        "custom_shape",
+        "init_mouse_y",
+        "init_value",
+    )
+
+    def _update_offset_matrix(self):
+        # offset behind the camera
+        self.matrix_offset.col[3][2] = self.target_get_value("offset") / -0.1
+
+    def draw(self, context):
+        self._update_offset_matrix()
+        self.draw_custom_shape(self.custom_shape)
+
+    def draw_select(self, context, select_id):
+        self._update_offset_matrix()
+        self.draw_custom_shape(self.custom_shape, select_id=select_id)
+
+    def setup(self):
+        if not hasattr(self, "custom_shape"):
+            self.custom_shape = self.new_custom_shape('TRIS', custom_shape_verts)
+
+    def invoke(self, context, event):
+        self.init_mouse_y = event.mouse_y
+        self.init_value = self.target_get_value("offset")
+        return {'RUNNING_MODAL'}
+
+    def exit(self, context, cancel):
+        context.area.header_text_set(None)
+        if cancel:
+            self.target_set_value("offset", self.init_value)
+
+    def modal(self, context, event, tweak):
+
+        scene = context.scene
+
+        if event.type == 'UP_ARROW':
+            # Increase Mouse sensitivity
+            scene.dolly_zoom_sensitivity_02 *= 2
+        elif event.type == 'DOWN_ARROW':
+            # Decrease Mouse Sensitivity
+            scene.dolly_zoom_sensitivity_02 *= 0.5
+
+        # default was 10
+        delta = (event.mouse_y - self.init_mouse_y) / scene.dolly_zoom_sensitivity_02
+        if 'SNAP' in tweak:
+            delta = round(delta)
+        if 'PRECISE' in tweak:
+            # default was 10
+            delta /= 0.01
+        value = self.init_value - delta
+        self.target_set_value("offset", value)
+        context.area.header_text_set("My Gizmo: %.4f Sensitivity: %.4f " % (value, scene.dolly_zoom_sensitivity_02))
+
+        return {'RUNNING_MODAL'}
+
+
+class CustomCamWidgetGroup(GizmoGroup):
+    bl_idname = "OBJECT_GGT_CAMERA_test"
+    bl_label = "Test CAMERA Widget"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'WINDOW'
+    bl_options = {'3D', 'PERSISTENT'}
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.object
+        return (ob and ob.type == 'CAMERA')
+
+    def setup(self, context):
+        ob = context.object
+
+        # Gizmo settings
+        gz = self.gizmos.new(CustomCamWidget.bl_idname)
+        gz.target_set_prop("offset", ob.data, "angle")
+
+        # Color
+        gz.color = 1.0, 0.5, 1.0
+        gz.alpha = 0.5
+
+        gz.color_highlight = 1.0, 1.0, 1.0
+        gz.alpha_highlight = 0.5
+
+        # units are large, so shrink to something more reasonable.
+        gz.scale_basis = 0.1
+        gz.use_draw_modal = True
+
+        self.angle_gizmo = gz
+
+    def refresh(self, context):
+        ob = context.object
+        gz = self.angle_gizmo
+        gz.matrix_basis = ob.matrix_world.normalized()
+
 
 classes = (
     CAM_MANAGER_OT_dolly_zoom,
+    CustomCamWidget,
+    CustomCamWidgetGroup,
+    MyCameraWidgetGroup
 )
 
 
@@ -177,7 +377,17 @@ def register():
     scene = bpy.types.Scene
 
     # properties stored in blender scene
-    scene.dolly_zoom_sensitivity = FloatProperty(default=0.0008, description='Mouse sensitivity for controlling the dolly zoom', name="Mouse Sensitivity")
+    scene.dolly_zoom_sensitivity = FloatProperty(default=0.0008,
+                                                 description='Mouse sensitivity for controlling the dolly zoom',
+                                                 name="Mouse Sensitivity")
+    # properties stored in blender scene
+    scene.dolly_zoom_sensitivity_02 = FloatProperty(default=0.1,
+                                                    description='Mouse sensitivity for controlling the dolly zoom',
+                                                    name="Mouse Sensitivity")
+    # properties stored in blender scene
+    scene.dolly_zoom_sensitivity_03 = FloatProperty(default=0.1,
+                                                    description='Mouse sensitivity for controlling the dolly zoom',
+                                                    name="Mouse Sensitivity")
 
     from bpy.utils import register_class
 
