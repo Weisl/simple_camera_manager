@@ -226,8 +226,7 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
                 scene.render.resolution_x = resolution[0]
                 scene.render.resolution_y = resolution[1]
 
-            # if camera.data.exposure:
-            # print('EXPOSURE = ' + str(camera.data.exposure) )
+            # if camera.data.exposure: #returns 0 when exposure = 0
             context.scene.view_settings.exposure = camera.data.exposure
 
             if camera.data.world:
