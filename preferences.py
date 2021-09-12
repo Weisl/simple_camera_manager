@@ -53,10 +53,8 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
         # works best if a column, or even just self.layout
         mainrow = layout.row()
-        col = mainrow.column()
 
         box = layout.box()
-        split = box.split()
         col = box.column()
 
         wm = context.window_manager
