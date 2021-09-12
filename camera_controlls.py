@@ -1,4 +1,5 @@
 import bpy
+import os
 
 cam_collection_name = 'Cameras'
 
@@ -255,6 +256,12 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
                 # subtract by one to make 1 the first slot 'Slot1' and not user input 0
                 bpy.data.images['Render Result'].render_slots.active_index = camera.data.slot - 1
 
+            if scene.output_use_cam_name:
+                old_path = bpy.context.scene.render.filepath
+                path,basename = os.path.split(old_path)
+                new_path = os.path.join(path,self.camera_name)
+                bpy.context.scene.render.filepath = new_path
+
         return {'FINISHED'}
 
 
@@ -283,6 +290,7 @@ class CAM_MANAGER_OT_camera_to_collection(bpy.types.Operator):
             moveToCollection(camera, cam_collection)
 
         return {'FINISHED'}
+
 
 class CAM_MANAGER_OT_select_active_cam(bpy.types.Operator):
     """Selects the currently active camera and sets it to be the active object"""
@@ -384,6 +392,7 @@ def world_update_func(self, context):
 
     return None
 
+
 def render_slot_update_funce(self, context):
     '''
     Update the render slot when changing render slot for the active camera. A new render slot will
@@ -411,7 +420,6 @@ def render_slot_update_funce(self, context):
         else:
             # subtract by one to make 1 the first slot 'Slot1' and not user input 0
             render_result.render_slots.active_index = self.slot - 1
-
 
 
 classes = (
@@ -453,9 +461,8 @@ def register():
         register_class(cls)
 
     # The PointerProperty has to be after registering the classes to know about the custom property type
-    cam.world = bpy.props.PointerProperty( update=world_update_func, type=bpy.types.World, name="World Material") # type=WorldMaterialProperty, name="World Material", description='World material assigned to the camera',
-
-
+    cam.world = bpy.props.PointerProperty(update=world_update_func, type=bpy.types.World,
+                                          name="World Material")  # type=WorldMaterialProperty, name="World Material", description='World material assigned to the camera',
 
 
 def unregister():
