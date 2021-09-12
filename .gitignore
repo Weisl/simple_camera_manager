@@ -1,3 +1,6 @@
 
 *.pyc
 *.mp4
+__pycache__/
+cameramanager_updater/
+cam-manager_updater/
