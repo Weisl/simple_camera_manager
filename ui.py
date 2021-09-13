@@ -372,6 +372,8 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         row = layout.row()
         row.prop(scene, 'output_render')
         row = layout.row()
+        row.prop(scene, 'output_use_cam_name')
+        row = layout.row()
         row.prop(context.scene.render, 'filepath')
         # col_01.operator('cameras.open_in_explorer')
         row = layout.row()
@@ -436,6 +438,7 @@ def register():
                                                      type=CameraCollectionProperty)
 
     scene.output_render = bpy.props.BoolProperty(name="Save Render", description="Save renders to disk", default=True)
+    scene.output_use_cam_name = bpy.props.BoolProperty(name="Camera as File Name", description="Use camera name as file name", default=True)
 
 
 def unregister():
