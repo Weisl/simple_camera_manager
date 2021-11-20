@@ -304,7 +304,6 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
     bl_region_type = 'WINDOW'
     bl_context = "empty"
     bl_ui_units_x = 45
-    bl_options = {'DRAW_BOX'}
 
     def draw(self, context):
         layout = self.layout
