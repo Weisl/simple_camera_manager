@@ -149,10 +149,10 @@ custom_shape_verts = (
 )
 
 
-class CAM_MANAGER_OT_dolly_zoom(Gizmo):
+class CAM_MANAGER_OT_dolly_zoom_gizmo(Gizmo):
     """Modal operator that keeps the object size in viewport when changing the focal lenght """
 
-    bl_idname = "cam_manager.modal_camera_dolly_zoom"
+    bl_idname = "cam_manager.modal_camera_gizmo"
     # bl_label = "Dolly Zoom"
     # bl_description = "Change focal lenght while keeping the target object at the same size in the camera view"
     # bl_options = {'REGISTER', 'UNDO'}
@@ -316,8 +316,6 @@ class CAM_MANAGER_OT_dolly_zoom(Gizmo):
             return {'CANCELLED'}
 
 
-
-
 class CustomCamWidgetGroup(GizmoGroup):
     bl_idname = "OBJECT_GGT_CAMERA_test"
     bl_label = "Test CAMERA Widget"
@@ -366,7 +364,7 @@ class CustomCamWidgetGroup(GizmoGroup):
 
 
 classes = (
-    CAM_MANAGER_OT_dolly_zoom,
+    CAM_MANAGER_OT_dolly_zoom_gizmo,
     CustomCamWidgetGroup,
     MyCameraWidgetGroup
 )

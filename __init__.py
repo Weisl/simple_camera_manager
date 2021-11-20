@@ -15,7 +15,8 @@ if "bpy" in locals():
     import importlib
 
     importlib.reload(camera_controlls)
-    importlib.reload(dolly_zoom)
+    importlib.reload(dolly_zoom_modal)
+    # importlib.reload(dolly_zoom_gizmo)
     importlib.reload(keymap)
     importlib.reload(preferences)
     importlib.reload(ui)
@@ -24,7 +25,8 @@ if "bpy" in locals():
 
 else:
     from . import camera_controlls
-    from . import dolly_zoom
+    from . import dolly_zoom_modal
+    # from . import dolly_zoom_gizmo
     from . import ui
     from . import keymap
     from . import preferences
@@ -39,7 +41,8 @@ def register():
     addon_updater_ops.register(bl_info)
 
     camera_controlls.register()
-    dolly_zoom.register()
+    dolly_zoom_modal.register()
+    # dolly_zoom_gizmo.register()
     ui.register()
     pie_menu.register()
 
@@ -56,6 +59,7 @@ def unregister():
     ui.unregister()
     camera_controlls.unregister()
     preferences.unregister()
-    dolly_zoom.unregister()
+    # dolly_zoom_gizmo.unregister()
+    dolly_zoom_modal.unregister()
     pie_menu.unregister()
     keymap.unregister()
