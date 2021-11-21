@@ -16,12 +16,21 @@ def distance_vec(point1: Vector, point2: Vector):
     return (point2 - point1).length
 
 
-def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, text):
-    blf.color(font_id,1.0,1.0,1.0,1.0)
-    blf.position(font_id, left_margin, i * vertical_px_offset, 0)
+def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, value):
+    text = '{name: <15}:'.format(name=name)
+    text2 = '{value:.2f}'.format(value=value)
+
     blf.size(font_id, 20, 72)
+
+    blf.color(font_id, 1.0, 1.0, 1.0, 1.0)
+    blf.position(font_id, left_margin, i * vertical_px_offset, 0)
     blf.draw(font_id, text)
+
+    blf.color(font_id, 1.0, 1.0, 0.5, 1.0)
+    blf.position(font_id, left_margin  + 200, i * vertical_px_offset, 0)
+    blf.draw(font_id, text2)
     i += 1
+
     return i
 
 def draw_callback_px(self, context):
@@ -33,21 +42,14 @@ def draw_callback_px(self, context):
     left_margin = 50
     i = 1
 
-    x = str(math.degrees(self.current_camera_fov))
-    text = 'FOV: {}'.format(x)
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, text)
+    x = math.degrees(self.current_camera_fov)
+    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'FOV:', x)
 
-    x = str(self.camera_focal_length)
-    text = 'Focal Length: {}'.format(x)
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, text)
+    x = self.camera_focal_length
+    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Focal Length:', x)
 
-    x = str(self.distance)
-    text = 'DISTANCE: {}'.format(x)
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, text)
-
-    x = str(self.delta)
-    text = 'DELTA: {}'.format(x)
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, text)
+    x = self.distance
+    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'DISTANCE:', x)
 
 
 class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
@@ -56,17 +58,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
     bl_label = "Dolly Zoom"
     bl_description = "Change focal lenght while keeping the target object at the same size in the camera view"
     bl_options = {'REGISTER', 'UNDO'}
-
-    # # Initial mouse position
-    mouse_initial_x: IntProperty()
-    # # camera position. Only using Y Axis for now
-    # camera_location: FloatProperty()
-    # # FOV changes
-    # current_camera_fov: FloatProperty()
-    # initial_camera_fov: FloatProperty()
-    # # target object
-    # target_width: FloatProperty(default=4, name="Width")
-
 
     def modal(self, context, event):
         '''Calculate the FOV from the changed location to the target object '''
