@@ -2,3 +2,7 @@
 *.pyc
 *.mp4
 *.json
+
+__pycache__/
+cameramanager_updater/
+cam-manager_updater/
