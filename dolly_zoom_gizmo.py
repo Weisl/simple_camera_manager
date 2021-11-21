@@ -33,7 +33,7 @@ def draw_callback_px(self, context):
 
     blf.position(font_id, 15, 60, 0)
     blf.size(font_id, 20, 72)
-    blf.draw(font_id, "Focal Length" + str(self.camera_focal_length))
+    blf.draw(font_id, "Focal Length" + str(self.current_focal_length))
 
     blf.position(font_id, 15, 90, 0)
     blf.size(font_id, 20, 72)
