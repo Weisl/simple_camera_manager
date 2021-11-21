@@ -1,13 +1,7 @@
-import bgl
 import blf
 import bpy
-import gpu
 import math
-import numpy
 
-from bpy.props import IntProperty, FloatProperty
-
-from gpu_extras.batch import batch_for_shader
 from mathutils import Vector
 
 def set_cam_values(cam_dic, camera, target_vector):
@@ -277,5 +271,4 @@ def unregister():
     for cls in reversed(classes):
         unregister_class(cls)
 
-    scene = bpy.types.Scene
-    del scene.dolly_zoom_sensitivity
+
