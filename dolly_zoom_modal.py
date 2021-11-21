@@ -34,6 +34,13 @@ def distance_vec(point1: Vector, point2: Vector):
     """Calculates distance between two points."""
     return (point2 - point1).length
 
+def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, color):
+    blf.size(font_id, 20, 72)
+
+    blf.color(font_id, color[0], color[1], color[2], color[3])
+    blf.position(font_id, left_margin, i * vertical_px_offset, 0)
+    blf.draw(font_id, name)
+
 
 def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, value, initial_value = None):
     text = '{name:}:'.format(name=name)
@@ -87,6 +94,11 @@ def draw_callback_px(self, context):
     x = self.distance
     y = self.initial_cam_settings['distance']
     i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'DISTANCE:', x, initial_value=y)
+
+    if self.ignore_input == True:
+        color = (1.0, 0.0, 0.0, 1.0)
+        draw_title_text(self, font_id, i, vertical_px_offset, left_margin, 'INPUT IGNORED (ALT)', color)
+
 
 
 
@@ -187,6 +199,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             # update reference camera settings to current camera settings
             self.ignore_input = True
             return {'RUNNING_MODAL'}
+
 
         # Ignore Mouse Movement. The Operator will behave as starting it newly
         elif event.type == 'LEFT_ALT' and event.value == 'RELEASE':
