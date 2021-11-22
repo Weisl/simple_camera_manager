@@ -194,6 +194,17 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.ignore_input = True
             return {'RUNNING_MODAL'}
 
+        # Set ref values when switching mode to avoid jumping of field of view.
+        elif event.type in ['LEFT_SHIFT','LEFT_CTRL'] and event.value in ['PRESS', 'RELEASE'] :
+            # update reference camera settings to current camera settings
+            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera, self.target)
+
+            # update ref mouse position to current
+            self.mouse_initial_x = event.mouse_x
+
+            #Alt is not pressed anymore after release
+            self.ignore_input = False
+            return {'RUNNING_MODAL'}
 
         # Ignore Mouse Movement. The Operator will behave as starting it newly
         elif event.type == 'LEFT_ALT' and event.value == 'RELEASE':
@@ -205,7 +216,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
             #Alt is not pressed anymore after release
             self.ignore_input = False
-
             return {'RUNNING_MODAL'}
 
 

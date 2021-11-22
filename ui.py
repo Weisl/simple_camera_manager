@@ -150,10 +150,6 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
 
                 ###### Col04 #####
                 row = col_04.row(align=True)
-                # dof = cam.dof
-                # row.prop(dof, 'use_dof')
-                # row.prop(dof, "focus_distance", text="Focus Distance")
-
                 op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION')
                 op.object_name = obj.name
 
@@ -274,19 +270,6 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
 
         layout.separator()
-        # row = layout.row()
-        # row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
-
-        # if scene.camera:
-        #     layout.label(text='Active Camera')
-        #     cam = scene.camera
-        #
-        #     row = layout.row(align=True)
-        #     row.prop(cam.data, "resolution", text="")
-        #     op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
-        #     op.camera_name = cam.name
-
-        layout.separator()
         layout.label(text='All Cameras')
 
         row = layout.row(align=True)
@@ -337,6 +320,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
 
         split = layout.split(factor=0.6)
         split_left = split.column().split(factor=0.45)
+
         # Camera name
         col_01 = split_left.column()
         col_02 = split_left.column()
