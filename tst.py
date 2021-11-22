@@ -1,38 +1,15 @@
+#Script to get vertices from Mesh
+
 import bpy
-from bpy.types import (
-    GizmoGroup,
-)
+import bmesh
 
+data = bpy.context.object.data
 
-class OtherWidget(GizmoGroup):
-    bl_idname = "OBJECT_GGT_othjer_camera"
-    bl_label = "Object Camera Test Widget"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'WINDOW'
-    bl_options = {'3D', 'PERSISTENT'}
+print('')
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.object
-        return (ob and ob.type == 'CAMERA')
+bm = bmesh.from_edit_mesh(data)
+tuple = ()
+for e in bm.edges:
+    tuple += ((e.verts[0].co.x, e.verts[0].co.y, e.verts[0].co.z),(e.verts[1].co.x, e.verts[1].co.y, e.verts[1].co.z))
 
-    def setup(self, context):
-        arrow = self.gizmos.new("GIZMO_GT_arrow_3d")
-
-        def move_get_x():
-            return -context.object.data.dof.focus_distance
-
-        def move_set_x(value):
-            context.object.data.dof.focus_distance = -value
-
-        arrow.target_set_handler("offset", get=move_get_x, set=move_set_x)
-
-        arrow.matrix_basis = context.object.matrix_world.normalized()
-
-        self.x_gizmo = arrow
-
-    def refresh(self, context):
-        self.x_gizmo.matrix_basis = context.object.matrix_world.normalized()
-
-
-bpy.utils.register_class(OtherWidget)
+print(str(tuple))
