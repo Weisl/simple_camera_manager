@@ -17,7 +17,6 @@ if "bpy" in locals():
     importlib.reload(camera_controlls)
     importlib.reload(dolly_zoom_modal)
     importlib.reload(camera_gizmos)
-    # importlib.reload(dolly_zoom_gizmo)
     importlib.reload(keymap)
     importlib.reload(preferences)
     importlib.reload(ui)
@@ -28,7 +27,6 @@ else:
     from . import camera_controlls
     from . import dolly_zoom_modal
     from . import camera_gizmos
-    # from . import dolly_zoom_gizmo
     from . import ui
     from . import keymap
     from . import preferences
