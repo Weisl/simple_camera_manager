@@ -455,6 +455,12 @@ def register():
     cam.slot = bpy.props.IntProperty(name="Slot", default=1, description='Render slot, used when rendering this camera',
                                      min=1, soft_max=15, update=render_slot_update_funce)
 
+    cam.dolly_zoom_target_scale = bpy.props.FloatProperty(name='dolly_zoom_target_scale', description='', default=2, min=0)
+    cam.dolly_zoom_target_location = bpy.props.FloatVectorProperty(name='', description='', default=(0.0, 0.0, 0.0), subtype='COORDINATES', size=3)
+
+    cam.dolly_zoom_target_distance = bpy.props.FloatProperty(name='', description='', default=10, min=0)
+
+
     from bpy.utils import register_class
 
     for cls in classes:
@@ -475,3 +481,5 @@ def unregister():
 
     del cam.resolution
     del cam.slot
+    del cam.exposure
+    del cam.world

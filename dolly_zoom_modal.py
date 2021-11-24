@@ -75,7 +75,6 @@ def draw_callback_px(self, context):
     i = 1
 
     x = math.degrees(self.current_camera_fov)
-    print(self.initial_cam_settings['camera_fov'])
     y = math.degrees(self.initial_cam_settings['camera_fov'])
     i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'FOV:', x, initial_value=y)
 
@@ -87,7 +86,11 @@ def draw_callback_px(self, context):
 
     x = self.distance
     y = self.initial_cam_settings['distance']
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'DISTANCE:', x, initial_value=y)
+    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Target distance:', x, initial_value=y)
+
+    x = self.target_width
+    y = self.initial_target_width
+    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Target width:', x, initial_value=y)
 
     if self.ignore_input == True:
         color = (1.0, 0.0, 0.0, 1.0)
@@ -118,8 +121,10 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.camera = camera
 
             # Target
-            self.target = Vector((0.0, 0.0, 0.0))
-            self.target_width = 4
+            # self.target = Vector((0.0, 0.0, 0.0))
+            self.target = camera.data.dolly_zoom_target_location
+            self.target_width = camera.data.dolly_zoom_target_scale
+            self.initial_target_width = camera.data.dolly_zoom_target_scale
 
             cam_settings = {}
             cam_settings = set_cam_values(cam_settings, camera, self.target)
@@ -135,8 +140,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             # Mouse
             self.mouse_initial_x = event.mouse_x
 
-            # Initial Mouse Position
-            self.distance = 0
+            self.distance = camera.data.dolly_zoom_target_distance
 
             # check if alt is pressed
             self.ignore_input = False
@@ -228,39 +232,53 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
                 self.ignore_input = True
                 return {'RUNNING_MODAL'}
 
-            # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
-            factor = 0.05
-            if event.ctrl == True:
-                factor = 0.15
-            elif event.shift == True:
-                factor = 0.01
+            if event.type == ['F'] and event.value == ['PRESS']:
+                # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
+                factor = 0.05
+                if event.ctrl == True:
+                    factor = 0.15
+                elif event.shift == True:
+                    factor = 0.01
 
-            # calculate mouse movement and offset camera
-            delta = int(self.mouse_initial_x - event.mouse_x)
+                # calculate mouse movement and offset camera
+                delta = int(self.mouse_initial_x - event.mouse_x)
+                self.target_width = self.initial_target_width + delta
 
-            # cam_offset = round((delta * factor), 4)
-            cam_offset = delta * factor
+            else:
+                # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
+                factor = 0.05
+                if event.ctrl == True:
+                    factor = 0.15
+                elif event.shift == True:
+                    factor = 0.01
 
-            # vec aligned to local axis in Blender 2.8+
-            vec = Vector((0.0, 0.0, cam_offset))
-            vec_rot = vec @ self.ref_cam_settings['inverted_matrix']
-            camera.location = self.ref_cam_settings['cam_location'] + vec_rot
+                # calculate mouse movement and offset camera
+                delta = int(self.mouse_initial_x - event.mouse_x)
 
-            # get camera world position and target position
-            cam_pos = self.camera.matrix_world.to_translation()
+                # cam_offset = round((delta * factor), 4)
+                cam_offset = delta * factor
 
-            cam_vector = Vector(cam_pos)
-            target_pos = self.target
-            distance = distance_vec(cam_vector, target_pos)
-            self.distance = distance
+                # vec aligned to local axis in Blender 2.8+
+                vec = Vector((0.0, 0.0, cam_offset))
+                vec_rot = vec @ self.ref_cam_settings['inverted_matrix']
+                camera.location = self.ref_cam_settings['cam_location'] + vec_rot
 
-            # Dolly Zoom computation
-            field_of_view = 2 * math.atan(self.target_width / distance)
+                # get camera world position and target position
+                cam_pos = self.camera.matrix_world.to_translation()
 
-            # Set camera field of view and
-            camera.data.angle = field_of_view
-            self.current_camera_fov = field_of_view
-            self.current_focal_length = camera.data.lens
+                cam_vector = Vector(cam_pos)
+                target_pos = self.target
+                distance = distance_vec(cam_vector, target_pos)
+                self.distance = distance
+                camera.data.dolly_zoom_target_distance = distance
+
+                # Dolly Zoom computation
+                field_of_view = 2 * math.atan(self.target_width / distance)
+
+                # Set camera field of view and
+                camera.data.angle = field_of_view
+                self.current_camera_fov = field_of_view
+                self.current_focal_length = camera.data.lens
         return {'RUNNING_MODAL'}
 
 classes = (

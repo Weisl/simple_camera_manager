@@ -37,16 +37,16 @@ class CameraFocusDistance(GizmoGroup):
         arrow.use_draw_offset_scale = False
 
         # Needed to keep the scale constant
-        arrow.scale_basis = 1.0
+        arrow.scale_basis = ob.data.dolly_zoom_target_scale
 
         def move_get_x():
-            return -ob.data.dof.focus_distance
+            return -ob.data.dolly_zoom_target_distance
 
         def move_set_x(value):
-            ob.data.dof.focus_distance = -value
+            ob.data.dolly_zoom_target_distance = -value
 
         # arrow.target_set_handler("offset", get=move_get_x, set=move_set_x)
-        arrow.target_set_prop("offset", ob.data.dof, "focus_distance")
+        arrow.target_set_prop("offset", ob.data, "dolly_zoom_target_distance")
 
         arrow.matrix_basis = context.object.matrix_world.normalized()
 

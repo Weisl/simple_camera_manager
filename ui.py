@@ -430,3 +430,8 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    scene = bpy.types.Scene
+    del scene.output_use_cam_name
+    del scene.output_render
+    del scene.cam_collection
