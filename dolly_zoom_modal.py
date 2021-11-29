@@ -126,20 +126,26 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
         camera = self.camera
 
-        # move camera
-        # vec aligned to local axis in Blender 2.8+
-        vec = Vector((0.0, 0.0, cam_offset))
-        vec_rot = vec @ self.ref_cam_settings['inverted_matrix']
-        camera.location = self.ref_cam_settings['cam_location'] + vec_rot
-
-
-        # Calculate Distance from camera to target
-        cam_vector = Vector(self.camera.matrix_world.to_translation())
-        target_pos = Vector(self.ref_cam_settings['target_location'])
-
         if use_cam_offset:
-            distance = cam_offset + self.ref_cam_settings['distance']
+            if cam_offset > -self.ref_cam_settings['distance']:
+                cam_move = cam_offset
+                distance = cam_move + self.ref_cam_settings['distance']
+
+            else: # Camera goes past the target
+                #TODO: Bounce Back
+                cam_move = cam_offset
+                distance = cam_move + self.ref_cam_settings['distance']
+
+            # move camera
+            # vec aligned to local axis in Blender 2.8+
+            vec = Vector((0.0, 0.0, cam_move))
+            vec_rot = vec @ self.ref_cam_settings['inverted_matrix']
+            camera.location = self.ref_cam_settings['cam_location'] + vec_rot
+
         else:
+            # Calculate Distance from camera to target
+            cam_vector = Vector(self.camera.matrix_world.to_translation())
+            target_pos = Vector(self.ref_cam_settings['target_location'])
             distance = distance_vec(cam_vector, target_pos)
 
         self.distance = distance
@@ -177,11 +183,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
             self.distance = camera.data.dolly_zoom_target_distance
 
-            # Target
-            width = camera.data.dolly_zoom_target_distance * math.tan(0.5 * camera.data.angle)
-
-            self.target_width = width
-
             # Camera lens settings
             self.current_camera_fov = camera.data.angle
             self.current_focal_length = camera.data.lens
@@ -201,6 +202,12 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             # check if alt is pressed
             self.ignore_input = False
             self.set_width = False
+
+            # Target
+            width = camera.data.dolly_zoom_target_distance * math.tan(0.5 * camera.data.angle)
+            self.target_width = width
+            # update camera
+            self.update_camera()
 
             # the arguments we pass the the callback
             args = (self, context)
@@ -254,9 +261,10 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
             # update reference camera settings to current camera settings
             self.ignore_input = True
+
             return {'RUNNING_MODAL'}
 
-        elif event.type == 'F' and event.value == 'PRESS':
+        elif event.type == 'F' and event.value == 'RELEASE':
             self.set_width = not self.set_width
 
 
