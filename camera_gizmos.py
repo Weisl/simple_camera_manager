@@ -2,6 +2,7 @@ from bpy.types import (
     GizmoGroup,
     Gizmo
 )
+import mathutils
 
 # Coordinates (each one is a line).
 custom_shape_verts_02 = (
@@ -37,7 +38,9 @@ class CameraFocusDistance(GizmoGroup):
         arrow.use_draw_offset_scale = False
 
         # Needed to keep the scale constant
-        arrow.scale_basis = ob.data.dolly_zoom_target_scale
+        arrow.scale_basis = 1.0
+        # mat_sca = mathutils.Matrix.Scale(ob.data.dolly_zoom_target_scale, 4, (1.0, 1.0, 1.0))
+
 
         def move_get_x():
             return -ob.data.dolly_zoom_target_distance
@@ -52,8 +55,27 @@ class CameraFocusDistance(GizmoGroup):
 
         self.x_gizmo = arrow
 
+
+
+
     def refresh(self, context):
-        self.x_gizmo.matrix_basis = context.object.matrix_world.normalized()
+        w_matrix = context.object.matrix_world.copy()
+        orig_loc, orig_rot, orig_scale = w_matrix.normalized().copy().decompose()
+
+        orig_loc_mat = mathutils.Matrix.Translation(orig_loc)
+        orig_rot_mat = orig_rot.to_matrix().to_4x4()
+
+        scale_matrix_x2 = mathutils.Matrix.Scale(context.object.data.dolly_zoom_target_scale, 4, (1.0, 0.0, 0.0))
+        scale_matrix_y2 = mathutils.Matrix.Scale(context.object.data.dolly_zoom_target_scale, 4, (0.0, 1.0, 0.0))
+        scale_matrix_z2 = mathutils.Matrix.Scale(1, 4, (0.0, 0.0, 1.0))
+
+        scale_mat = scale_matrix_x2 @ scale_matrix_y2 @ scale_matrix_z2
+
+        # assemble the new matrix
+        mat_out = orig_loc_mat @ orig_rot_mat @ scale_mat
+
+        self.x_gizmo.matrix_basis = mat_out
+
 
 
 class MyCustomShapeWidget(Gizmo):
@@ -64,7 +86,7 @@ class MyCustomShapeWidget(Gizmo):
 
     __slots__ = (
         "custom_shape",
-        "init_mouse_y",
+        "init_mouse_x",
         "init_value",
     )
 
@@ -88,7 +110,7 @@ class MyCustomShapeWidget(Gizmo):
             self.custom_shape = self.new_custom_shape('LINES', custom_shape_verts_02)
 
     def invoke(self, context, event):
-        self.init_mouse_y = event.mouse_y
+        self.init_mouse_x = event.mouse_x
         self.init_value = self.target_get_value("offset")
         return {'RUNNING_MODAL'}
 
@@ -98,19 +120,15 @@ class MyCustomShapeWidget(Gizmo):
             self.target_set_value("offset", self.init_value)
 
     def modal(self, context, event, tweak):
-        delta = (event.mouse_y - self.init_mouse_y) / 10.0
+        delta = (event.mouse_x - self.init_mouse_x) / 10.0
         if 'SNAP' in tweak:
             delta = round(delta)
         if 'PRECISE' in tweak:
             delta /= 10.0
-        value = self.init_value - delta
+        value = self.init_value + delta
         self.target_set_value("offset", value)
         context.area.header_text_set("My Gizmo: %.4f" % value)
         return {'RUNNING_MODAL'}
-
-
-
-
 
 
 

@@ -436,6 +436,10 @@ classes = (
     CAM_MANAGER_OT_select_active_cam
 )
 
+def update_func(self, context):
+    self.show_limits = not self.show_limits
+    self.show_limits = not self.show_limits
+
 
 def register():
     scene = bpy.types.Scene
@@ -455,9 +459,7 @@ def register():
     cam.slot = bpy.props.IntProperty(name="Slot", default=1, description='Render slot, used when rendering this camera',
                                      min=1, soft_max=15, update=render_slot_update_funce)
 
-    cam.dolly_zoom_target_scale = bpy.props.FloatProperty(name='dolly_zoom_target_scale', description='', default=2, min=0)
-    cam.dolly_zoom_target_location = bpy.props.FloatVectorProperty(name='', description='', default=(0.0, 0.0, 0.0), subtype='COORDINATES', size=3)
-
+    cam.dolly_zoom_target_scale = bpy.props.FloatProperty(name='Target Scale', description='', default=2, min=0, update=update_func)
     cam.dolly_zoom_target_distance = bpy.props.FloatProperty(name='', description='', default=10, min=0)
 
 
