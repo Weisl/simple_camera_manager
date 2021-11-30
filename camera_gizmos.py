@@ -2,7 +2,10 @@ from bpy.types import (
     GizmoGroup,
     Gizmo
 )
+from .dolly_zoom_modal import calculate_target_width
+
 import mathutils
+
 
 # Coordinates (each one is a line).
 custom_shape_verts_02 = (
@@ -21,7 +24,7 @@ class CameraFocusDistance(GizmoGroup):
     bl_label = "Camera Focus Distance Widget"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
-    bl_options = {'3D', 'PERSISTENT'}
+    bl_options = {'3D', 'PERSISTENT', 'SHOW_MODAL_ALL', 'DEPTH_3D'}
 
     @classmethod
     def poll(cls, context):
@@ -29,27 +32,32 @@ class CameraFocusDistance(GizmoGroup):
         return (ob and ob.type == 'CAMERA')
 
     def setup(self, context):
-        ob = context.object
+        camera = context.object
+        self.camera = camera
 
         arrow = self.gizmos.new(MyCustomShapeWidget.bl_idname)
         # arrow.use_draw_offset_scale = False
 
         arrow.use_draw_scale = False
         arrow.use_draw_offset_scale = False
+        arrow.use_draw_modal = True
 
-        # Needed to keep the scale constant
-        arrow.scale_basis = 1.0
-        # mat_sca = mathutils.Matrix.Scale(ob.data.dolly_zoom_target_scale, 4, (1.0, 1.0, 1.0))
-
+        arrow.color = (1.0, 1.0, 1.0)
+        arrow.color_highlight = (1.0, 1.0, 0.0)
+        #Draw only when hovering
+        # arrow.use_draw_hover = True
 
         def move_get_x():
-            return -ob.data.dolly_zoom_target_distance
+            return -camera.data.dolly_zoom_target_distance
 
         def move_set_x(value):
-            ob.data.dolly_zoom_target_distance = -value
+            camera.data.dolly_zoom_target_distance = -value
 
         # arrow.target_set_handler("offset", get=move_get_x, set=move_set_x)
-        arrow.target_set_prop("offset", ob.data, "dolly_zoom_target_distance")
+        arrow.target_set_prop("offset", camera.data, "dolly_zoom_target_distance")
+
+        # Needed to keep the scale constant
+        arrow.scale_basis = calculate_target_width(camera.data.dolly_zoom_target_distance, camera.data.angle)
 
         arrow.matrix_basis = context.object.matrix_world.normalized()
 
@@ -65,8 +73,10 @@ class CameraFocusDistance(GizmoGroup):
         orig_loc_mat = mathutils.Matrix.Translation(orig_loc)
         orig_rot_mat = orig_rot.to_matrix().to_4x4()
 
-        scale_matrix_x2 = mathutils.Matrix.Scale(context.object.data.dolly_zoom_target_scale, 4, (1.0, 0.0, 0.0))
-        scale_matrix_y2 = mathutils.Matrix.Scale(context.object.data.dolly_zoom_target_scale, 4, (0.0, 1.0, 0.0))
+        scale = calculate_target_width(self.camera.data.dolly_zoom_target_distance, self.camera.data.angle)
+
+        scale_matrix_x2 = mathutils.Matrix.Scale(scale, 4, (1.0, 0.0, 0.0))
+        scale_matrix_y2 = mathutils.Matrix.Scale(scale, 4, (0.0, 1.0, 0.0))
         scale_matrix_z2 = mathutils.Matrix.Scale(1, 4, (0.0, 0.0, 1.0))
 
         scale_mat = scale_matrix_x2 @ scale_matrix_y2 @ scale_matrix_z2
@@ -98,9 +108,11 @@ class MyCustomShapeWidget(Gizmo):
         self._update_offset_matrix()
         self.draw_custom_shape(self.custom_shape)
 
+
     def draw_select(self, context, select_id):
         self._update_offset_matrix()
         self.draw_custom_shape(self.custom_shape, select_id=select_id)
+
 
     def setup(self):
         if not hasattr(self, "custom_shape"):

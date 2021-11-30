@@ -4,6 +4,10 @@ import math
 
 from mathutils import Vector, Matrix
 
+def calculate_target_width(distance, fov):
+    width = distance * math.tan(0.5 * fov)
+    return width
+
 def generate_target_location(camera, distance):
     # Create the transformation matrix to move 1 unit along x
     vec = Vector((0.0, 0.0, -distance))
@@ -35,6 +39,8 @@ def set_cam_values(cam_dic, camera, distance):
 
     cam_dic['distance'] = distance
     cam_dic['target_location'] = target_location
+
+    cam_dic['target_width'] = camera.data.dolly_zoom_target_scale
 
 
     return cam_dic
@@ -103,7 +109,7 @@ def draw_callback_px(self, context):
 
     x = self.distance
     y = self.initial_cam_settings['distance']
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Distance', x, initial_value=y)
+    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Distance (D)', x, initial_value=y)
 
     x = self.target_width
     y = self.initial_target_width
@@ -121,6 +127,10 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
     bl_label = "Dolly Zoom"
     bl_description = "Change focal lenght while keeping the target object at the same size in the camera view"
     bl_options = {'REGISTER', 'UNDO'}
+
+    def force_redraw(self):
+        bpy.context.object.data.show_limits = not self.show_limits
+        bpy.context.object.data.show_limits = self.show_limits
 
     def update_camera(self, cam_offset = 0, use_cam_offset = False):
 
@@ -179,8 +189,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.camera = camera
             self.show_limits = bpy.context.object.data.show_limits
 
-            self.initial_target_width = camera.data.dolly_zoom_target_scale
-
             self.distance = camera.data.dolly_zoom_target_distance
 
             # Camera lens settings
@@ -188,6 +196,24 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.current_focal_length = camera.data.lens
 
             #####  UI  #######
+            # Mouse
+            self.mouse_initial_x = event.mouse_x
+
+            # check if alt is pressed
+            self.ignore_input = False
+            self.set_width = False
+            self.set_distance = False
+
+            #setting used when changing the distance with the modal operator
+            self.tmp_distance = False
+
+            # Target
+            width = calculate_target_width(camera.data.dolly_zoom_target_distance, camera.data.angle)
+
+            self.target_width = width
+            self.initial_target_width = width
+            camera.data.dolly_zoom_target_scale = width
+
             #Camera Reference Values
             cam_settings = {}
             cam_settings = set_cam_values(cam_settings, camera, self.distance)
@@ -196,16 +222,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.initial_cam_settings = cam_settings
             self.ref_cam_settings = cam_settings.copy()
 
-            # Mouse
-            self.mouse_initial_x = event.mouse_x
-
-            # check if alt is pressed
-            self.ignore_input = False
-            self.set_width = False
-
-            # Target
-            width = camera.data.dolly_zoom_target_distance * math.tan(0.5 * camera.data.angle)
-            self.target_width = width
             # update camera
             self.update_camera()
 
@@ -229,7 +245,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
         camera = self.camera
         scene = context.scene
-
 
         # Cancel Operator
         if event.type in {'RIGHTMOUSE', 'ESC'}:
@@ -261,12 +276,22 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
             # update reference camera settings to current camera settings
             self.ignore_input = True
+            self.force_redraw()
 
             return {'RUNNING_MODAL'}
 
         elif event.type == 'F' and event.value == 'RELEASE':
             self.set_width = not self.set_width
+            self.set_distance = False
 
+        elif event.type == 'D' and event.value == 'RELEASE':
+            self.set_distance = not self.set_distance
+            self.set_width = False
+
+            if self.set_distance:
+                self.tmp_distance = self.ref_cam_settings['distance']
+            else:
+                self.tmp_distance = False
 
         # Set ref values when switching mode to avoid jumping of field of view.
         elif event.type in ['LEFT_SHIFT','LEFT_CTRL'] and event.value in ['PRESS', 'RELEASE']:
@@ -322,6 +347,32 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
                 # update camera
                 self.update_camera()
+
+            elif self.set_distance:
+
+                factor = 0.05
+                if event.ctrl == True:
+                    factor = 0.15
+                elif event.shift == True:
+                    factor = 0.005
+
+                # calculate width offset
+                offset = delta * factor
+                distance = abs(self.tmp_distance + offset)
+
+
+                self.camera.data.dolly_zoom_target_distance = distance
+                self.distance = distance
+                self.ref_cam_settings['distance'] = distance
+
+                # Target
+                width = calculate_target_width(camera.data.dolly_zoom_target_distance, camera.data.angle)
+
+                self.target_width = width
+                camera.data.dolly_zoom_target_scale = width
+
+                # update camera
+                # self.update_camera()
 
             else:
                 # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
