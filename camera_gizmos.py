@@ -60,6 +60,7 @@ class CameraFocusDistance(GizmoGroup):
 
         def set_dolly_zoom_target_distance(value):
             if self.cam:
+                print('ENTERED')
                 self.cam.data.dolly_zoom_target_distance = value
 
         # gizmo.target_set_prop("offset", camera.data, "dolly_zoom_target_distance")
@@ -152,7 +153,10 @@ class MyCustomShapeWidget(Gizmo):
         if 'PRECISE' in tweak:
             delta /= 10.0
         value = self.init_value + delta
-        self.target_set_value("offset", value)
+
+        # Set value as a Tuple, it doesn't work otherwise
+        self.target_set_value("offset", (value,))
+
         context.area.header_text_set("My Gizmo: %.4f" % value)
         return {'RUNNING_MODAL'}
 
