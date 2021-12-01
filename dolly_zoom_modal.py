@@ -126,8 +126,11 @@ def draw_callback_px(self, context):
     i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Width (F)', x, initial_value=y, highlighting=self.set_width)
 
     if self.ignore_input == True:
-        color = (1.0, 1.0, 0.0, 1.0)
-        draw_title_text(self, font_id, i, vertical_px_offset, left_margin, 'INPUT IGNORED (ALT)', color)
+        color = (0.0, 1.0, 1.0, 1.0)
+    else:
+        color = (1.0, 1.0, 1.0, 1.0)
+
+    draw_title_text(self, font_id, i, vertical_px_offset, left_margin, 'IGNORE INPUT (ALT)', color)
 
 
 class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
