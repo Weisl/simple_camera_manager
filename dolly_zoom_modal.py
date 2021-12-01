@@ -192,9 +192,11 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             return False
 
     def invoke(self, context, event):
-        if context.scene.camera:
+        bpy.ops.object.select_all(action='DESELECT')
 
+        if context.scene.camera:
             camera = context.scene.camera
+            camera.select_set(True)
             context.view_layer.objects.active = camera
 
             # Camera Object Settings
