@@ -26,6 +26,8 @@ class CameraFocusDistance(GizmoGroup):
     bl_region_type = 'WINDOW'
     bl_options = {'3D', 'PERSISTENT', 'SHOW_MODAL_ALL', 'DEPTH_3D'}
 
+    cam = None
+
     @classmethod
     def poll(cls, context):
         ob = context.object
@@ -33,47 +35,57 @@ class CameraFocusDistance(GizmoGroup):
 
     def setup(self, context):
         camera = context.object
-        self.camera = camera
+        self.cam = camera
 
-        arrow = self.gizmos.new(MyCustomShapeWidget.bl_idname)
-        # arrow.use_draw_offset_scale = False
+        gizmo = self.gizmos.new(MyCustomShapeWidget.bl_idname)
+        # gizmo = self.gizmos.new("GIZMO_GT_arrow_3d")
+        # gizmo = self.gizmos.new("GIZMO_GT_primitive_3d")
+        # gizmo.use_draw_offset_scale = False
 
-        arrow.use_draw_scale = False
-        arrow.use_draw_offset_scale = False
-        arrow.use_draw_modal = True
+        gizmo.use_draw_scale = False
+        gizmo.use_draw_offset_scale = False
+        gizmo.use_draw_modal = True
 
-        arrow.color = (1.0, 1.0, 1.0)
-        arrow.color_highlight = (1.0, 1.0, 0.0)
+        gizmo.color = (1.0, 1.0, 1.0)
+        gizmo.color_highlight = (1.0, 1.0, 0.0)
+
         #Draw only when hovering
-        # arrow.use_draw_hover = True
+        # gizmo.use_draw_hover = True
 
-        def move_get_x():
-            return -camera.data.dolly_zoom_target_distance
+        def get_dolly_zoom_target_distance():
+            if self.cam:
+                return self.cam.data.dolly_zoom_target_distance
+            else:
+                return (0.0,)
 
-        def move_set_x(value):
-            camera.data.dolly_zoom_target_distance = -value
+        def set_dolly_zoom_target_distance(value):
+            if self.cam:
+                self.cam.data.dolly_zoom_target_distance = value
 
-        # arrow.target_set_handler("offset", get=move_get_x, set=move_set_x)
-        arrow.target_set_prop("offset", camera.data, "dolly_zoom_target_distance")
+        # gizmo.target_set_prop("offset", camera.data, "dolly_zoom_target_distance")
+        gizmo.target_set_handler('offset', get=get_dolly_zoom_target_distance, set=set_dolly_zoom_target_distance)
 
         # Needed to keep the scale constant
-        arrow.scale_basis = calculate_target_width(camera.data.dolly_zoom_target_distance, camera.data.angle)
+        gizmo.scale_basis = 1.0
 
-        arrow.matrix_basis = context.object.matrix_world.normalized()
+        gizmo.matrix_basis = camera.matrix_world.normalized()
 
-        self.x_gizmo = arrow
-
-
+        self.distance_gizmo = gizmo
 
 
     def refresh(self, context):
-        w_matrix = context.object.matrix_world.copy()
-        orig_loc, orig_rot, orig_scale = w_matrix.normalized().copy().decompose()
+        camera = context.object
+
+        self.cam = camera
+
+
+        w_matrix = self.cam.matrix_world.copy()
+        orig_loc, orig_rot, orig_scale = w_matrix.normalized().decompose()
 
         orig_loc_mat = mathutils.Matrix.Translation(orig_loc)
         orig_rot_mat = orig_rot.to_matrix().to_4x4()
 
-        scale = calculate_target_width(self.camera.data.dolly_zoom_target_distance, self.camera.data.angle)
+        scale = calculate_target_width(self.cam.data.dolly_zoom_target_distance, self.cam.data.angle)
 
         scale_matrix_x2 = mathutils.Matrix.Scale(scale, 4, (1.0, 0.0, 0.0))
         scale_matrix_y2 = mathutils.Matrix.Scale(scale, 4, (0.0, 1.0, 0.0))
@@ -84,15 +96,16 @@ class CameraFocusDistance(GizmoGroup):
         # assemble the new matrix
         mat_out = orig_loc_mat @ orig_rot_mat @ scale_mat
 
-        self.x_gizmo.matrix_basis = mat_out
-
+        self.distance_gizmo.matrix_basis = mat_out
 
 
 class MyCustomShapeWidget(Gizmo):
-    bl_idname = "VIEW3D_GT_auto_facemap"
+    bl_idname = "Custom_Dolly_Gizmo"
     bl_target_properties = (
         {"id": "offset", "type": 'FLOAT', "array_length": 1},
+        # {"id": "offset", "type": 'TUPLE', "array_length": 1},
     )
+    #
 
     __slots__ = (
         "custom_shape",
@@ -102,7 +115,8 @@ class MyCustomShapeWidget(Gizmo):
 
     def _update_offset_matrix(self):
         # offset behind the light
-        self.matrix_offset.col[3][2] = self.target_get_value("offset") * -1
+        print("VALUE" + str(self.target_get_value('offset')[0]))
+        self.matrix_offset.col[3][2] = float(self.target_get_value('offset')[0]) * -1
 
     def draw(self, context):
         self._update_offset_matrix()
@@ -123,13 +137,13 @@ class MyCustomShapeWidget(Gizmo):
 
     def invoke(self, context, event):
         self.init_mouse_x = event.mouse_x
-        self.init_value = self.target_get_value("offset")
+        self.init_value = self.target_get_value('offset')[0]
         return {'RUNNING_MODAL'}
 
     def exit(self, context, cancel):
         context.area.header_text_set(None)
-        if cancel:
-            self.target_set_value("offset", self.init_value)
+        # if cancel:
+            # self.target_set_value("offset", self.init_value)
 
     def modal(self, context, event, tweak):
         delta = (event.mouse_x - self.init_mouse_x) / 10.0

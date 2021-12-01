@@ -155,7 +155,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
                 distance = cam_move + self.ref_cam_settings['distance']
 
             else: # Camera goes past the target
-                #TODO:
                 cam_move = abs(cam_offset) - self.ref_cam_settings['distance'] - self.ref_cam_settings['distance']
                 distance = cam_move + self.ref_cam_settings['distance']
 
@@ -381,7 +380,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
                 # Target
                 width = calculate_target_width(camera.data.dolly_zoom_target_distance, camera.data.angle)
-
                 camera.data.dolly_zoom_target_scale = width
 
                 # update camera

@@ -460,7 +460,7 @@ def register():
                                      min=1, soft_max=15, update=render_slot_update_funce)
 
     cam.dolly_zoom_target_scale = bpy.props.FloatProperty(name='Target Scale', description='', default=2, min=0, update=update_func)
-    cam.dolly_zoom_target_distance = bpy.props.FloatProperty(name='', description='', default=10, min=0, update=update_func)
+    cam.dolly_zoom_target_distance = bpy.props.FloatProperty(name='Target Distance', description='', default=10, min=0, update=update_func)
 
 
     from bpy.utils import register_class
