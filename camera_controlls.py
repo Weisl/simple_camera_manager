@@ -425,6 +425,7 @@ def render_slot_update_funce(self, context):
 def update_func(self, context):
     self.show_limits = not self.show_limits
     self.show_limits = not self.show_limits
+    # print('Update = ' + self.name)
 
 classes = (
     CAM_MANAGER_OT_camera_to_collection,
@@ -459,7 +460,7 @@ def register():
                                      min=1, soft_max=15, update=render_slot_update_funce)
 
     cam.dolly_zoom_target_scale = bpy.props.FloatProperty(name='Target Scale', description='', default=2, min=0, update=update_func)
-    cam.dolly_zoom_target_distance = bpy.props.FloatProperty(name='', description='', default=10, min=0, update=update_func)
+    cam.dolly_zoom_target_distance = bpy.props.FloatProperty(name='Target Distance', description='', default=10, min=0, update=update_func)
 
 
     from bpy.utils import register_class
