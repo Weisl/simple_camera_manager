@@ -156,7 +156,11 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         if dof.focus_object is None:
             row.prop(dof, "focus_distance", text="Focus Distance")
 
-
+        # Camera Settings
+        row = col.row(align=True)
+        row.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
+        row = col.row(align=True)
+        row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
 
 
 

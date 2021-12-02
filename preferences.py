@@ -6,6 +6,7 @@ from .keymap import get_hotkey_entry_item
 
 
 # addon Preferences
+@addon_updater_ops.make_annotations
 class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
     """Contains the blender addon preferences"""
     # this must match the addon name, use '__package__'
@@ -17,35 +18,34 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
     auto_check_update = bpy.props.BoolProperty(
         name="Auto-check for Update",
         description="If enabled, auto-check for updates using an interval",
-        default=False,
-    )
-    updater_intrval_months = bpy.props.IntProperty(
+        default=False)
+
+    updater_interval_months = bpy.props.IntProperty(
         name='Months',
         description="Number of months between checking for updates",
         default=0,
-        min=0
-    )
-    updater_intrval_days = bpy.props.IntProperty(
+        min=0)
+
+    updater_interval_days = bpy.props.IntProperty(
         name='Days',
         description="Number of days between checking for updates",
         default=7,
         min=0,
-        max=31
-    )
-    updater_intrval_hours = bpy.props.IntProperty(
+        max=31)
+
+    updater_interval_hours = bpy.props.IntProperty(
         name='Hours',
         description="Number of hours between checking for updates",
         default=0,
         min=0,
-        max=23
-    )
-    updater_intrval_minutes = bpy.props.IntProperty(
+        max=23)
+
+    updater_interval_minutes = bpy.props.IntProperty(
         name='Minutes',
         description="Number of minutes between checking for updates",
         default=0,
         min=0,
-        max=59
-    )
+        max=59)
 
     def draw(self, context):
         ''' simple preference UI to define custom inputs and user preferences'''
@@ -92,6 +92,7 @@ def register():
     from bpy.utils import register_class
 
     for cls in classes:
+        addon_updater_ops.make_annotations(cls)  # Avoid blender 2.8 warnings.
         register_class(cls)
 
 
@@ -100,3 +101,4 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
+
