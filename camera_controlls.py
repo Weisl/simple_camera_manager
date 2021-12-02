@@ -425,7 +425,6 @@ def render_slot_update_funce(self, context):
 def update_func(self, context):
     self.show_limits = not self.show_limits
     self.show_limits = not self.show_limits
-    # print('Update = ' + self.name)
 
 classes = (
     CAM_MANAGER_OT_camera_to_collection,

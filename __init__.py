@@ -61,5 +61,5 @@ def unregister():
     # addon updater unregister
     addon_updater_ops.unregister()
 
-    for file in files.reverse():
-        file.register()
+    for file in files:
+        file.unregister()

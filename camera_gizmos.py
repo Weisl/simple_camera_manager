@@ -60,7 +60,6 @@ class CameraFocusDistance(GizmoGroup):
 
         def set_dolly_zoom_target_distance(value):
             if self.cam:
-                print('ENTERED')
                 self.cam.data.dolly_zoom_target_distance = value
 
         # gizmo.target_set_prop("offset", camera.data, "dolly_zoom_target_distance")
@@ -116,7 +115,6 @@ class MyCustomShapeWidget(Gizmo):
 
     def _update_offset_matrix(self):
         # offset behind the light
-        print("VALUE" + str(self.target_get_value('offset')[0]))
         self.matrix_offset.col[3][2] = float(self.target_get_value('offset')[0]) * -1
 
     def draw(self, context):
