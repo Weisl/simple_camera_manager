@@ -2,6 +2,9 @@
 
 ![img](images/cam-Manager.png)
 
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=Q6PL92LJX7836)
+
+
 Cam-Manager is an add-on to improve efficiency and organization with multiple cameras. It empowers you to quickly present your work from product design to modeling/texturing work. It is a powerful tool to tweak the composition and framing of your artwork or when working with image planes. The addon includes different overview panels (3D view and Scene properties), a pie menu for quickly adjusting settings on the active camera, different tools to assign and adjust camera-specific resolution, world materials, render slots, and more. Further, it allows you to customize the shortcuts to your needs.
 >⚠️
 **This addon does not provide special tools for animation.** It is designed for static cameras, working with image planes, setting up the framing and composition as well as quickly presenting your work with static images.
