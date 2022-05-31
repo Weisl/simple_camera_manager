@@ -162,6 +162,9 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row = col.row(align=True)
         row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
 
+        prefs = context.preferences.addons[__package__].preferences
+        row.prop(prefs,"show_dolly_gizmo", text="Gizmo")
+
 
 
     def draw_right_column(self, context, col, cam_obj):

@@ -390,6 +390,8 @@ class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
                           text="", icon='IMAGE_BACKGROUND').camera_name = cam.name
 
 
+
+
 class CameraCollectionProperty(bpy.types.PropertyGroup):
     collection: bpy.props.PointerProperty(
         name="Collection",

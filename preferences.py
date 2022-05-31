@@ -47,6 +47,9 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         min=0,
         max=59)
 
+    # Gizmos
+    show_dolly_gizmo: bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=False)
+
     def draw(self, context):
         ''' simple preference UI to define custom inputs and user preferences'''
         layout = self.layout
@@ -77,6 +80,14 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             else:
                 col.label(text="No hotkey entry found")
                 col.operator("cam_manager.add_hotkey", text="Add hotkey entry", icon='ADD')
+
+        box = layout.box()
+        row = box.row()
+        row.label(text='Always show Gizmo')
+
+        row = box.row()
+        row.prop(self, "show_dolly_gizmo", expand=True)
+
 
         # updater draw function
         # could also pass in col as third arg
