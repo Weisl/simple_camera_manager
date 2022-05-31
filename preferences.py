@@ -48,7 +48,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         max=59)
 
     # Gizmos
-    show_dolly_gizmo: bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=True)
+    show_dolly_gizmo: bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=False)
 
     def draw(self, context):
         ''' simple preference UI to define custom inputs and user preferences'''
@@ -83,7 +83,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
         box = layout.box()
         row = box.row()
-        row.label(text='Gizmos')
+        row.label(text='Always show Gizmo')
 
         row = box.row()
         row.prop(self, "show_dolly_gizmo", expand=True)
