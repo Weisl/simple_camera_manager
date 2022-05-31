@@ -33,6 +33,9 @@ else:
     from . import addon_updater_ops
     from . import pie_menu
 
+
+import bpy
+
 files = [
     camera_controlls,
     dolly_zoom_modal,
@@ -45,9 +48,19 @@ files = [
     preferences
 ]
 
-
+# def update_show_gizmo(self, context):
+#     scene = bpy.types.Scene
+#     # Set Gizmo to be visibile during the modal operation. Dirty!
+#     prefs = context.preferences.addons[__package__].preferences
+#     prefs.show_dolly_gizmo = scene.toggle_dolly_gizmo
+#
 
 def register():
+    # register variables saved in the blender scene
+    # scene = bpy.types.Scene
+    # scene.toggle_dolly_gizmo = bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=False, update=update_show_gizmo)
+
+
     # addon updater code and configurations
     # in case of broken version, try to register the updater first
     # so that users can revert back to a working version
@@ -56,7 +69,11 @@ def register():
     for file in files:
         file.register()
 
+
 def unregister():
+    # scene = bpy.types.Scene
+    # del scene.show_dolly_gizmo
+
     for file in files.reverse():
         file.unregister()
 
