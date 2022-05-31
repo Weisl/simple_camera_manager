@@ -1,8 +1,8 @@
 bl_info = {
     "name": "Cam-Manager",
     "author": "Matthias Patscheider",
-    "version": (1, 1),
-    "blender": (3, 00, 0),
+    "version": (1, 1, 1),
+    "blender": (3, 1, 0),
     "location": "Shift + C > (Cam Overview Panel), Alt + C > (Cam Adjustment Panel), Properties Panel > Scene > Quick Overview ",
     "description": "Tools for managing multiple cameras",
     "wiki_url": "https://weisl.github.io/Cam-Manager_Overview/",
