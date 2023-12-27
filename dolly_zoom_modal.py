@@ -51,7 +51,7 @@ def distance_vec(point1: Vector, point2: Vector):
 
 def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, color):
     '''Draw UI title text in the 3D Viewport '''
-    blf.size(font_id, 20, 72)
+    blf.size(font_id, 20)
 
     blf.color(font_id, color[0], color[1], color[2], color[3])
     blf.position(font_id, left_margin, i * vertical_px_offset, 0)
@@ -63,7 +63,13 @@ def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, 
     text = '{name:}:'.format(name=name)
     text2 = '{value:.2f}'.format(value=value)
 
-    blf.size(font_id, 20, 72)
+    font_size = 20
+
+    if bpy.app.version < (4, 00):
+        # legacy support
+        blf.size(font_id, font_size)
+    else:
+        blf.size(font_id, font_size)
 
     # define color for input ignore
     if self.ignore_input:
