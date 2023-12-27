@@ -73,7 +73,6 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         min=0,
         max=59)
 
-
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
         split = box.split(align=True, factor=0.5)
@@ -113,7 +112,6 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
     def draw(self, context):
         ''' simple preference UI to define custom inputs and user preferences'''
         layout = self.layout
-
 
         # Settings regarding the keymap
         if self.prefs_tabs == 'KEYMAPS':

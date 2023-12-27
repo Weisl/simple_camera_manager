@@ -5,7 +5,7 @@ bl_info = {
     "blender": (4, 0, 0),
     "location": "Shift + C > (Cam Overview Panel), Alt + C > (Cam Adjustment Panel), Properties Panel > Scene > Quick Overview ",
     "description": "Tools for managing multiple cameras",
-    "doc_url": "https://weisl.github.io/Cam-Manager_Overview/",
+    "doc_url": "https://weisl.github.io/cam_Overview/",
     "tracker_url": "https://github.com/Weisl/Cam-Manager/issues",
     "category": "3D View",
 }
@@ -34,7 +34,6 @@ else:
     from . import pie_menu
 
 
-import bpy
 
 files = [
     camera_controlls,
@@ -42,28 +41,13 @@ files = [
     ui,
     pie_menu,
     camera_gizmos,
-
     # keymap and preferences should be last
     keymap,
     preferences
 ]
 
-# def update_show_gizmo(self, context):
-#     scene = bpy.types.Scene
-#     # Set Gizmo to be visibile during the modal operation. Dirty!
-#     prefs = context.preferences.addons[__package__].preferences
-#     prefs.show_dolly_gizmo = scene.toggle_dolly_gizmo
-#
 
 def register():
-    # register variables saved in the blender scene
-    # scene = bpy.types.Scene
-    # scene.toggle_dolly_gizmo = bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=False, update=update_show_gizmo)
-
-
-    # addon updater code and configurations
-    # in case of broken version, try to register the updater first
-    # so that users can revert back to a working version
     addon_updater_ops.register(bl_info)
 
     for file in files:
@@ -71,8 +55,6 @@ def register():
 
 
 def unregister():
-    # scene = bpy.types.Scene
-    # del scene.show_dolly_gizmo
 
     for file in files.reverse():
         file.unregister()

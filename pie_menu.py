@@ -58,8 +58,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         # North East
         pie.separator()
 
-
-        #South West
+        # South West
         if cam_obj:
             if cam_obj.get('lock'):
                 op = pie.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
@@ -72,7 +71,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         else:
             pie.separator()
 
-        #South East
+        # South East
         pie.operator('cameras.select_active_cam')
 
         # pie.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
@@ -95,7 +94,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.label(text='Cameras Collection')
         row = col.row(align=True)
 
-        #hide visibility settings for collection if it doesn't yet exist
+        # hide visibility settings for collection if it doesn't yet exist
         if scene.cam_collection.collection:
             row.prop(scene.cam_collection.collection, 'hide_viewport', text='')
             row.prop(context.view_layer.layer_collection.children[scene.cam_collection.collection.name],
@@ -125,7 +124,6 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         else:
             row = col.row(align=True)
             row.label(text="Camera has no Backround Images", icon='INFO')
-
 
     def draw_center_column(self, context, col, cam_obj):
         # col.scale_y = 1
@@ -163,9 +161,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
 
         prefs = context.preferences.addons[__package__].preferences
-        row.prop(prefs,"show_dolly_gizmo", text="Gizmo")
-
-
+        row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
 
     def draw_right_column(self, context, col, cam_obj):
         # col.scale_x = 2
@@ -212,6 +208,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         # row.prop(cam, "show_composition_harmony_tri_a")
         # row = col.row()
         # row.prop(cam, "show_composition_harmony_tri_b")
+
 
 classes = (
     CAM_MANAGER_MT_PIE_camera_settings,
