@@ -20,7 +20,6 @@ if "bpy" in locals():
     importlib.reload(keymap)
     importlib.reload(preferences)
     importlib.reload(ui)
-    importlib.reload(addon_updater_ops)
     importlib.reload(pie_menu)
 
 else:
@@ -30,7 +29,6 @@ else:
     from . import ui
     from . import keymap
     from . import preferences
-    from . import addon_updater_ops
     from . import pie_menu
 
 
@@ -48,7 +46,6 @@ files = [
 
 
 def register():
-    addon_updater_ops.register(bl_info)
 
     for file in files:
         file.register()
@@ -59,5 +56,4 @@ def unregister():
     for file in files.reverse():
         file.unregister()
 
-    # addon updater unregister
-    addon_updater_ops.unregister()
+

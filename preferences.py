@@ -132,7 +132,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
             # updater draw function
             # could also pass in col as third arg
-            addon_updater_ops.update_settings_ui(self, context)
+
 
 
 classes = (
@@ -260,7 +260,6 @@ def register():
     from bpy.utils import register_class
 
     for cls in classes:
-        addon_updater_ops.make_annotations(cls)  # Avoid blender 2.8 warnings.
         register_class(cls)
 
 

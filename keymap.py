@@ -1,20 +1,20 @@
 import bpy
 
 keymaps_items_dict = {
-    "Camera Overview": ['wm.call_panel', 'OBJECT_PT_camera_manager_popup', '3D View Generic', 'VIEW_3D', 'WINDOW',
-                        'C', 'PRESS', False, True, False],
-    "Camera Pie": ['wm.call_menu_pie', 'CAMERA_MT_pie_menu', '3D View Generic', 'VIEW_3D', 'WINDOW',
+    "Camera Overview": ['cam_menu', 'wm.call_panel', 'OBJECT_PT_camera_manager_popup', '3D View Generic', 'VIEW_3D',
+                        'WINDOW', 'C', 'PRESS', False, True, False],
+    "Camera Pie": ['cam_pie', 'wm.call_menu_pie', 'CAMERA_MT_pie_menu', '3D View Generic', 'VIEW_3D', 'WINDOW',
                    'C', 'PRESS', False, False, True],
-    "Camera Overview": ['cam_manager.cycle_cameras_next', 'RIGHT_ARROW', '3D View Generic', 'VIEW_3D', 'WINDOW',
-                        'C', 'PRESS', True, True, False],
-    "Camera Pie": ['cam_manager.cycle_cameras_backward', 'LEFT_ARROW', '3D View Generic', 'VIEW_3D', 'WINDOW',
-                   'C', 'PRESS', True, True, False],
+    "Camera Overview": ['next_cam', 'cam_manager.cycle_cameras_next', '', '3D View Generic', 'VIEW_3D', 'WINDOW',
+                        'RIGHT_ARROW', 'PRESS', True, True, False],
+    "Camera Pie": ['prev_cam', 'cam_manager.cycle_cameras_backward', '', '3D View Generic', 'VIEW_3D', 'WINDOW',
+                   'LEFT_ARROW', 'PRESS', True, True, False],
 }
 
 
 def add_keymap():
     km = bpy.context.window_manager.keyconfigs.addon.keymaps.new(name="Window")
-    prefs = bpy.context.preferences.addons[__package__.split('.')[0]].preferences
+    prefs = bpy.context.preferences.addons[__package__].preferences
 
     kmi = km.keymap_items.new(idname='wm.call_panel', type=prefs.renaming_panel_type, value='PRESS',
                               ctrl=prefs.renaming_panel_ctrl, shift=prefs.renaming_panel_shift,
@@ -71,7 +71,7 @@ class REMOVE_OT_hotkey(bpy.types.Operator):
     def execute(self, context):
         remove_key(context, self.idname, self.properties_name)
 
-        prefs = context.preferences.addons[__package__.split('.')[0]].preferences
+        prefs = bpy.context.preferences.addons[__package__].preferences
         setattr(prefs, f'{self.property_prefix}_type', "NONE")
         setattr(prefs, f'{self.property_prefix}_ctrl', False)
         setattr(prefs, f'{self.property_prefix}_shift', False)
@@ -92,7 +92,7 @@ class BUTTON_OT_change_key(bpy.types.Operator):
         self.my_event = ''
 
     def invoke(self, context, event):
-        prefs = context.preferences.addons[__package__.split('.')[0]].preferences
+        prefs = bpy.context.preferences.addons[__package__].preferences
         self.prefs = prefs
         setattr(prefs, f'{self.property_prefix}_type', "NONE")
 
@@ -127,10 +127,6 @@ def register():
     from bpy.utils import register_class
     for cls in classes:
         register_class(cls)
-
-    update_panel_category(None, bpy.context)
-    # update_vallidate_panel_category(None, bpy.context)
-
     add_keymap()
 
 
