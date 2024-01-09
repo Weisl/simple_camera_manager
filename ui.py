@@ -363,7 +363,6 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         # layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
 
 
-
 class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
     bl_idname = "CAMERA_PT_manager_menu"
     bl_label = "Cam Manager Menu"
@@ -388,8 +387,6 @@ class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
         row.prop(cam, "resolution", text="")
         op = row.operator("cam_manager.camera_resolutio_from_image",
                           text="", icon='IMAGE_BACKGROUND').camera_name = cam.name
-
-
 
 
 class CameraCollectionProperty(bpy.types.PropertyGroup):
@@ -423,7 +420,8 @@ def register():
                                                      type=CameraCollectionProperty)
 
     scene.output_render = bpy.props.BoolProperty(name="Save Render", description="Save renders to disk", default=True)
-    scene.output_use_cam_name = bpy.props.BoolProperty(name="Camera as File Name", description="Use camera name as file name", default=True)
+    scene.output_use_cam_name = bpy.props.BoolProperty(name="Camera as File Name",
+                                                       description="Use camera name as file name", default=True)
 
 
 def unregister():

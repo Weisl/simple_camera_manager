@@ -4,9 +4,11 @@ import math
 
 from mathutils import Vector, Matrix
 
+
 def calculate_target_width(distance, fov):
     width = distance * math.tan(0.5 * fov)
     return width
+
 
 def generate_target_location(camera, distance):
     # Create the transformation matrix to move 1 unit along x
@@ -19,6 +21,7 @@ def generate_target_location(camera, distance):
     target_location = camera.location.copy() + vec_rot
 
     return target_location
+
 
 def set_cam_values(cam_dic, camera, distance):
     '''Store current camera settings in a dictionary '''
@@ -42,12 +45,13 @@ def set_cam_values(cam_dic, camera, distance):
 
     cam_dic['target_width'] = camera.data.dolly_zoom_target_scale
 
-
     return cam_dic
+
 
 def distance_vec(point1: Vector, point2: Vector):
     """Calculates distance between two points."""
     return (point2 - point1).length
+
 
 def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, color):
     '''Draw UI title text in the 3D Viewport '''
@@ -58,7 +62,8 @@ def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, col
     blf.draw(font_id, name)
 
 
-def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, value, initial_value = None, highlighting = False):
+def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, value, initial_value=None,
+                       highlighting=False):
     '''Draw UI operator parameters as text in the 3D Viewport '''
     text = '{name:}:'.format(name=name)
     text2 = '{value:.2f}'.format(value=value)
@@ -84,7 +89,6 @@ def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, 
         c1 = [1.0, 1.0, 1.0, 1.0]
         c2 = [1.0, 1.0, 0.5, 1.0]
 
-
     blf.color(font_id, c1[0], c1[1], c1[2], c1[3])
     blf.position(font_id, left_margin, i * vertical_px_offset, 0)
     blf.draw(font_id, text)
@@ -93,7 +97,7 @@ def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, 
     blf.position(font_id, left_margin + 190, i * vertical_px_offset, 0)
     blf.draw(font_id, text2)
 
-    #optional original value
+    # optional original value
     if initial_value:
         text3 = '{initial_value:.2f}'.format(initial_value=initial_value)
         blf.color(font_id, c1[0], c1[1], c1[2], c1[3])
@@ -104,32 +108,33 @@ def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, 
 
     return i
 
+
 def draw_callback_px(self, context):
     """Draw 3d viewport text for the dolly zoom modal operator"""
     scene = context.scene
 
     font_id = 0  # XXX, need to find out how best to get this.
     vertical_px_offset = 30
-    left_margin = bpy.context.area.width/2 - 200
+    left_margin = bpy.context.area.width / 2 - 200
     i = 1
 
     x = math.degrees(self.current_camera_fov)
     y = math.degrees(self.initial_cam_settings['camera_fov'])
     i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'FOV', x, initial_value=y)
 
-
     x = self.current_focal_length
     y = self.initial_cam_settings['camera_focal_length']
     i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Focal Length', x, initial_value=y)
 
-
     x = self.camera.data.dolly_zoom_target_distance
     y = self.initial_cam_settings['distance']
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Distance (D)', x, initial_value=y, highlighting=self.set_distance)
+    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Distance (D)', x, initial_value=y,
+                           highlighting=self.set_distance)
 
     x = self.camera.data.dolly_zoom_target_scale
     y = self.initial_cam_settings['target_width']
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Width (F)', x, initial_value=y, highlighting=self.set_width)
+    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Width (F)', x, initial_value=y,
+                           highlighting=self.set_width)
 
     if self.ignore_input == True:
         color = (0.0, 1.0, 1.0, 1.0)
@@ -151,7 +156,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         bpy.context.object.data.show_limits = not self.show_limits
         bpy.context.object.data.show_limits = self.show_limits
 
-    def update_camera(self, cam_offset = 0, use_cam_offset = False):
+    def update_camera(self, cam_offset=0, use_cam_offset=False):
 
         camera = self.camera
 
@@ -160,7 +165,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
                 cam_move = cam_offset
                 distance = cam_move + self.ref_cam_settings['distance']
 
-            else: # Camera goes past the target
+            else:  # Camera goes past the target
                 cam_move = abs(cam_offset) - self.ref_cam_settings['distance'] - self.ref_cam_settings['distance']
                 distance = cam_move + self.ref_cam_settings['distance']
 
@@ -204,16 +209,15 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             camera.select_set(True)
             context.view_layer.objects.active = camera
 
-            #initial state Gizmo
+            # initial state Gizmo
             prefs = context.preferences.addons[__package__].preferences
             self.initial_gizmo_state = prefs.show_dolly_gizmo
-
 
             # Camera Object Settings
             self.camera = camera
             self.show_limits = bpy.context.object.data.show_limits
 
-            #setting used when changing the distance with the modal operator
+            # setting used when changing the distance with the modal operator
             self.tmp_distance = False
 
             # Camera lens settings
@@ -227,7 +231,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             # check if alt is pressed
             self.ignore_input = False
 
-            #Operator modes
+            # Operator modes
             self.set_width = False
             self.set_distance = False
 
@@ -235,7 +239,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             width = calculate_target_width(camera.data.dolly_zoom_target_distance, camera.data.angle)
             camera.data.dolly_zoom_target_scale = width
 
-            #Camera Reference Values
+            # Camera Reference Values
             cam_settings = {}
             cam_settings = set_cam_values(cam_settings, camera, self.camera.data.dolly_zoom_target_distance)
 
@@ -260,7 +264,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.report({'WARNING'}, "No scene camera assigned")
             return {'CANCELLED'}
 
-
     def modal(self, context, event):
         '''Calculate the FOV from the changed location to the target object '''
 
@@ -273,7 +276,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
         # Cancel Operator
         if event.type in {'RIGHTMOUSE', 'ESC'}:
-            #reset camera position and fov. resetting the fov will also reset the focal length
+            # reset camera position and fov. resetting the fov will also reset the focal length
             self.camera.location = self.initial_cam_settings['cam_location']
             self.camera.data.angle = self.initial_cam_settings['camera_fov']
             self.camera.data.dolly_zoom_target_distance = self.initial_cam_settings['distance']
@@ -308,7 +311,8 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.set_width = not self.set_width
             self.set_distance = False
 
-            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera, self.camera.data.dolly_zoom_target_distance)
+            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
+                                                   self.camera.data.dolly_zoom_target_distance)
 
         elif event.type == 'D' and event.value == 'RELEASE':
             self.set_distance = not self.set_distance
@@ -319,18 +323,20 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             else:
                 self.tmp_distance = False
 
-            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera, self.camera.data.dolly_zoom_target_distance)
+            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
+                                                   self.camera.data.dolly_zoom_target_distance)
 
         # Set ref values when switching mode to avoid jumping of field of view.
-        elif event.type in ['LEFT_SHIFT','LEFT_CTRL'] and event.value in ['PRESS', 'RELEASE']:
+        elif event.type in ['LEFT_SHIFT', 'LEFT_CTRL'] and event.value in ['PRESS', 'RELEASE']:
             # update reference camera settings to current camera settings
-            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera, self.camera.data.dolly_zoom_target_distance)
+            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
+                                                   self.camera.data.dolly_zoom_target_distance)
             self.tmp_distance = self.ref_cam_settings['distance']
 
             # update ref mouse position to current
             self.mouse_initial_x = event.mouse_x
 
-            #Alt is not pressed anymore after release
+            # Alt is not pressed anymore after release
             self.ignore_input = False
 
             return {'RUNNING_MODAL'}
@@ -338,13 +344,14 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         # Ignore Mouse Movement. The Operator will behave as starting it newly
         elif event.type == 'LEFT_ALT' and event.value == 'RELEASE':
             # update reference camera settings to current camera settings
-            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera, self.camera.data.dolly_zoom_target_distance)
+            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
+                                                   self.camera.data.dolly_zoom_target_distance)
             self.tmp_distance = self.ref_cam_settings['distance']
 
             # update ref mouse position to current
             self.mouse_initial_x = event.mouse_x
 
-            #Alt is not pressed anymore after release
+            # Alt is not pressed anymore after release
             self.ignore_input = False
             return {'RUNNING_MODAL'}
 
@@ -390,7 +397,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
                 offset = delta * factor
                 distance = abs(self.tmp_distance + offset)
 
-
                 self.camera.data.dolly_zoom_target_distance = distance
                 self.ref_cam_settings['distance'] = distance
 
@@ -411,9 +417,10 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
                 cam_offset = delta * factor
 
-                self.update_camera(cam_offset=cam_offset, use_cam_offset = True)
+                self.update_camera(cam_offset=cam_offset, use_cam_offset=True)
 
         return {'RUNNING_MODAL'}
+
 
 classes = (
     CAM_MANAGER_OT_dolly_zoom,
@@ -432,5 +439,3 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
-
-
