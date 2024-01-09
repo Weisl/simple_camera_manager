@@ -82,7 +82,7 @@ class CameraFocusDistance(GizmoGroup):
     bl_label = "Camera Focus Distance Widget"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
-    bl_options = {'3D', 'PERSISTENT', 'SHOW_MODAL_ALL'}
+    bl_options = {'3D', 'PERSISTENT', 'SHOW_MODAL_ALL', 'DEPTH_3D'}
 
     # DEPTH_3D allows for objects in the scene to overlap gizmos. It causes for gizmos not to work properly since Blender 3.1
     # bl_options = {'3D', 'PERSISTENT', 'SHOW_MODAL_ALL', 'DEPTH_3D'}
