@@ -2,17 +2,17 @@ import bpy
 
 keymaps_items_dict = {
     "Camera Overview": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
-        'OBJECT_PT_camera_manager_popup', "keytype": 'C', "value": 'PRESS',
+        'OBJECT_PT_camera_manager_popup', "type": 'C', "value": 'PRESS',
                         "ctrl": False, "shift": True, "alt": False, "active": True},
     "Camera Pie": {"name": 'cam_pie', "idname": 'wm.call_menu_pie',
                    "operator": 'CAMERA_MT_pie_menu',
-                   "keytype": 'C', "value": 'PRESS', "ctrl": False, "shift": False, "alt": True, "active": True},
-    "Camera Overview": {"name": 'next_cam', "idname": 'cam_manager.cycle_cameras_next',
-                        "operator": '', "keytype": 'RIGHT_ARROW',
-                        "value": 'PRESS', "ctrl": True, "shift": True, "alt": False, "active": True},
-    "Camera Pie": {"name": 'prev_cam', "idname": 'cam_manager.cycle_cameras_backward',
-                   "operator": '', "keytype": 'LEFT_ARROW', "value": 'PRESS', "ctrl": True, "shift": True,
-                   "alt": False, "active": True}}
+                   "type": 'C', "value": 'PRESS', "ctrl": False, "shift": False, "alt": True, "active": True},
+    "Next Camera": {"name": 'next_cam', "idname": 'cam_manager.cycle_cameras_next',
+                    "operator": '', "type": 'RIGHT_ARROW',
+                    "value": 'PRESS', "ctrl": True, "shift": True, "alt": False, "active": True},
+    "Previous Camera": {"name": 'prev_cam', "idname": 'cam_manager.cycle_cameras_backward',
+                        "operator": '', "type": 'LEFT_ARROW', "value": 'PRESS', "ctrl": True, "shift": True,
+                        "alt": False, "active": True}}
 
 
 def add_keymap():
@@ -20,12 +20,11 @@ def add_keymap():
     prefs = bpy.context.preferences.addons[__package__].preferences
 
     for key, value in keymaps_items_dict.items():
-        kmi = km.keymap_items.new(idname=value["idname"], type=value["keytype"], value=value["value"],
+        kmi = km.keymap_items.new(idname=value["idname"], type=value["type"], value=value["value"],
                                   ctrl=value["ctrl"], shift=value["shift"],
                                   alt=value["alt"])
         if value["operator"] != '':
-            print(key)
-            add_key_to_keymap(value["operator"], kmi, km, active=value["active"])
+            add_key_to_keymap(value["operator"], kmi, active=value["active"])
 
 
 def add_key_to_keymap(idname, kmi, active=True):

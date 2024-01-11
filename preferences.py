@@ -1,8 +1,8 @@
 import bpy
 import rna_keymap_ui
 
-from . import addon_updater_ops
-from .keymap import remove_keymap
+from .keymap import remove_key
+from .keymap import keymaps_items_dict
 
 
 def add_key(km, idname, properties_name, button_assignment_type, button_assignment_ctrl, button_assignment_shift,
@@ -28,6 +28,34 @@ def update_key(context, operation, operator_name, property_prefix):
             getattr(prefs, f'{property_prefix}_alt'), getattr(prefs, f'{property_prefix}_active'))
 
 
+def update_next_cam_key(self, context):
+    keyEntry = keymaps_items_dict["Next Camera"]
+    operator = keyEntry["idname"]
+    operator_name = keyEntry["operator"]
+    update_key(context, operator, operator_name)
+
+
+def update_prev_cam_key(self, context):
+    keyEntry = keymaps_items_dict["Previous Camera"]
+    operator = keyEntry["idname"]
+    operator_name = keyEntry["operator"]
+    update_key(context, operator, operator_name)
+
+
+def update_cam_pie_key(self, context):
+    keyEntry = keymaps_items_dict["Camera Pie"]
+    operator = keyEntry["idname"]
+    operator_name = keyEntry["operator"]
+    update_key(context, operator, operator_name)
+
+
+def update_cam_menu_key(self, context):
+    keyEntry = keymaps_items_dict["Camera Overview"]
+    operator = keyEntry["idname"]
+    operator_name = keyEntry["operator"]
+    update_key(context, operator, operator_name)
+
+
 # addon Preferences
 class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
     """Contains the blender addon preferences"""
@@ -41,37 +69,121 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
                                               ('KEYMAPS', "Keymaps", "Keymaps")),
                                        default='GENERAL')
 
-    auto_check_update = bpy.props.BoolProperty(
-        name="Auto-check for Update",
-        description="If enabled, auto-check for updates using an interval",
-        default=False)
+    next_cam_type: bpy.props.StringProperty(
+        name="Renaming Popup",
+        default=keymaps_items_dict["Next Camera"]['type'],
+        update=update_next_cam_key
+    )
 
-    updater_interval_months = bpy.props.IntProperty(
-        name='Months',
-        description="Number of months between checking for updates",
-        default=0,
-        min=0)
+    next_cam_ctrl: bpy.props.BoolProperty(
+        name="Ctrl",
+        default=keymaps_items_dict["Next Camera"]['ctrl'],
+        update=update_next_cam_key
+    )
 
-    updater_interval_days = bpy.props.IntProperty(
-        name='Days',
-        description="Number of days between checking for updates",
-        default=7,
-        min=0,
-        max=31)
+    next_cam_shift: bpy.props.BoolProperty(
+        name="Shift",
+        default=keymaps_items_dict["Next Camera"]['shift'],
+        update=update_next_cam_key
+    )
+    next_cam_alt: bpy.props.BoolProperty(
+        name="Alt",
+        default=keymaps_items_dict["Next Camera"]['alt'],
+        update=update_next_cam_key
+    )
 
-    updater_interval_hours = bpy.props.IntProperty(
-        name='Hours',
-        description="Number of hours between checking for updates",
-        default=0,
-        min=0,
-        max=23)
+    next_cam_active: bpy.props.BoolProperty(
+        name="Active",
+        default=keymaps_items_dict["Next Camera"]['active'],
+        update=update_next_cam_key
+    )
 
-    updater_interval_minutes = bpy.props.IntProperty(
-        name='Minutes',
-        description="Number of minutes between checking for updates",
-        default=0,
-        min=0,
-        max=59)
+    prev_cam_type: bpy.props.StringProperty(
+        name="Renaming Popup",
+        default=keymaps_items_dict["Previous Camera"]["type"],
+        update=update_prev_cam_key
+    )
+
+    prev_cam_ctrl: bpy.props.BoolProperty(
+        name="Ctrl",
+        default=keymaps_items_dict["Previous Camera"]["ctrl"],
+        update=update_prev_cam_key
+    )
+
+    prev_cam_shift: bpy.props.BoolProperty(
+        name="Shift",
+        default=keymaps_items_dict["Previous Camera"]["shift"],
+        update=update_prev_cam_key
+    )
+    prev_cam_alt: bpy.props.BoolProperty(
+        name="Alt",
+        default=keymaps_items_dict["Previous Camera"]["alt"],
+        update=update_prev_cam_key
+    )
+
+    prev_cam_active: bpy.props.BoolProperty(
+        name="Active",
+        default=keymaps_items_dict["Previous Camera"]["active"],
+        update=update_prev_cam_key
+    )
+
+    cam_pie_type: bpy.props.StringProperty(
+        name="Renaming Popup",
+        default=keymaps_items_dict["Camera Pie"]["type"],
+        update=update_cam_pie_key
+    )
+
+    cam_pie_ctrl: bpy.props.BoolProperty(
+        name="Ctrl",
+        default=keymaps_items_dict["Camera Pie"]["ctrl"],
+        update=update_cam_pie_key
+    )
+
+    cam_pie_shift: bpy.props.BoolProperty(
+        name="Shift",
+        default=keymaps_items_dict["Camera Pie"]["shift"],
+        update=update_cam_pie_key
+    )
+    cam_pie_alt: bpy.props.BoolProperty(
+        name="Alt",
+        default=keymaps_items_dict["Camera Pie"]["alt"],
+        update=update_cam_pie_key
+    )
+
+    cam_pie_active: bpy.props.BoolProperty(
+        name="Active",
+        default=keymaps_items_dict["Camera Pie"]["active"],
+        update=update_cam_pie_key
+    )
+
+    cam_menu_type: bpy.props.StringProperty(
+        name="Renaming Popup",
+        default=keymaps_items_dict["Camera Overview"]["type"],
+        update=update_cam_menu_key
+    )
+
+    cam_menu_ctrl: bpy.props.BoolProperty(
+        name="Ctrl",
+        default=keymaps_items_dict["Camera Overview"]["ctrl"],
+        update=update_cam_menu_key
+    )
+
+    cam_menu_shift: bpy.props.BoolProperty(
+        name="Shift",
+        default=keymaps_items_dict["Camera Overview"]["shift"],
+        update=update_cam_menu_key
+    )
+    cam_menu_alt: bpy.props.BoolProperty(
+        name="Alt",
+        default=keymaps_items_dict["Camera Overview"]["alt"],
+        update=update_cam_menu_key
+    )
+
+    cam_menu_active: bpy.props.BoolProperty(
+        name="Active",
+        default=keymaps_items_dict["Camera Overview"]["active"],
+        update=update_cam_menu_key
+    )
 
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
@@ -113,14 +225,16 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         ''' simple preference UI to define custom inputs and user preferences'''
         layout = self.layout
 
+        row = layout.row(align=True)
+        row.prop(self, "prefs_tabs", expand=True)
+
         # Settings regarding the keymap
         if self.prefs_tabs == 'KEYMAPS':
             box = layout.box()
 
-            self.keymap_ui(box, 'Renaming Panel', 'renaming_panel',
-                           'wm.call_panel', "VIEW3D_PT_tools_renaming_panel")
-            self.keymap_ui(box, 'Renaming Sub/Prefix', 'renaming_suf_pre',
-                           'wm.call_panel', "VIEW3D_PT_tools_type_suffix")
+            for title, value in keymaps_items_dict.items():
+                self.keymap_ui(box, title, value['name'], value["idname"], value["operator"])
+
 
         else:
             box = layout.box()
@@ -134,129 +248,12 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             # could also pass in col as third arg
 
 
-
 classes = (
     CAM_MANAGER_OT_renaming_preferences,
 )
 
 
 def register():
-    next_cam_type: bpy.props.StringProperty(
-        name="Renaming Popup",
-        default="F2",
-        update=update_next_cam_key
-    )
-
-    next_cam_ctrl: bpy.props.BoolProperty(
-        name="Ctrl",
-        default=True,
-        update=update_next_cam_key
-    )
-
-    next_cam_shift: bpy.props.BoolProperty(
-        name="Shift",
-        default=False,
-        update=update_next_cam_key
-    )
-    next_cam_alt: bpy.props.BoolProperty(
-        name="Alt",
-        default=True,
-        update=update_next_cam_key
-    )
-
-    next_cam_active: bpy.props.BoolProperty(
-        name="Active",
-        default=True,
-        update=update_next_cam_key
-    )
-
-    prev_cam_type: bpy.props.StringProperty(
-        name="Renaming Popup",
-        default="F2",
-        update=update_prev_cam_key
-    )
-
-    prev_cam_ctrl: bpy.props.BoolProperty(
-        name="Ctrl",
-        default=True,
-        update=update_prev_cam_key
-    )
-
-    prev_cam_shift: bpy.props.BoolProperty(
-        name="Shift",
-        default=False,
-        update=update_prev_cam_key
-    )
-    prev_cam_alt: bpy.props.BoolProperty(
-        name="Alt",
-        default=True,
-        update=update_prev_cam_key
-    )
-
-    prev_cam_active: bpy.props.BoolProperty(
-        name="Active",
-        default=True,
-        update=update_prev_cam_key
-    )
-
-    cam_pie_type: bpy.props.StringProperty(
-        name="Renaming Popup",
-        default="F2",
-        update=update_cam_pie_key
-    )
-
-    cam_pie_ctrl: bpy.props.BoolProperty(
-        name="Ctrl",
-        default=True,
-        update=update_cam_pie_key
-    )
-
-    cam_pie_shift: bpy.props.BoolProperty(
-        name="Shift",
-        default=False,
-        update=update_cam_pie_key
-    )
-    cam_pie_alt: bpy.props.BoolProperty(
-        name="Alt",
-        default=True,
-        update=update_cam_pie_key
-    )
-
-    cam_pie_active: bpy.props.BoolProperty(
-        name="Active",
-        default=True,
-        update=update_cam_pie_key
-    )
-
-    cam_menu_type: bpy.props.StringProperty(
-        name="Renaming Popup",
-        default="F2",
-        update=update_cam_menu_key
-    )
-
-    cam_menu_ctrl: bpy.props.BoolProperty(
-        name="Ctrl",
-        default=True,
-        update=update_cam_menu_key
-    )
-
-    cam_menu_shift: bpy.props.BoolProperty(
-        name="Shift",
-        default=False,
-        update=update_cam_menu_key
-    )
-    cam_menu_alt: bpy.props.BoolProperty(
-        name="Alt",
-        default=True,
-        update=update_cam_menu_key
-    )
-
-    cam_menu_active: bpy.props.BoolProperty(
-        name="Active",
-        default=True,
-        update=update_cam_menu_key
-    )
-
     from bpy.utils import register_class
 
     for cls in classes:
