@@ -2,16 +2,9 @@ import bpy
 
 from .keymap import remove_key
 from .keymap import keymaps_items_dict
-from .keymap import add_keymap
+from .keymap import add_keymap, add_key
 
 
-def add_key(km, idname, properties_name, button_assignment_type, button_assignment_ctrl, button_assignment_shift,
-            button_assignment_alt, button_assignment_active):
-    print('Add key')
-    kmi = km.keymap_items.new(idname=idname, type=button_assignment_type, value='PRESS',
-                              ctrl=button_assignment_ctrl, shift=button_assignment_shift, alt=button_assignment_alt)
-    kmi.properties.name = properties_name
-    kmi.active = button_assignment_active
 
 
 def update_key(self, context, idname, operator_name, property_prefix):
@@ -21,14 +14,11 @@ def update_key(self, context, idname, operator_name, property_prefix):
 
     prefs = context.preferences.addons[__package__.split('.')[0]].preferences
 
-    # Set preference to new type
-    setattr(prefs, f'{property_prefix}_type', type)
-
     # Remove previous key assignment
     remove_key(context, idname, operator_name)
-    add_key(km, idname, operator_name, getattr(prefs, f'{property_prefix}_type'),
+    add_key(context, idname, getattr(prefs, f'{property_prefix}_type'),
             getattr(prefs, f'{property_prefix}_ctrl'), getattr(prefs, f'{property_prefix}_shift'),
-            getattr(prefs, f'{property_prefix}_alt'), getattr(prefs, f'{property_prefix}_active'))
+            getattr(prefs, f'{property_prefix}_alt'), operator_name, getattr(prefs, f'{property_prefix}_active'))
 
 
 

@@ -15,29 +15,15 @@ keymaps_items_dict = {
                         "alt": False, "active": True}}
 
 
-def add_keymap():
-    km = bpy.context.window_manager.keyconfigs.addon.keymaps.new(name="Window")
-    prefs = bpy.context.preferences.addons[__package__].preferences
+def add_key(context, idname, type, ctrl, shift, alt, operator, active):
+    km = context.window_manager.keyconfigs.addon.keymaps.new(name="Window")
 
-    for key, value in keymaps_items_dict.items():
-        type = getattr(prefs, f'{value["name"]}_type')
-        ctrl = getattr(prefs, f'{value["name"]}_ctrl')
-        shift = getattr(prefs, f'{value["name"]}_shift')
-        alt = getattr(prefs, f'{value["name"]}_alt')
+    kmi = km.keymap_items.new(idname=idname, type=type, value='PRESS',
+                              ctrl=ctrl, shift=shift,
+                              alt=alt)
 
-        kmi = km.keymap_items.new(idname=value["idname"], type=type, value='PRESS',
-                                  ctrl=ctrl, shift=shift,
-                                  alt=alt)
-
-        if value["operator"] != '':
-            add_key_to_keymap(value["operator"], kmi, active=value["active"])
-
-
-def add_key_to_keymap(idname, kmi, active=True):
-    ''' Add ta key to the appropriate keymap '''
-    kmi.properties.name = idname
-    kmi.active = active
-
+    if operator != '':
+        add_key_to_keymap(operator, kmi, active=active)
 
 def remove_key(context, idname, properties_name):
     '''Removes addon hotkeys from the keymap'''
@@ -47,6 +33,30 @@ def remove_key(context, idname, properties_name):
     for kmi in km.keymap_items:
         if kmi.idname == idname and kmi.properties.name == properties_name:
             km.keymap_items.remove(kmi)
+
+
+
+def add_keymap():
+    context = bpy.context
+    prefs = context.preferences.addons[__package__].preferences
+
+    for key, valueDic in keymaps_items_dict.items():
+        idname = valueDic["idname"]
+        type = getattr(prefs, f'{valueDic["name"]}_type')
+        ctrl = getattr(prefs, f'{valueDic["name"]}_ctrl')
+        shift = getattr(prefs, f'{valueDic["name"]}_shift')
+        alt = getattr(prefs, f'{valueDic["name"]}_alt')
+        operator = valueDic["operator"]
+        active = valueDic["active"]
+        add_key(context, idname, type, ctrl, shift, alt, operator, active)
+
+
+def add_key_to_keymap(idname, kmi, active=True):
+    ''' Add ta key to the appropriate keymap '''
+    kmi.properties.name = idname
+    kmi.active = active
+
+
 
 
 def remove_keymap():
