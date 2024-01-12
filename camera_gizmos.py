@@ -41,11 +41,9 @@ class MyCustomShapeWidget(Gizmo):
         self._update_offset_matrix()
         self.draw_custom_shape(self.custom_shape)
 
-
     def draw_select(self, context, select_id):
         self._update_offset_matrix()
         self.draw_custom_shape(self.custom_shape, select_id=select_id)
-
 
     def setup(self):
         if not hasattr(self, "custom_shape"):
@@ -53,7 +51,6 @@ class MyCustomShapeWidget(Gizmo):
             # verts (sequence of of 2D or 3D coordinates.) – Coordinates.
             # display_name (Callable that takes a string and returns a string.) – Optional callback that takes the full path, returns the name to display.
             self.custom_shape = self.new_custom_shape('LINES', custom_shape_verts_02)
-
 
     def invoke(self, context, event):
         self.init_mouse_x = event.mouse_x
@@ -80,17 +77,15 @@ class MyCustomShapeWidget(Gizmo):
         return {'RUNNING_MODAL'}
 
 
-
 class CameraFocusDistance(GizmoGroup):
     bl_idname = "OBJECT_GGT_focus_distance_camera"
     bl_label = "Camera Focus Distance Widget"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
-    bl_options = {'3D', 'PERSISTENT', 'SHOW_MODAL_ALL'}
+    bl_options = {'3D', 'PERSISTENT', 'SHOW_MODAL_ALL', 'DEPTH_3D'}
 
     # DEPTH_3D allows for objects in the scene to overlap gizmos. It causes for gizmos not to work properly since Blender 3.1
     # bl_options = {'3D', 'PERSISTENT', 'SHOW_MODAL_ALL', 'DEPTH_3D'}
-
 
     cam = None
 
@@ -101,7 +96,6 @@ class CameraFocusDistance(GizmoGroup):
         if (ob and ob.type == 'CAMERA'):
             prefs = context.preferences.addons[__package__].preferences
             return prefs.show_dolly_gizmo
-
 
     def setup(self, context):
         camera = context.object
@@ -115,13 +109,13 @@ class CameraFocusDistance(GizmoGroup):
         gizmo.use_draw_scale = False
         gizmo.use_draw_offset_scale = True
 
-        #Needed to work with modal operator
+        # Needed to work with modal operator
         gizmo.use_draw_modal = True
 
         gizmo.color = (1.0, 1.0, 1.0)
         gizmo.color_highlight = (1.0, 1.0, 0.0)
 
-        #Draw only when hovering
+        # Draw only when hovering
         # gizmo.use_draw_hover = True
 
         def get_dolly_zoom_target_distance():
@@ -144,12 +138,10 @@ class CameraFocusDistance(GizmoGroup):
 
         self.distance_gizmo = gizmo
 
-
     def refresh(self, context):
         camera = context.object
 
         self.cam = camera
-
 
         w_matrix = self.cam.matrix_world.copy()
         orig_loc, orig_rot, orig_scale = w_matrix.normalized().decompose()
@@ -171,7 +163,6 @@ class CameraFocusDistance(GizmoGroup):
         self.distance_gizmo.matrix_basis = mat_out
 
 
-
 classes = (
     CameraFocusDistance,
     MyCustomShapeWidget,
@@ -190,4 +181,3 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
-

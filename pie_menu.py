@@ -7,7 +7,7 @@ from bpy.types import Menu
 
 class CAM_MANAGER_MT_PIE_camera_settings(Menu):
     # label is displayed at the center of the pie menu.
-    bl_label = "Cam Manager Pie Menu"
+    bl_label = "Active Camera Pie "
     bl_idname = "CAMERA_MT_pie_menu"
 
     def draw(self, context):
@@ -58,21 +58,20 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         # North East
         pie.separator()
 
-
-        #South West
+        # South West
         if cam_obj:
             if cam_obj.get('lock'):
-                op = pie.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
+                op = pie.operator("cam_manager.lock_unlock_camera", icon='UNLOCKED', text='')
                 op.camera_name = cam_obj.name
                 op.cam_lock = False
             else:
-                op = pie.operator("cam_manager.lock_unlock_camera", icon='UNLOCKED', text='')
+                op = pie.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
                 op.camera_name = cam_obj.name
                 op.cam_lock = True
         else:
             pie.separator()
 
-        #South East
+        # South East
         pie.operator('cameras.select_active_cam')
 
         # pie.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
@@ -95,7 +94,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.label(text='Cameras Collection')
         row = col.row(align=True)
 
-        #hide visibility settings for collection if it doesn't yet exist
+        # hide visibility settings for collection if it doesn't yet exist
         if scene.cam_collection.collection:
             row.prop(scene.cam_collection.collection, 'hide_viewport', text='')
             row.prop(context.view_layer.layer_collection.children[scene.cam_collection.collection.name],
@@ -126,7 +125,6 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
             row = col.row(align=True)
             row.label(text="Camera has no Backround Images", icon='INFO')
 
-
     def draw_center_column(self, context, col, cam_obj):
         # col.scale_y = 1
         cam = cam_obj.data
@@ -141,16 +139,9 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.prop(cam, "clip_start")
         row = col.row(align=True)
         row.prop(cam, "clip_end")
-
-        # row = col.row(align=True)
-        # row.prop_search(cam, "world", bpy.data, "worlds", text='')
         row = col.row(align=True)
         dof = cam.dof
         row.prop(dof, 'use_dof')
-
-        # Picker does not work from pie menu
-        # row = col.row(align=True)
-        # row.prop(dof, "focus_object", text="Focus on Object")
 
         row = col.row(align=True)
         if dof.focus_object is None:
@@ -163,9 +154,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
 
         prefs = context.preferences.addons[__package__].preferences
-        row.prop(prefs,"show_dolly_gizmo", text="Gizmo")
-
-
+        row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
 
     def draw_right_column(self, context, col, cam_obj):
         # col.scale_x = 2
@@ -177,12 +166,14 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
 
         view = context.space_data
         overlay = view.overlay
+        shading = view.shading
 
         col.use_property_decorate = False
         row = col.row(align=True)
         row.prop(overlay, "show_overlays", icon='OVERLAY', text="")
         row.label(text='Viewport Display')
         row = col.row(align=True)
+
         row.separator()
 
         row = col.row(align=True)
@@ -204,14 +195,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.prop(cam, "show_composition_center_diagonal")
         row = col.row()
         row.prop(cam, "show_composition_golden")
-        # row = col.row()
-        # row.prop(cam, "show_composition_golden_tria_a")
-        # row = col.row()
-        # row.prop(cam, "show_composition_golden_tria_b")
-        # row = col.row()
-        # row.prop(cam, "show_composition_harmony_tri_a")
-        # row = col.row()
-        # row.prop(cam, "show_composition_harmony_tri_b")
+
 
 classes = (
     CAM_MANAGER_MT_PIE_camera_settings,
