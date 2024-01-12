@@ -61,11 +61,11 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         # South West
         if cam_obj:
             if cam_obj.get('lock'):
-                op = pie.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
+                op = pie.operator("cam_manager.lock_unlock_camera", icon='UNLOCKED', text='')
                 op.camera_name = cam_obj.name
                 op.cam_lock = False
             else:
-                op = pie.operator("cam_manager.lock_unlock_camera", icon='UNLOCKED', text='')
+                op = pie.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
                 op.camera_name = cam_obj.name
                 op.cam_lock = True
         else:
