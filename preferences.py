@@ -7,60 +7,61 @@ from .keymap import add_keymap
 
 def add_key(km, idname, properties_name, button_assignment_type, button_assignment_ctrl, button_assignment_shift,
             button_assignment_alt, button_assignment_active):
+    print('Add key')
     kmi = km.keymap_items.new(idname=idname, type=button_assignment_type, value='PRESS',
                               ctrl=button_assignment_ctrl, shift=button_assignment_shift, alt=button_assignment_alt)
     kmi.properties.name = properties_name
     kmi.active = button_assignment_active
 
 
-def update_key(self, context, operation, operator_name, property_prefix):
+def update_key(self, context, idname, operator_name, property_prefix):
     # This functions gets called when the hotkey assignment is updated in the preferences
     wm = context.window_manager
     km = wm.keyconfigs.addon.keymaps["Window"]
 
     prefs = context.preferences.addons[__package__.split('.')[0]].preferences
-    type = getattr(prefs, f'{property_prefix}_type').upper()
-
-    # Remove previous key assignment
-    remove_key(context, operation, operator_name)
-    print(f'{property_prefix}_type')
-    add_key(km, operation, operator_name, getattr(prefs, f'{property_prefix}_type'),
-            getattr(prefs, f'{property_prefix}_ctrl'), getattr(prefs, f'{property_prefix}_shift'),
-            getattr(prefs, f'{property_prefix}_alt'), getattr(prefs, f'{property_prefix}_active'))
 
     # Set preference to new type
     setattr(prefs, f'{property_prefix}_type', type)
 
+    # Remove previous key assignment
+    remove_key(context, idname, operator_name)
+    add_key(km, idname, operator_name, getattr(prefs, f'{property_prefix}_type'),
+            getattr(prefs, f'{property_prefix}_ctrl'), getattr(prefs, f'{property_prefix}_shift'),
+            getattr(prefs, f'{property_prefix}_alt'), getattr(prefs, f'{property_prefix}_active'))
+
+
+
 def update_next_cam_key(self, context):
     keyEntry = keymaps_items_dict["Next Camera"]
-    operator = keyEntry["idname"]
+    idname = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(self, context, operator, operator_name, name)
+    update_key(self, context, idname, operator_name, name)
 
 
 def update_prev_cam_key(self, context):
     keyEntry = keymaps_items_dict["Previous Camera"]
-    operator = keyEntry["idname"]
+    idname = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(self, context, operator, operator_name, name)
+    update_key(self, context, idname, operator_name, name)
 
 
 def update_cam_pie_key(self, context):
     keyEntry = keymaps_items_dict["Camera Pie"]
-    operator = keyEntry["idname"]
+    idname = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(self, context, operator, operator_name, name)
+    update_key(self, context, idname, operator_name, name)
 
 
 def update_cam_menu_key(self, context):
     keyEntry = keymaps_items_dict["Camera Overview"]
-    operator = keyEntry["idname"]
+    idname = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(self, context, operator, operator_name, name)
+    update_key(self, context, idname, operator_name, name)
 
 
 # addon Preferences
