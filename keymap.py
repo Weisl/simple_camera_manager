@@ -1,10 +1,10 @@
 import bpy
 
 keymaps_items_dict = {
-    "Camera Overview": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
+    "Cam Manager Panel": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
         'OBJECT_PT_camera_manager_popup', "type": 'C', "value": 'PRESS',
                         "ctrl": False, "shift": True, "alt": False, "active": True},
-    "Camera Pie": {"name": 'cam_pie', "idname": 'wm.call_menu_pie',
+    "Active Camera Pie": {"name": 'cam_pie', "idname": 'wm.call_menu_pie',
                    "operator": 'CAMERA_MT_pie_menu',
                    "type": 'C', "value": 'PRESS', "ctrl": False, "shift": False, "alt": True, "active": True},
     "Next Camera": {"name": 'next_cam', "idname": 'cam_manager.cycle_cameras_next',

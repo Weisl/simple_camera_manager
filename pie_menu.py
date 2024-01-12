@@ -7,7 +7,7 @@ from bpy.types import Menu
 
 class CAM_MANAGER_MT_PIE_camera_settings(Menu):
     # label is displayed at the center of the pie menu.
-    bl_label = "Cam Manager Pie Menu"
+    bl_label = "Active Camera Pie "
     bl_idname = "CAMERA_MT_pie_menu"
 
     def draw(self, context):
@@ -139,16 +139,9 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.prop(cam, "clip_start")
         row = col.row(align=True)
         row.prop(cam, "clip_end")
-
-        # row = col.row(align=True)
-        # row.prop_search(cam, "world", bpy.data, "worlds", text='')
         row = col.row(align=True)
         dof = cam.dof
         row.prop(dof, 'use_dof')
-
-        # Picker does not work from pie menu
-        # row = col.row(align=True)
-        # row.prop(dof, "focus_object", text="Focus on Object")
 
         row = col.row(align=True)
         if dof.focus_object is None:
@@ -202,14 +195,6 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.prop(cam, "show_composition_center_diagonal")
         row = col.row()
         row.prop(cam, "show_composition_golden")
-        # row = col.row()
-        # row.prop(cam, "show_composition_golden_tria_a")
-        # row = col.row()
-        # row.prop(cam, "show_composition_golden_tria_b")
-        # row = col.row()
-        # row.prop(cam, "show_composition_harmony_tri_a")
-        # row = col.row()
-        # row.prop(cam, "show_composition_harmony_tri_b")
 
 
 classes = (

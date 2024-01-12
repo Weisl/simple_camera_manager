@@ -39,7 +39,7 @@ def update_prev_cam_key(self, context):
 
 
 def update_cam_pie_key(self, context):
-    keyEntry = keymaps_items_dict["Camera Pie"]
+    keyEntry = keymaps_items_dict["Active Camera Pie"]
     idname = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
@@ -47,7 +47,7 @@ def update_cam_pie_key(self, context):
 
 
 def update_cam_menu_key(self, context):
-    keyEntry = keymaps_items_dict["Camera Overview"]
+    keyEntry = keymaps_items_dict["Cam Manager Panel"]
     idname = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
@@ -127,59 +127,59 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
     cam_pie_type: bpy.props.StringProperty(
         name="Renaming Popup",
-        default=keymaps_items_dict["Camera Pie"]["type"],
+        default=keymaps_items_dict["Active Camera Pie"]["type"],
         update=update_cam_pie_key
     )
 
     cam_pie_ctrl: bpy.props.BoolProperty(
         name="Ctrl",
-        default=keymaps_items_dict["Camera Pie"]["ctrl"],
+        default=keymaps_items_dict["Active Camera Pie"]["ctrl"],
         update=update_cam_pie_key
     )
 
     cam_pie_shift: bpy.props.BoolProperty(
         name="Shift",
-        default=keymaps_items_dict["Camera Pie"]["shift"],
+        default=keymaps_items_dict["Active Camera Pie"]["shift"],
         update=update_cam_pie_key
     )
     cam_pie_alt: bpy.props.BoolProperty(
         name="Alt",
-        default=keymaps_items_dict["Camera Pie"]["alt"],
+        default=keymaps_items_dict["Active Camera Pie"]["alt"],
         update=update_cam_pie_key
     )
 
     cam_pie_active: bpy.props.BoolProperty(
         name="Active",
-        default=keymaps_items_dict["Camera Pie"]["active"],
+        default=keymaps_items_dict["Active Camera Pie"]["active"],
         update=update_cam_pie_key
     )
 
     cam_menu_type: bpy.props.StringProperty(
         name="Renaming Popup",
-        default=keymaps_items_dict["Camera Overview"]["type"],
+        default=keymaps_items_dict["Cam Manager Panel"]["type"],
         update=update_cam_menu_key
     )
 
     cam_menu_ctrl: bpy.props.BoolProperty(
         name="Ctrl",
-        default=keymaps_items_dict["Camera Overview"]["ctrl"],
+        default=keymaps_items_dict["Cam Manager Panel"]["ctrl"],
         update=update_cam_menu_key
     )
 
     cam_menu_shift: bpy.props.BoolProperty(
         name="Shift",
-        default=keymaps_items_dict["Camera Overview"]["shift"],
+        default=keymaps_items_dict["Cam Manager Panel"]["shift"],
         update=update_cam_menu_key
     )
     cam_menu_alt: bpy.props.BoolProperty(
         name="Alt",
-        default=keymaps_items_dict["Camera Overview"]["alt"],
+        default=keymaps_items_dict["Cam Manager Panel"]["alt"],
         update=update_cam_menu_key
     )
 
     cam_menu_active: bpy.props.BoolProperty(
         name="Active",
-        default=keymaps_items_dict["Camera Overview"]["active"],
+        default=keymaps_items_dict["Cam Manager Panel"]["active"],
         update=update_cam_menu_key
     )
 
