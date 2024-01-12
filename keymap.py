@@ -31,8 +31,12 @@ def remove_key(context, idname, properties_name):
     km = wm.keyconfigs.addon.keymaps['Window']
 
     for kmi in km.keymap_items:
-        if kmi.idname == idname and kmi.properties.name == properties_name:
-            km.keymap_items.remove(kmi)
+        if properties_name:
+            if kmi.idname == idname and kmi.properties.name == properties_name:
+                km.keymap_items.remove(kmi)
+        else:
+            if kmi.idname == idname:
+                km.keymap_items.remove(kmi)
 
 
 
