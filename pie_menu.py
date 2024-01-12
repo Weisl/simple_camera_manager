@@ -180,14 +180,16 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row.prop(overlay, "show_overlays", icon='OVERLAY', text="")
         row.label(text='Viewport Display')
         row = col.row(align=True)
-        row.prop(overlay, "show_wireframes", icon='SHADING_WIRE', text="")
-        row.label(text='Wireframe')
-        row = col.row(align=True)
-        row.prop(shading, "show_backface_culling", text="")
-        row.label(text='Backface Culling')
-        row = col.row(align=True)
-        row.prop(overlay, "show_face_orientation", text="")
-        row.label(text='Face Orientation')
+
+        # NOT relevant to active Camera but general display settings!!!! Should be a different popup
+        # row.prop(overlay, "show_wireframes", icon='SHADING_WIRE', text="")
+        # row.label(text='Wireframe')
+        # row = col.row(align=True)
+        # row.prop(shading, "show_backface_culling", text="")
+        # row.label(text='Backface Culling')
+        # row = col.row(align=True)
+        # row.prop(overlay, "show_face_orientation", text="")
+        # row.label(text='Face Orientation')
 
         row.separator()
 
