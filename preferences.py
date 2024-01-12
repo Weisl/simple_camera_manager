@@ -1,5 +1,4 @@
 import bpy
-import rna_keymap_ui
 
 from .keymap import remove_key
 from .keymap import keymaps_items_dict
@@ -31,29 +30,33 @@ def update_key(context, operation, operator_name, property_prefix):
 def update_next_cam_key(self, context):
     keyEntry = keymaps_items_dict["Next Camera"]
     operator = keyEntry["idname"]
+    name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name)
+    update_key(context, operator, operator_name,name)
 
 
 def update_prev_cam_key(self, context):
     keyEntry = keymaps_items_dict["Previous Camera"]
     operator = keyEntry["idname"]
+    name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name)
+    update_key(context, operator, operator_name, name )
 
 
 def update_cam_pie_key(self, context):
     keyEntry = keymaps_items_dict["Camera Pie"]
     operator = keyEntry["idname"]
+    name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name)
+    update_key(context, operator, operator_name, name)
 
 
 def update_cam_menu_key(self, context):
     keyEntry = keymaps_items_dict["Camera Overview"]
     operator = keyEntry["idname"]
+    name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name)
+    update_key(context, operator, operator_name, name)
 
 
 # addon Preferences
