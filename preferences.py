@@ -2,6 +2,7 @@ import bpy
 
 from .keymap import remove_key
 from .keymap import keymaps_items_dict
+from .keymap import add_keymap
 
 
 def add_key(km, idname, properties_name, button_assignment_type, button_assignment_ctrl, button_assignment_shift,
@@ -265,9 +266,11 @@ def register():
     for cls in classes:
         register_class(cls)
 
+    add_keymap()
 
 def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
         unregister_class(cls)
+

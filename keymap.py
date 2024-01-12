@@ -20,9 +20,15 @@ def add_keymap():
     prefs = bpy.context.preferences.addons[__package__].preferences
 
     for key, value in keymaps_items_dict.items():
-        kmi = km.keymap_items.new(idname=value["idname"], type=value["type"], value=value["value"],
-                                  ctrl=value["ctrl"], shift=value["shift"],
-                                  alt=value["alt"])
+        type = getattr(prefs, f'{value["name"]}_type')
+        ctrl = getattr(prefs, f'{value["name"]}_ctrl')
+        shift = getattr(prefs, f'{value["name"]}_shift')
+        alt = getattr(prefs, f'{value["name"]}_alt')
+
+        kmi = km.keymap_items.new(idname=value["idname"], type=type, value='PRESS',
+                                  ctrl=ctrl, shift=shift,
+                                  alt=alt)
+
         if value["operator"] != '':
             add_key_to_keymap(value["operator"], kmi, active=value["active"])
 
@@ -44,16 +50,13 @@ def remove_key(context, idname, properties_name):
 
 
 def remove_keymap():
-    '''Removes keys from the keymap. Currently this is only called when unregistering the addon. '''
-    # only works for menues and pie menus
     wm = bpy.context.window_manager
     km = wm.keyconfigs.addon.keymaps['Window']
 
     for kmi in km.keymap_items:
-        if hasattr(kmi.properties, 'name') and kmi.properties.name in ['COLLISION_MT_pie_menu',
-                                                                       'VIEW3D_PT_collision_visibility_panel',
-                                                                       'VIEW3D_PT_collision_material_panel']:
-            km.keymap_items.remove(kmi)
+        for key in keymaps_items_dict:
+            if kmi.idname == key['idname'] and kmi.properties.name == key['operator']:
+                km.keymap_items.remove(kmi)
 
 
 class REMOVE_OT_hotkey(bpy.types.Operator):
@@ -126,7 +129,6 @@ def register():
     from bpy.utils import register_class
     for cls in classes:
         register_class(cls)
-    add_keymap()
 
 
 def unregister():
