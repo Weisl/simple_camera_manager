@@ -32,7 +32,7 @@ def update_next_cam_key(self, context):
     operator = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name,name)
+    update_key(context, operator, operator_name, name)
 
 
 def update_prev_cam_key(self, context):
@@ -40,7 +40,7 @@ def update_prev_cam_key(self, context):
     operator = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name, name )
+    update_key(context, operator, operator_name, name)
 
 
 def update_cam_pie_key(self, context):
