@@ -58,7 +58,7 @@ def remove_keymap():
 
 class REMOVE_OT_hotkey(bpy.types.Operator):
     """Tooltip"""
-    bl_idname = "rename.remove_hotkey"
+    bl_idname = "cam.remove_hotkey"
     bl_label = "Remove hotkey"
     bl_description = "Remove hotkey"
     bl_options = {'REGISTER', 'INTERNAL'}

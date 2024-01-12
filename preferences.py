@@ -12,27 +12,30 @@ def add_key(km, idname, properties_name, button_assignment_type, button_assignme
     kmi.active = button_assignment_active
 
 
-def update_key(context, operation, operator_name, property_prefix):
+def update_key(self, context, operation, operator_name, property_prefix):
     # This functions gets called when the hotkey assignment is updated in the preferences
     wm = context.window_manager
     km = wm.keyconfigs.addon.keymaps["Window"]
 
     prefs = context.preferences.addons[__package__.split('.')[0]].preferences
+    type = getattr(prefs, f'{property_prefix}_type').upper()
 
     # Remove previous key assignment
     remove_key(context, operation, operator_name)
-
+    print(f'{property_prefix}_type')
     add_key(km, operation, operator_name, getattr(prefs, f'{property_prefix}_type'),
             getattr(prefs, f'{property_prefix}_ctrl'), getattr(prefs, f'{property_prefix}_shift'),
             getattr(prefs, f'{property_prefix}_alt'), getattr(prefs, f'{property_prefix}_active'))
 
+    # Set preference to new type
+    setattr(prefs, f'{property_prefix}_type', type)
 
 def update_next_cam_key(self, context):
     keyEntry = keymaps_items_dict["Next Camera"]
     operator = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name, name)
+    update_key(self, context, operator, operator_name, name)
 
 
 def update_prev_cam_key(self, context):
@@ -40,7 +43,7 @@ def update_prev_cam_key(self, context):
     operator = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name, name)
+    update_key(self, context, operator, operator_name, name)
 
 
 def update_cam_pie_key(self, context):
@@ -48,7 +51,7 @@ def update_cam_pie_key(self, context):
     operator = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name, name)
+    update_key(self, context, operator, operator_name, name)
 
 
 def update_cam_menu_key(self, context):
@@ -56,7 +59,7 @@ def update_cam_menu_key(self, context):
     operator = keyEntry["idname"]
     name = keyEntry["name"]
     operator_name = keyEntry["operator"]
-    update_key(context, operator, operator_name, name)
+    update_key(self, context, operator, operator_name, name)
 
 
 # addon Preferences
@@ -208,10 +211,10 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             else 'Press a key'
         )
 
-        op = row.operator("rename.key_selection_button", text=text)
+        op = row.operator("cam.key_selection_button", text=text)
         op.property_prefix = property_prefix
         # row.prop(self, f'{property_prefix}_type', text="")
-        op = row.operator("rename.remove_hotkey", text="", icon="X")
+        op = row.operator("cam.remove_hotkey", text="", icon="X")
         op.idname = id_name
         op.properties_name = properties_name
         op.property_prefix = property_prefix
