@@ -48,7 +48,7 @@ class MyCustomShapeWidget(Gizmo):
     def setup(self):
         if not hasattr(self, "custom_shape"):
             # type (string) – The type of shape to create in (POINTS, LINES, TRIS, LINE_STRIP).
-            # verts (sequence of of 2D or 3D coordinates.) – Coordinates.
+            # verts (sequence of 2D or 3D coordinates.) – Coordinates.
             # display_name (Callable that takes a string and returns a string.) – Optional callback that takes the full path, returns the name to display.
             self.custom_shape = self.new_custom_shape('LINES', custom_shape_verts_02)
 

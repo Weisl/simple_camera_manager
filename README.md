@@ -9,7 +9,7 @@ Cam-Manager is an add-on to improve efficiency and organization with multiple ca
 >⚠️
 **This addon does not provide special tools for animation.** It is designed for static cameras, working with image planes, setting up the framing and composition as well as quickly presenting your work with static images.
 ## Getting the addon: 
-Support me by purchasing the addon from [Blender Market](https://blendermarket.com/products/cam-manager). You are permitted to get a copy from this Github page and everything specified in the attached license (GPL 3.0). Creating addons is a lot of effort and work. The licensing and contribution of my future addons will also depend on the fairness of all of you.
+Support me by purchasing the addon from [Blender Market](https://blendermarket.com/products/cam-manager). You are permitted to get a copy from this GitHub page and everything specified in the attached license (GPL 3.0). Creating addons is a lot of effort and work. The licensing and contribution of my future addons will also depend on the fairness of all of you.
 
 The releases will also be published here on  [Github Releases](https://github.com/Weisl/Cam-Manager/releases). 
 

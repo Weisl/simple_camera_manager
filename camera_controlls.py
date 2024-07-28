@@ -5,13 +5,13 @@ cam_collection_name = 'Cameras'
 
 
 def make_collection(collection_name, parent_collection):
-    '''
+    """
     return existing collection if a collection with the according name exists, otherwise return a newly created one
 
     :param collection_name: name of the newly created collection
     :param parent_collection: parent collection of the newly created collection
     :return: the newly created collection
-    '''
+    """
 
     if collection_name in bpy.data.collections:
         col = bpy.data.collections[collection_name]
@@ -22,12 +22,12 @@ def make_collection(collection_name, parent_collection):
 
 
 def moveToCollection(ob, collection):
-    '''
+    """
     Move an object to another scene collection
     :param ob: object to move
     :param collection: collection the object is moved to
     :return: the input object
-    '''
+    """
     ob_old_coll = ob.users_collection  # list of all collection the obj is in
     for col in ob_old_coll:  # unlink from all  precedent obj collections
         col.objects.unlink(ob)
@@ -37,12 +37,12 @@ def moveToCollection(ob, collection):
 
 
 def cycleCamera(context, direction):
-    '''
+    """
     Change the active camera to the previous or next camera one in the camera list
     :param context:
     :param direction: string with 'FORWARD' or 'BACKWARD' to define the direction
     :return: Bool for either successful or unsuccesful try
-    '''
+    """
 
     scene = context.scene
     cam_objects = [ob for ob in scene.objects if ob.type == 'CAMERA']
@@ -62,11 +62,11 @@ def cycleCamera(context, direction):
 
 
 def lock_camera(obj, lock):
-    ''' Locks or unlocks all transformation attributes of the camera. It further adds a custom property
+    """ Locks or unlocks all transformation attributes of the camera. It further adds a custom property
     :param obj: object to lock/unlock
     :param lock: bool, defining if locking or unlocking
     :return: None
-    '''
+    """
     obj.lock_location[0] = lock
     obj.lock_location[1] = lock
     obj.lock_location[2] = lock
@@ -355,36 +355,36 @@ class CAM_MANAGER_OT_render(bpy.types.Operator):
 
 
 def resolution_update_func(self, context):
-    '''
+    """
     Updating scene resolution when changing the resolution of the active camera
     :param self:
     :param context:
     :return: None
-    '''
+    """
     if context.scene.camera.data.name == self.name:
         context.scene.render.resolution_x = self.resolution[0]
         context.scene.render.resolution_y = self.resolution[1]
 
 
 def exposure_update_func(self, context):
-    '''
+    """
     Updating scene exposure when changing the exposure of the active camera
     :param self:
     :param context:
     :return: None
-    '''
+    """
 
     if context.scene.camera.data.name == self.name:
         context.scene.view_settings.exposure = self.exposure
 
 
 def world_update_func(self, context):
-    '''
+    """
     Updating the world material when changing the world material for the active camera
     :param self:
     :param context:
     :return: None
-    '''
+    """
 
     if context.scene.camera.data.name == self.name:
         context.scene.world = self.world
@@ -394,14 +394,14 @@ def world_update_func(self, context):
 
 
 def render_slot_update_funce(self, context):
-    '''
+    """
     Update the render slot when changing render slot for the active camera. A new render slot will
     be created if the number is higher than the number of current renderslots. The newly created
     render slots gets assigned automatically.
     :param self:
     :param context:
     :return: None
-    '''
+    """
 
     new_slot = False
     render_result = bpy.data.images['Render Result']

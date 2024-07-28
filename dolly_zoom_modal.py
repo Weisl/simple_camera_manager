@@ -24,7 +24,7 @@ def generate_target_location(camera, distance):
 
 
 def set_cam_values(cam_dic, camera, distance):
-    '''Store current camera settings in a dictionary '''
+    """Store current camera settings in a dictionary """
     # Initial Camera Position and Location Matrix
     cam_dic['cam_location'] = camera.location.copy()
 
@@ -54,7 +54,7 @@ def distance_vec(point1: Vector, point2: Vector):
 
 
 def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, color):
-    '''Draw UI title text in the 3D Viewport '''
+    """Draw UI title text in the 3D Viewport """
     blf.size(font_id, 20)
 
     blf.color(font_id, color[0], color[1], color[2], color[3])
@@ -64,7 +64,7 @@ def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, col
 
 def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, value, initial_value=None,
                        highlighting=False):
-    '''Draw UI operator parameters as text in the 3D Viewport '''
+    """Draw UI operator parameters as text in the 3D Viewport """
     text = '{name:}:'.format(name=name)
     text2 = '{value:.2f}'.format(value=value)
 
@@ -250,7 +250,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             # update camera
             self.update_camera()
 
-            # the arguments we pass the the callback
+            # the arguments we pass to the callback
             args = (self, context)
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
@@ -265,7 +265,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             return {'CANCELLED'}
 
     def modal(self, context, event):
-        '''Calculate the FOV from the changed location to the target object '''
+        """Calculate the FOV from the changed location to the target object """
 
         camera = self.camera
         scene = context.scene

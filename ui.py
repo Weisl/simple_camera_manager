@@ -18,13 +18,13 @@ class CAMERA_OT_open_in_explorer(bpy.types.Operator):
 
 
 def filter_list(self, context):
-    '''
+    """
     Filter cameras from all objects for the UI list and soft them
     :param self:
     :param context:
     :return: flt_flags is a bit-flag containing the filtering and flt
             flt_neworder defines the order of all cameras
-    '''
+    """
     helper_funcs = bpy.types.UI_UL_list
 
     # Default return values.
@@ -89,7 +89,7 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
         # draw_item must handle the three layout types. Usually 'DEFAULT' and 'COMPACT' can share the same code.
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-            # this will also make the row easily selectable in the list! The later also enables ctrl-click rename.
+            # this will also make the row easily selectable in the list! The latter also enables ctrl-click rename.
             # We use icon_value of label, as our given icon is an integer value, not an enum ID.
             # Note "data" names should never be translated!
             if obj.type == 'CAMERA':
@@ -236,7 +236,7 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
 
 
 class CAM_MANAGER_PT_scene_panel:
-    '''Properties Panel in the scene tab'''
+    """Properties Panel in the scene tab"""
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"

@@ -220,7 +220,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
     show_dolly_gizmo: bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=False)
 
     def draw(self, context):
-        ''' simple preference UI to define custom inputs and user preferences'''
+        """ simple preference UI to define custom inputs and user preferences"""
         layout = self.layout
 
         row = layout.row(align=True)
