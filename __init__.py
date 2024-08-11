@@ -1,5 +1,5 @@
 bl_info = {
-    "name": "Cam-Manager",
+    "name": "simple_camera_manager",
     "author": "Matthias Patscheider",
     "version": (1, 2, 0),
     "blender": (4, 0, 0),
