@@ -1,7 +1,7 @@
 import bpy
 
 keymaps_items_dict = {
-    "Simple Camera Manager Panel": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
+    "Simple Camera Manager": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
         'OBJECT_PT_camera_manager_popup', "type": 'C', "value": 'PRESS',
                                     "ctrl": False, "shift": True, "alt": True, "active": True},
     "Active Camera Pie": {"name": 'cam_pie', "idname": 'wm.call_menu_pie',

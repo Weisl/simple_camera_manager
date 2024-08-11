@@ -257,7 +257,7 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
         layout = self.layout
 
         row = layout.row()
-        row.label(text="Simple Camera Manager Panel")
+        row.label(text="Simple Camera Manager")
 
         scene = context.scene
 
@@ -299,7 +299,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         layout = self.layout
 
         row = layout.row()
-        row.label(text="Simple Camera Manager Panel")
+        row.label(text="Simple Camera Manager")
 
         scene = context.scene
         split = layout.split(factor=0.333)

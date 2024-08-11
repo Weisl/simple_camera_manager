@@ -45,7 +45,7 @@ def update_cam_pie_key(self, context):
 
 
 def update_cam_menu_key(self, context):
-    key_entry = keymaps_items_dict["Simple Camera Manager Panel"]
+    key_entry = keymaps_items_dict["Simple Camera Manager"]
     idname = key_entry["idname"]
     name = key_entry["name"]
     operator_name = key_entry["operator"]
@@ -154,30 +154,30 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
     cam_menu_type: bpy.props.StringProperty(
         name="Renaming Popup",
-        default=keymaps_items_dict["Simple Camera Manager Panel"]["type"],
+        default=keymaps_items_dict["Simple Camera Manager"]["type"],
         update=update_cam_menu_key
     )
 
     cam_menu_ctrl: bpy.props.BoolProperty(
         name="Ctrl",
-        default=keymaps_items_dict["Simple Camera Manager Panel"]["ctrl"],
+        default=keymaps_items_dict["Simple Camera Manager"]["ctrl"],
         update=update_cam_menu_key
     )
 
     cam_menu_shift: bpy.props.BoolProperty(
         name="Shift",
-        default=keymaps_items_dict["Simple Camera Manager Panel"]["shift"],
+        default=keymaps_items_dict["Simple Camera Manager"]["shift"],
         update=update_cam_menu_key
     )
     cam_menu_alt: bpy.props.BoolProperty(
         name="Alt",
-        default=keymaps_items_dict["Simple Camera Manager Panel"]["alt"],
+        default=keymaps_items_dict["Simple Camera Manager"]["alt"],
         update=update_cam_menu_key
     )
 
     cam_menu_active: bpy.props.BoolProperty(
         name="Active",
-        default=keymaps_items_dict["Simple Camera Manager Panel"]["active"],
+        default=keymaps_items_dict["Simple Camera Manager"]["active"],
         update=update_cam_menu_key
     )
 
