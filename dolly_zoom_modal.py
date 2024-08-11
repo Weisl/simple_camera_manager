@@ -2,7 +2,7 @@ import blf
 import bpy
 import math
 
-from mathutils import Vector, Matrix
+from mathutils import Vector
 
 
 def calculate_target_width(distance, fov):
@@ -24,7 +24,7 @@ def generate_target_location(camera, distance):
 
 
 def set_cam_values(cam_dic, camera, distance):
-    '''Store current camera settings in a dictionary '''
+    """Store current camera settings in a dictionary """
     # Initial Camera Position and Location Matrix
     cam_dic['cam_location'] = camera.location.copy()
 
@@ -53,8 +53,9 @@ def distance_vec(point1: Vector, point2: Vector):
     return (point2 - point1).length
 
 
+
 def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, color):
-    '''Draw UI title text in the 3D Viewport '''
+    """Draw UI title text in the 3D Viewport """
     blf.size(font_id, 20)
 
     blf.color(font_id, color[0], color[1], color[2], color[3])
@@ -64,7 +65,7 @@ def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, col
 
 def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, value, initial_value=None,
                        highlighting=False):
-    '''Draw UI operator parameters as text in the 3D Viewport '''
+    """Draw UI operator parameters as text in the 3D Viewport """
     text = '{name:}:'.format(name=name)
     text2 = '{value:.2f}'.format(value=value)
 
@@ -109,6 +110,7 @@ def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, 
     return i
 
 
+
 def draw_callback_px(self, context):
     """Draw 3d viewport text for the dolly zoom modal operator"""
     scene = context.scene
@@ -136,7 +138,7 @@ def draw_callback_px(self, context):
     i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Width (F)', x, initial_value=y,
                            highlighting=self.set_width)
 
-    if self.ignore_input == True:
+    if self.ignore_input:
         color = (0.0, 1.0, 1.0, 1.0)
     else:
         color = (1.0, 1.0, 1.0, 1.0)
@@ -250,7 +252,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             # update camera
             self.update_camera()
 
-            # the arguments we pass the the callback
+            # the arguments we pass the callback
             args = (self, context)
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
@@ -264,8 +266,9 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.report({'WARNING'}, "No scene camera assigned")
             return {'CANCELLED'}
 
+    
     def modal(self, context, event):
-        '''Calculate the FOV from the changed location to the target object '''
+        """Calculate the FOV from the changed location to the target object """
 
         camera = self.camera
         scene = context.scene
@@ -370,9 +373,9 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
                 # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
 
                 factor = 0.005
-                if event.ctrl == True:
+                if event.ctrl:
                     factor = 0.015
-                elif event.shift == True:
+                elif event.shift:
                     factor = 0.001
 
                 # calculate width offset
@@ -388,9 +391,9 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             elif self.set_distance:
 
                 factor = 0.05
-                if event.ctrl == True:
+                if event.ctrl:
                     factor = 0.15
-                elif event.shift == True:
+                elif event.shift:
                     factor = 0.005
 
                 # calculate width offset
@@ -410,9 +413,9 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             else:
                 # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
                 factor = 0.05
-                if event.ctrl == True:
+                if event.ctrl:
                     factor = 0.15
-                elif event.shift == True:
+                elif event.shift:
                     factor = 0.005
 
                 cam_offset = delta * factor

@@ -6,7 +6,6 @@ from .keymap import add_keymap, add_key
 
 
 
-
 def update_key(self, context, idname, operator_name, property_prefix):
     # This functions gets called when the hotkey assignment is updated in the preferences
     wm = context.window_manager
@@ -21,36 +20,35 @@ def update_key(self, context, idname, operator_name, property_prefix):
             getattr(prefs, f'{property_prefix}_alt'), operator_name, getattr(prefs, f'{property_prefix}_active'))
 
 
-
 def update_next_cam_key(self, context):
-    keyEntry = keymaps_items_dict["Next Camera"]
-    idname = keyEntry["idname"]
-    name = keyEntry["name"]
-    operator_name = keyEntry["operator"]
+    key_entry = keymaps_items_dict["Next Camera"]
+    idname = key_entry["idname"]
+    name = key_entry["name"]
+    operator_name = key_entry["operator"]
     update_key(self, context, idname, operator_name, name)
 
 
 def update_prev_cam_key(self, context):
-    keyEntry = keymaps_items_dict["Previous Camera"]
-    idname = keyEntry["idname"]
-    name = keyEntry["name"]
-    operator_name = keyEntry["operator"]
+    key_entry = keymaps_items_dict["Previous Camera"]
+    idname = key_entry["idname"]
+    name = key_entry["name"]
+    operator_name = key_entry["operator"]
     update_key(self, context, idname, operator_name, name)
 
 
 def update_cam_pie_key(self, context):
-    keyEntry = keymaps_items_dict["Active Camera Pie"]
-    idname = keyEntry["idname"]
-    name = keyEntry["name"]
-    operator_name = keyEntry["operator"]
+    key_entry = keymaps_items_dict["Active Camera Pie"]
+    idname = key_entry["idname"]
+    name = key_entry["name"]
+    operator_name = key_entry["operator"]
     update_key(self, context, idname, operator_name, name)
 
 
 def update_cam_menu_key(self, context):
-    keyEntry = keymaps_items_dict["Cam Manager Panel"]
-    idname = keyEntry["idname"]
-    name = keyEntry["name"]
-    operator_name = keyEntry["operator"]
+    key_entry = keymaps_items_dict["Simple Camera Manager Panel"]
+    idname = key_entry["idname"]
+    name = key_entry["name"]
+    operator_name = key_entry["operator"]
     update_key(self, context, idname, operator_name, name)
 
 
@@ -156,30 +154,30 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
     cam_menu_type: bpy.props.StringProperty(
         name="Renaming Popup",
-        default=keymaps_items_dict["Cam Manager Panel"]["type"],
+        default=keymaps_items_dict["Simple Camera Manager Panel"]["type"],
         update=update_cam_menu_key
     )
 
     cam_menu_ctrl: bpy.props.BoolProperty(
         name="Ctrl",
-        default=keymaps_items_dict["Cam Manager Panel"]["ctrl"],
+        default=keymaps_items_dict["Simple Camera Manager Panel"]["ctrl"],
         update=update_cam_menu_key
     )
 
     cam_menu_shift: bpy.props.BoolProperty(
         name="Shift",
-        default=keymaps_items_dict["Cam Manager Panel"]["shift"],
+        default=keymaps_items_dict["Simple Camera Manager Panel"]["shift"],
         update=update_cam_menu_key
     )
     cam_menu_alt: bpy.props.BoolProperty(
         name="Alt",
-        default=keymaps_items_dict["Cam Manager Panel"]["alt"],
+        default=keymaps_items_dict["Simple Camera Manager Panel"]["alt"],
         update=update_cam_menu_key
     )
 
     cam_menu_active: bpy.props.BoolProperty(
         name="Active",
-        default=keymaps_items_dict["Cam Manager Panel"]["active"],
+        default=keymaps_items_dict["Simple Camera Manager Panel"]["active"],
         update=update_cam_menu_key
     )
 
@@ -219,8 +217,9 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
     # Gizmos
     show_dolly_gizmo: bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=False)
 
+    
     def draw(self, context):
-        ''' simple preference UI to define custom inputs and user preferences'''
+        """ simple preference UI to define custom inputs and user preferences"""
         layout = self.layout
 
         row = layout.row(align=True)
@@ -259,9 +258,9 @@ def register():
 
     add_keymap()
 
+
 def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
         unregister_class(cls)
-

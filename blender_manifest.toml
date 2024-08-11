@@ -1,0 +1,33 @@
+schema_version = "1.0.0"
+
+id = "simple_camera_manager"
+version = "1.5.0"
+name = "Simple Camera Manager"
+tagline = "Simple Camera Manager is a simple tools for managing multiple cameras"
+maintainer = "Matthias Patscheider <patscheider.matthias@gmail.com>"
+type = "add-on"
+
+website = "https://weisl.github.io/collider-tools_overview/"
+
+tags = ["3D View", "Camera", "User Interface"]
+
+blender_version_min = "4.2.0"
+
+license = [
+    "SPDX:GPL-3.0-or-later",
+]
+
+copyright = [
+    "2023 Matthias Patscheider",
+]
+
+[permissions]
+files = "Write Renders to disk"
+
+
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    "/.git/",
+    "/*.zip",
+]
