@@ -396,7 +396,7 @@ def world_update_func(self, context):
     return None
 
 
-def render_slot_update_func(self, context):
+def render_slot_update_funce(self, context):
     """
     Update the render slot when changing render slot for the active camera. A new render slot will
     be created if the number is higher than the number of current render slots. The newly created
@@ -462,7 +462,7 @@ def register():
                                            soft_max=10, update=exposure_update_func)
 
     cam.slot = bpy.props.IntProperty(name="Slot", default=1, description='Render slot, used when rendering this camera',
-                                     min=1, soft_max=15, update=render_slot_update_func)
+                                     min=1, soft_max=15, update=render_slot_update_funce)
 
     cam.dolly_zoom_target_scale = bpy.props.FloatProperty(name='Target Scale', description='', default=2, min=0,
                                                           update=update_func)
