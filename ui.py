@@ -17,14 +17,15 @@ class CAMERA_OT_open_in_explorer(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
 def filter_list(self, context):
-    '''
+    """
     Filter cameras from all objects for the UI list and soft them
     :param self:
     :param context:
     :return: flt_flags is a bit-flag containing the filtering and flt
             flt_neworder defines the order of all cameras
-    '''
+    """
     helper_funcs = bpy.types.UI_UL_list
 
     # Default return values.
@@ -68,6 +69,7 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
     # Be careful not to shadow FILTER_ITEM!
     CAMERA_FILTER = 1 << 0
 
+    
     def filter_items(self, context, data, propname):
         # This function gets the collection property (as the usual tuple (data, propname)), and must return two lists:
         # * The first one is for filtering, it must contain 32bit integers were self.bitflag_filter_item marks the
@@ -81,6 +83,7 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
         flt_flags, flt_neworder = filter_list(self, context)
         return flt_flags, flt_neworder
 
+    
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
 
         obj = item
@@ -89,7 +92,7 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
         # draw_item must handle the three layout types. Usually 'DEFAULT' and 'COMPACT' can share the same code.
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-            # this will also make the row easily selectable in the list! The later also enables ctrl-click rename.
+            # this will also make the row easily selectable in the list! The latter also enables ctrl-click rename.
             # We use icon_value of label, as our given icon is an integer value, not an enum ID.
             # Note "data" names should never be translated!
             if obj.type == 'CAMERA':
@@ -173,10 +176,12 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
     """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
     CAMERA_FILTER = 1 << 0
 
+    
     def filter_items(self, context, data, propname):
         flt_flags, flt_neworder = filter_list(self, context)
         return flt_flags, flt_neworder
 
+    
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
 
         obj = item
@@ -185,7 +190,7 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
         # draw_item must handle the three layout types. Usually 'DEFAULT' and 'COMPACT' can share the same code.
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-            # this will also make the row easily selectable in the list! The later also enables ctrl-click rename.
+            # this will also make the row easily selectable in the list! The latter also enables ctrl-click rename.
             # We use icon_value of label, as our given icon is an integer value, not an enum ID.
             # Note "data" names should never be translated!
             if obj.type == 'CAMERA':
@@ -236,7 +241,7 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
 
 
 class CAM_MANAGER_PT_scene_panel:
-    '''Properties Panel in the scene tab'''
+    """Properties Panel in the scene tab"""
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"
@@ -244,14 +249,15 @@ class CAM_MANAGER_PT_scene_panel:
 
 class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager"
-    bl_label = "Cam Manager"
+    bl_label = "Simple Camera Manager"
     bl_options = {'HIDE_HEADER'}
 
+    
     def draw(self, context):
         layout = self.layout
 
         row = layout.row()
-        row.label(text="Cam Manager Panel")
+        row.label(text="Simple Camera Manager")
 
         scene = context.scene
 
@@ -282,17 +288,18 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
 
 class CAM_MANAGER_PT_popup(bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager_popup"
-    bl_label = "Cam Manager Popup"
+    bl_label = "Simple Camera Manager Popup"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
     bl_context = "empty"
     bl_ui_units_x = 45
 
+    
     def draw(self, context):
         layout = self.layout
 
         row = layout.row()
-        row.label(text="Cam Manager Panel")
+        row.label(text="Simple Camera Manager")
 
         scene = context.scene
         split = layout.split(factor=0.333)
@@ -365,7 +372,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
 
 class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
     bl_idname = "CAMERA_PT_manager_menu"
-    bl_label = "Cam Manager Menu"
+    bl_label = "Simple Camera Manager Menu"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "data"
@@ -378,6 +385,7 @@ class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
         # Check if the properties data panel is for the camera or not
         return context.camera and (engine in cls.COMPAT_ENGINES)
 
+    
     def draw(self, context):
         layout = self.layout
 

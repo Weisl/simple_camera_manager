@@ -1,12 +1,12 @@
 import bpy
 
 keymaps_items_dict = {
-    "Cam Manager Panel": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
+    "Simple Camera Manager": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
         'OBJECT_PT_camera_manager_popup', "type": 'C', "value": 'PRESS',
-                        "ctrl": False, "shift": True, "alt": True, "active": True},
+                                    "ctrl": False, "shift": True, "alt": True, "active": True},
     "Active Camera Pie": {"name": 'cam_pie', "idname": 'wm.call_menu_pie',
-                   "operator": 'CAMERA_MT_pie_menu',
-                   "type": 'C', "value": 'PRESS', "ctrl": False, "shift": False, "alt": True, "active": True},
+                          "operator": 'CAMERA_MT_pie_menu',
+                          "type": 'C', "value": 'PRESS', "ctrl": False, "shift": False, "alt": True, "active": True},
     "Next Camera": {"name": 'next_cam', "idname": 'cam_manager.cycle_cameras_next',
                     "operator": '', "type": 'RIGHT_ARROW',
                     "value": 'PRESS', "ctrl": True, "shift": True, "alt": False, "active": True},
@@ -25,8 +25,10 @@ def add_key(context, idname, type, ctrl, shift, alt, operator, active):
     if operator != '':
         add_key_to_keymap(operator, kmi, active=active)
 
+
+
 def remove_key(context, idname, properties_name):
-    '''Removes addon hotkeys from the keymap'''
+    """Removes addon hotkeys from the keymap"""
     wm = bpy.context.window_manager
     km = wm.keyconfigs.addon.keymaps['Window']
 
@@ -37,7 +39,6 @@ def remove_key(context, idname, properties_name):
         else:
             if kmi.idname == idname:
                 km.keymap_items.remove(kmi)
-
 
 
 def add_keymap():
@@ -56,11 +57,9 @@ def add_keymap():
 
 
 def add_key_to_keymap(idname, kmi, active=True):
-    ''' Add ta key to the appropriate keymap '''
+    """ Add ta key to the appropriate keymap """
     kmi.properties.name = idname
     kmi.active = active
-
-
 
 
 def remove_keymap():
@@ -97,7 +96,7 @@ class REMOVE_OT_hotkey(bpy.types.Operator):
 
 
 class BUTTON_OT_change_key(bpy.types.Operator):
-    """UI button to assign a new key to a addon hotkey"""
+    """UI button to assign a new key to an addon hotkey"""
     bl_idname = "cam.key_selection_button"
     bl_label = "Press the button you want to assign to this operation."
     bl_options = {'REGISTER', 'INTERNAL'}
@@ -107,6 +106,7 @@ class BUTTON_OT_change_key(bpy.types.Operator):
     def __init__(self):
         self.my_event = ''
 
+    
     def invoke(self, context, event):
         prefs = bpy.context.preferences.addons[__package__].preferences
         self.prefs = prefs
@@ -127,6 +127,7 @@ class BUTTON_OT_change_key(bpy.types.Operator):
 
         return {'RUNNING_MODAL'}
 
+    
     def execute(self, context):
         self.report({'INFO'},
                     "Key change: " + bpy.types.Event.bl_rna.properties['type'].enum_items[self.my_event].name)

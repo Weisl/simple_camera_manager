@@ -1,5 +1,5 @@
 bl_info = {
-    "name": "Cam-Manager",
+    "name": "simple_camera_manager",
     "author": "Matthias Patscheider",
     "version": (1, 2, 0),
     "blender": (4, 0, 0),
@@ -14,12 +14,19 @@ bl_info = {
 if "bpy" in locals():
     import importlib
 
+    # noinspection PyUnboundLocalVariable
     importlib.reload(camera_controlls)
+    # noinspection PyUnboundLocalVariable
     importlib.reload(dolly_zoom_modal)
+    # noinspection PyUnboundLocalVariable
     importlib.reload(camera_gizmos)
+    # noinspection PyUnboundLocalVariable
     importlib.reload(keymap)
+    # noinspection PyUnboundLocalVariable
     importlib.reload(preferences)
+    # noinspection PyUnboundLocalVariable
     importlib.reload(ui)
+    # noinspection PyUnboundLocalVariable
     importlib.reload(pie_menu)
 
 else:
