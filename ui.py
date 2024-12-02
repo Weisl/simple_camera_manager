@@ -4,6 +4,13 @@ import subprocess
 import bpy
 
 
+def get_addon_name():
+    """
+    Returns the addon name as a string.
+    """
+    return "Simple Camera Manager"
+
+
 class CAMERA_OT_open_in_explorer(bpy.types.Operator):
     """Open render output directory in Explorer"""
     bl_idname = "cameras.open_in_explorer"
@@ -15,7 +22,6 @@ class CAMERA_OT_open_in_explorer(bpy.types.Operator):
         filepath = os.path.dirname(os.path.abspath(context.scene.render.filepath))
         subprocess.Popen(["explorer.exe", filepath])
         return {'FINISHED'}
-
 
 
 def filter_list(self, context):
@@ -69,7 +75,6 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
     # Be careful not to shadow FILTER_ITEM!
     CAMERA_FILTER = 1 << 0
 
-    
     def filter_items(self, context, data, propname):
         # This function gets the collection property (as the usual tuple (data, propname)), and must return two lists:
         # * The first one is for filtering, it must contain 32bit integers were self.bitflag_filter_item marks the
@@ -83,7 +88,6 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
         flt_flags, flt_neworder = filter_list(self, context)
         return flt_flags, flt_neworder
 
-    
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
 
         obj = item
@@ -176,12 +180,10 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
     """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
     CAMERA_FILTER = 1 << 0
 
-    
     def filter_items(self, context, data, propname):
         flt_flags, flt_neworder = filter_list(self, context)
         return flt_flags, flt_neworder
 
-    
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
 
         obj = item
@@ -253,7 +255,17 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
     bl_region_type = 'WINDOW'
     bl_context = "scene"
 
-    
+    def draw_header(self, context):
+        layout = self.layout
+
+        addon_name = get_addon_name()
+
+        row = layout.row(align=True)
+        row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/camera_manager_Overview/"
+        op = row.operator("preferences.rename_addon_search", text="", icon='PREFERENCES')
+        op.addon_name = addon_name
+        op.prefs_tabs = 'UI'
+
     def draw(self, context):
         layout = self.layout
 
@@ -292,7 +304,6 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
     bl_context = "empty"
     bl_ui_units_x = 45
 
-    
     def draw(self, context):
         layout = self.layout
 
@@ -364,8 +375,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         row = layout.row()
         row.prop(context.scene.render, 'filepath')
         # col_01.operator('cameras.open_in_explorer')
-        row = layout.row()
-        # layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
+        row = layout.row()  # layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
 
 
 class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
@@ -383,7 +393,6 @@ class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
         # Check if the properties data panel is for the camera or not
         return context.camera and (engine in cls.COMPAT_ENGINES)
 
-    
     def draw(self, context):
         layout = self.layout
 
@@ -391,26 +400,16 @@ class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(cam, "resolution", text="")
-        op = row.operator("cam_manager.camera_resolutio_from_image",
-                          text="", icon='IMAGE_BACKGROUND').camera_name = cam.name
+        op = row.operator("cam_manager.camera_resolutio_from_image", text="",
+                          icon='IMAGE_BACKGROUND').camera_name = cam.name
 
 
 class CameraCollectionProperty(bpy.types.PropertyGroup):
-    collection: bpy.props.PointerProperty(
-        name="Collection",
-        type=bpy.types.Collection,
-    )
+    collection: bpy.props.PointerProperty(name="Collection", type=bpy.types.Collection, )
 
 
-classes = (
-    CameraCollectionProperty,
-    CAMERA_OT_open_in_explorer,
-    CAMERA_UL_cameras_popup,
-    CAMERA_UL_cameras_scene,
-    CAM_MANAGER_PT_scene_properties,
-    CAM_MANAGER_PT_popup,
-    CAM_MANAGER_PT_camera_properties,
-)
+classes = (CameraCollectionProperty, CAMERA_OT_open_in_explorer, CAMERA_UL_cameras_popup, CAMERA_UL_cameras_scene,
+           CAM_MANAGER_PT_scene_properties, CAM_MANAGER_PT_popup, CAM_MANAGER_PT_camera_properties,)
 
 
 def register():
