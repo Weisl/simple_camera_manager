@@ -257,9 +257,6 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
     def draw(self, context):
         layout = self.layout
 
-        row = layout.row()
-        row.label(text="Simple Camera Manager")
-
         scene = context.scene
 
         row = layout.row()
