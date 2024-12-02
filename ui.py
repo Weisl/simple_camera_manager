@@ -250,7 +250,8 @@ class CAM_MANAGER_PT_scene_panel:
 class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager"
     bl_label = "Simple Camera Manager"
-    bl_options = {'HIDE_HEADER'}
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
 
     
     def draw(self, context):
@@ -422,12 +423,14 @@ def register():
         register_class(cls)
 
     scene = bpy.types.Scene
+
     # The PointerProperty has to be after registering the classes to know about the custom property type
     scene.cam_collection = bpy.props.PointerProperty(name="Camera Collection",
                                                      description='User collection dedicated for the cameras',
                                                      type=CameraCollectionProperty)
 
     scene.output_render = bpy.props.BoolProperty(name="Save Render", description="Save renders to disk", default=True)
+
     scene.output_use_cam_name = bpy.props.BoolProperty(name="Camera as File Name",
                                                        description="Use camera name as file name", default=True)
 
