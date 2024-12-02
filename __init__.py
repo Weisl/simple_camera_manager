@@ -1,15 +1,3 @@
-bl_info = {
-    "name": "simple_camera_manager",
-    "author": "Matthias Patscheider",
-    "version": (1, 2, 0),
-    "blender": (4, 2, 0),
-    "location": "Shift + C > (Cam Overview Panel), Alt + C > (Cam Adjustment Panel), Properties Panel > Scene > Quick Overview ",
-    "description": "Tools for managing multiple cameras",
-    "doc_url": "https://weisl.github.io/cam_Overview/",
-    "tracker_url": "https://github.com/Weisl/Cam-Manager/issues",
-    "category": "3D View",
-}
-
 # support reloading sub-modules
 if "bpy" in locals():
     import importlib
