@@ -7,7 +7,7 @@ tagline = "Simple Camera Manager is a simple tools for managing multiple cameras
 maintainer = "Matthias Patscheider <patscheider.matthias@gmail.com>"
 type = "add-on"
 
-website = "https://weisl.github.io/collider-tools_overview/"
+website = "https://weisl.github.io/camera_manager_Overview/"
 
 tags = ["3D View", "Camera", "User Interface"]
 
