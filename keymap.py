@@ -64,12 +64,25 @@ def add_key_to_keymap(idname, kmi, active=True):
 
 def remove_keymap():
     wm = bpy.context.window_manager
-    km = wm.keyconfigs.addon.keymaps['Window']
+    addon_keymaps = wm.keyconfigs.addon.keymaps.get('Window')
 
-    for kmi in km.keymap_items:
-        for key in keymaps_items_dict:
-            if kmi.idname == key['idname'] and kmi.properties.name == key['operator']:
-                km.keymap_items.remove(kmi)
+    if not addon_keymaps:
+        return
+
+    # Collect items to remove first
+    items_to_remove = []
+    for kmi in addon_keymaps.keymap_items:
+        for key, valueDic in keymaps_items_dict.items():
+            idname = valueDic["idname"]
+            operator = valueDic["operator"]
+            if kmi.idname == idname and (not operator or getattr(kmi.properties, 'name', '') == operator):
+                items_to_remove.append(kmi)
+
+    # Remove items
+    for kmi in items_to_remove:
+        addon_keymaps.keymap_items.remove(kmi)
+
+
 
 
 class REMOVE_OT_hotkey(bpy.types.Operator):
