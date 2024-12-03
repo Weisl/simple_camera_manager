@@ -10,6 +10,7 @@ if "bpy" in locals():
     importlib.reload(ui)
     importlib.reload(pie_menu)
 
+
 else:
     from . import camera_controlls
     from . import dolly_zoom_modal
@@ -18,7 +19,6 @@ else:
     from . import keymap
     from . import preferences
     from . import pie_menu
-
 
 
 files = [
@@ -34,14 +34,10 @@ files = [
 
 
 def register():
-
     for file in files:
         file.register()
 
 
 def unregister():
-
-    for file in files.reverse():
+    for file in reversed(files):
         file.unregister()
-
-
