@@ -262,7 +262,7 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
 
         row = layout.row(align=True)
         row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/camera_manager_Overview/"
-        op = row.operator("preferences.rename_addon_search", text="", icon='PREFERENCES')
+        op = row.operator("simple_camera.open_preferences", text="", icon='PREFERENCES')
         op.addon_name = addon_name
         op.prefs_tabs = 'UI'
 
