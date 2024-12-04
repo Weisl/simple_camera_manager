@@ -19,7 +19,7 @@ class EXPORTER_OT_open_preferences(bpy.types.Operator):
         prefs.prefs_tabs = self.prefs_tabs
 
         import addon_utils
-        mod = addon_utils.addons_fake_modules.get('simple_export')
+        mod = addon_utils.addons_fake_modules.get('simple_camera_manager')
 
         # mod is None the first time the operation is called :/
         if mod:
