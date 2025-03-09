@@ -19,11 +19,10 @@ jobs:
           zip -r ../simple_camera_manager_${version_with_underscores}.zip . \
             -x ".git*" "images/*"
 
-
       - name: Create versioned build with filtered zip file
         run: |
           version_with_underscores=$(echo ${{ github.ref_name }} | tr '.' '_')
           gh release create ${{ github.ref_name }} --generate-notes \
-            simple_camera_manager_${version_with_underscores}.zip
+            ../simple_camera_manager_${version_with_underscores}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
