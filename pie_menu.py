@@ -10,6 +10,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
     bl_label = "Active Camera Pie "
     bl_idname = "CAMERA_MT_pie_menu"
 
+    
     def draw(self, context):
         layout = self.layout
 
@@ -156,6 +157,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         prefs = context.preferences.addons[__package__].preferences
         row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
 
+    
     def draw_right_column(self, context, col, cam_obj):
         # col.scale_x = 2
 

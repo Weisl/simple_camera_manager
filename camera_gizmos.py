@@ -37,9 +37,11 @@ class MyCustomShapeWidget(Gizmo):
         # offset behind the light
         self.matrix_offset.col[3][2] = float(self.target_get_value('offset')[0]) * -1
 
+
     def draw(self, context):
         self._update_offset_matrix()
         self.draw_custom_shape(self.custom_shape)
+
 
     def draw_select(self, context, select_id):
         self._update_offset_matrix()
@@ -51,6 +53,7 @@ class MyCustomShapeWidget(Gizmo):
             # verts (sequence of 2D or 3D coordinates.) – Coordinates.
             # display_name (Callable that takes a string and returns a string.) – Optional callback that takes the full path, returns the name to display.
             self.custom_shape = self.new_custom_shape('LINES', custom_shape_verts_02)
+
 
     def invoke(self, context, event):
         self.init_mouse_x = event.mouse_x
@@ -93,7 +96,7 @@ class CameraFocusDistance(GizmoGroup):
     def poll(cls, context):
         ob = context.object
 
-        if (ob and ob.type == 'CAMERA'):
+        if ob and ob.type == 'CAMERA':
             prefs = context.preferences.addons[__package__].preferences
             return prefs.show_dolly_gizmo
 

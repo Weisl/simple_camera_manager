@@ -41,7 +41,7 @@ def cycleCamera(context, direction):
     Change the active camera to the previous or next camera one in the camera list
     :param context:
     :param direction: string with 'FORWARD' or 'BACKWARD' to define the direction
-    :return: Bool for either successful or unsuccesful try
+    :return: Bool for either successful or unsuccessful try
     """
 
     scene = context.scene
@@ -90,6 +90,7 @@ class CAM_MANAGER_OT_lock_cameras(bpy.types.Operator):
     camera_name: bpy.props.StringProperty()
     cam_lock: bpy.props.BoolProperty(name="lock", default=True)
 
+    
     def execute(self, context):
         if self.camera_name and bpy.data.objects[self.camera_name]:
             obj = bpy.data.objects[self.camera_name]
@@ -176,6 +177,7 @@ class CAM_MANAGER_OT_resolution_from_img(bpy.types.Operator):
 
     camera_name: bpy.props.StringProperty()
 
+    
     def execute(self, context):
         if self.camera_name and bpy.data.cameras[self.camera_name]:
             camera = bpy.data.cameras[self.camera_name]
@@ -201,6 +203,7 @@ class CAM_MANAGER_OT_hide_unhide_camera(bpy.types.Operator):
     camera_name: bpy.props.StringProperty()
     cam_hide: bpy.props.BoolProperty(name="hide", default=True)
 
+    
     def execute(self, context):
         if self.camera_name and bpy.data.objects[self.camera_name]:
             obj = bpy.data.objects[self.camera_name]
@@ -396,7 +399,7 @@ def world_update_func(self, context):
 def render_slot_update_funce(self, context):
     """
     Update the render slot when changing render slot for the active camera. A new render slot will
-    be created if the number is higher than the number of current renderslots. The newly created
+    be created if the number is higher than the number of current render slots. The newly created
     render slots gets assigned automatically.
     :param self:
     :param context:
@@ -420,6 +423,7 @@ def render_slot_update_funce(self, context):
         else:
             # subtract by one to make 1 the first slot 'Slot1' and not user input 0
             render_result.render_slots.active_index = self.slot - 1
+
 
 
 def update_func(self, context):

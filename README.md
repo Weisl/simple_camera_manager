@@ -11,7 +11,7 @@ Cam-Manager is an add-on to improve efficiency and organization with multiple ca
 ## Getting the addon: 
 Support me by purchasing the addon from [Blender Market](https://blendermarket.com/products/cam-manager). You are permitted to get a copy from this GitHub page and everything specified in the attached license (GPL 3.0). Creating addons is a lot of effort and work. The licensing and contribution of my future addons will also depend on the fairness of all of you.
 
-The releases will also be published here on  [Github Releases](https://github.com/Weisl/Cam-Manager/releases). 
+The releases will also be published here on  [GitHub Releases](https://github.com/Weisl/Cam-Manager/releases). 
 
 ## Contribution
 The best and easiest way to contribute is to share your experiences and use cases with me. Seeing how you work, helps me to understand what you need.

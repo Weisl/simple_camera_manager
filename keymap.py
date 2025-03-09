@@ -1,12 +1,12 @@
 import bpy
 
 keymaps_items_dict = {
-    "Cam Manager Panel": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
+    "Simple Camera Manager": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
         'OBJECT_PT_camera_manager_popup', "type": 'C', "value": 'PRESS',
-                        "ctrl": False, "shift": True, "alt": True, "active": True},
+                                    "ctrl": False, "shift": True, "alt": True, "active": True},
     "Active Camera Pie": {"name": 'cam_pie', "idname": 'wm.call_menu_pie',
-                   "operator": 'CAMERA_MT_pie_menu',
-                   "type": 'C', "value": 'PRESS', "ctrl": False, "shift": False, "alt": True, "active": True},
+                          "operator": 'CAMERA_MT_pie_menu',
+                          "type": 'C', "value": 'PRESS', "ctrl": False, "shift": False, "alt": True, "active": True},
     "Next Camera": {"name": 'next_cam', "idname": 'cam_manager.cycle_cameras_next',
                     "operator": '', "type": 'RIGHT_ARROW',
                     "value": 'PRESS', "ctrl": True, "shift": True, "alt": False, "active": True},
@@ -25,6 +25,8 @@ def add_key(context, idname, type, ctrl, shift, alt, operator, active):
     if operator != '':
         add_key_to_keymap(operator, kmi, active=active)
 
+
+
 def remove_key(context, idname, properties_name):
     """Removes addon hotkeys from the keymap"""
     wm = bpy.context.window_manager
@@ -37,7 +39,6 @@ def remove_key(context, idname, properties_name):
         else:
             if kmi.idname == idname:
                 km.keymap_items.remove(kmi)
-
 
 
 def add_keymap():
@@ -61,16 +62,27 @@ def add_key_to_keymap(idname, kmi, active=True):
     kmi.active = active
 
 
-
-
 def remove_keymap():
     wm = bpy.context.window_manager
-    km = wm.keyconfigs.addon.keymaps['Window']
+    addon_keymaps = wm.keyconfigs.addon.keymaps.get('Window')
 
-    for kmi in km.keymap_items:
-        for key in keymaps_items_dict:
-            if kmi.idname == key['idname'] and kmi.properties.name == key['operator']:
-                km.keymap_items.remove(kmi)
+    if not addon_keymaps:
+        return
+
+    # Collect items to remove first
+    items_to_remove = []
+    for kmi in addon_keymaps.keymap_items:
+        for key, valueDic in keymaps_items_dict.items():
+            idname = valueDic["idname"]
+            operator = valueDic["operator"]
+            if kmi.idname == idname and (not operator or getattr(kmi.properties, 'name', '') == operator):
+                items_to_remove.append(kmi)
+
+    # Remove items
+    for kmi in items_to_remove:
+        addon_keymaps.keymap_items.remove(kmi)
+
+
 
 
 class REMOVE_OT_hotkey(bpy.types.Operator):
@@ -107,6 +119,7 @@ class BUTTON_OT_change_key(bpy.types.Operator):
     def __init__(self):
         self.my_event = ''
 
+    
     def invoke(self, context, event):
         prefs = bpy.context.preferences.addons[__package__].preferences
         self.prefs = prefs
@@ -127,6 +140,7 @@ class BUTTON_OT_change_key(bpy.types.Operator):
 
         return {'RUNNING_MODAL'}
 
+    
     def execute(self, context):
         self.report({'INFO'},
                     "Key change: " + bpy.types.Event.bl_rna.properties['type'].enum_items[self.my_event].name)

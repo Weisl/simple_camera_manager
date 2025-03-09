@@ -4,6 +4,13 @@ import subprocess
 import bpy
 
 
+def get_addon_name():
+    """
+    Returns the addon name as a string.
+    """
+    return "Simple Camera Manager"
+
+
 class CAMERA_OT_open_in_explorer(bpy.types.Operator):
     """Open render output directory in Explorer"""
     bl_idname = "cameras.open_in_explorer"
@@ -185,7 +192,7 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
         # draw_item must handle the three layout types. Usually 'DEFAULT' and 'COMPACT' can share the same code.
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-            # this will also make the row easily selectable in the list! The later also enables ctrl-click rename.
+            # this will also make the row easily selectable in the list! The latter also enables ctrl-click rename.
             # We use icon_value of label, as our given icon is an integer value, not an enum ID.
             # Note "data" names should never be translated!
             if obj.type == 'CAMERA':
@@ -244,14 +251,23 @@ class CAM_MANAGER_PT_scene_panel:
 
 class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager"
-    bl_label = "Cam Manager"
-    bl_options = {'HIDE_HEADER'}
+    bl_label = "Simple Camera Manager"
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+
+    def draw_header(self, context):
+        layout = self.layout
+
+        addon_name = get_addon_name()
+
+        row = layout.row(align=True)
+        row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/camera_manager_Overview/"
+        op = row.operator("simple_camera.open_preferences", text="", icon='PREFERENCES')
+        op.addon_name = addon_name
+        op.prefs_tabs = 'GENERAL'
 
     def draw(self, context):
         layout = self.layout
-
-        row = layout.row()
-        row.label(text="Cam Manager Panel")
 
         scene = context.scene
 
@@ -282,7 +298,7 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
 
 class CAM_MANAGER_PT_popup(bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager_popup"
-    bl_label = "Cam Manager Popup"
+    bl_label = "Simple Camera Manager Popup"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
     bl_context = "empty"
@@ -292,7 +308,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         layout = self.layout
 
         row = layout.row()
-        row.label(text="Cam Manager Panel")
+        row.label(text="Simple Camera Manager")
 
         scene = context.scene
         split = layout.split(factor=0.333)
@@ -359,13 +375,12 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         row = layout.row()
         row.prop(context.scene.render, 'filepath')
         # col_01.operator('cameras.open_in_explorer')
-        row = layout.row()
-        # layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
+        row = layout.row()  # layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
 
 
 class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
     bl_idname = "CAMERA_PT_manager_menu"
-    bl_label = "Cam Manager Menu"
+    bl_label = "Simple Camera Manager Menu"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "data"
@@ -385,26 +400,16 @@ class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(cam, "resolution", text="")
-        op = row.operator("cam_manager.camera_resolutio_from_image",
-                          text="", icon='IMAGE_BACKGROUND').camera_name = cam.name
+        op = row.operator("cam_manager.camera_resolutio_from_image", text="",
+                          icon='IMAGE_BACKGROUND').camera_name = cam.name
 
 
 class CameraCollectionProperty(bpy.types.PropertyGroup):
-    collection: bpy.props.PointerProperty(
-        name="Collection",
-        type=bpy.types.Collection,
-    )
+    collection: bpy.props.PointerProperty(name="Collection", type=bpy.types.Collection, )
 
 
-classes = (
-    CameraCollectionProperty,
-    CAMERA_OT_open_in_explorer,
-    CAMERA_UL_cameras_popup,
-    CAMERA_UL_cameras_scene,
-    CAM_MANAGER_PT_scene_properties,
-    CAM_MANAGER_PT_popup,
-    CAM_MANAGER_PT_camera_properties,
-)
+classes = (CameraCollectionProperty, CAMERA_OT_open_in_explorer, CAMERA_UL_cameras_popup, CAMERA_UL_cameras_scene,
+           CAM_MANAGER_PT_scene_properties, CAM_MANAGER_PT_popup, CAM_MANAGER_PT_camera_properties,)
 
 
 def register():
@@ -414,12 +419,14 @@ def register():
         register_class(cls)
 
     scene = bpy.types.Scene
+
     # The PointerProperty has to be after registering the classes to know about the custom property type
     scene.cam_collection = bpy.props.PointerProperty(name="Camera Collection",
                                                      description='User collection dedicated for the cameras',
                                                      type=CameraCollectionProperty)
 
     scene.output_render = bpy.props.BoolProperty(name="Save Render", description="Save renders to disk", default=True)
+
     scene.output_use_cam_name = bpy.props.BoolProperty(name="Camera as File Name",
                                                        description="Use camera name as file name", default=True)
 
