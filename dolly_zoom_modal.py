@@ -252,7 +252,8 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             # update camera
             self.update_camera()
 
-            # the arguments we pass the callback
+            # the arguments we pass to the callback
+
             args = (self, context)
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
