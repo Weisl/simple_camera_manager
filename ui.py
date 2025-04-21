@@ -15,20 +15,19 @@ def get_addon_name():
 def draw_simple_camera_manager_header(layout):
     row = layout.row(align=True)
     # Open documentation
-    row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
-    # Open Preferences
+    row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/camera_manager_Overview/"
 
+    # Open Preferences
     addon_name = get_addon_name()
     op = row.operator("simple_camera.open_preferences", text="", icon='PREFERENCES')
     op.addon_name = addon_name
     op.prefs_tabs = 'GENERAL'
 
     # Open Export Popup
-    # Example usage
     op = row.operator("wm.call_panel", text="", icon="WINDOW")
-    op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+    op.name = "OBJECT_PT_camera_manager_popup"
 
-    # Get the keymap for the panel
+    # Add keymap to label
     panel_id = "OBJECT_PT_camera_manager_popup"
     popup_keymap = get_panel_keymap_string(panel_id)
 
