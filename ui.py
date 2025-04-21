@@ -32,7 +32,7 @@ def draw_simple_camera_manager_header(layout):
     popup_keymap = get_panel_keymap_string(panel_id)
 
     # Display the combined label and keymap information
-    row.label(text=f"Simple Export ({popup_keymap})")
+    row.label(text=f"Simple Camera Manager ({popup_keymap})")
 
 
 class CAMERA_OT_open_in_explorer(bpy.types.Operator):

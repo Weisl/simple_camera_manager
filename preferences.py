@@ -1,9 +1,25 @@
 import bpy
+import textwrap
 
-from .keymap import remove_key
-from .keymap import keymaps_items_dict
 from .keymap import add_keymap, add_key
+from .keymap import keymaps_items_dict
+from .keymap import remove_key
 
+
+def label_multiline(context, text, parent):
+    """
+    Draw a label with multiline text in the layout.
+
+    Args:
+        context (Context): The current context.
+        text (str): The text to display.
+        parent (UILayout): The parent layout to add the label to.
+    """
+    chars = int(context.region.width / 7)  # 7 pix on 1 character
+    wrapper = textwrap.TextWrapper(width=chars)
+    text_lines = wrapper.wrap(text=text)
+    for text_line in text_lines:
+        parent.label(text=text_line)
 
 
 def update_key(self, context, idname, operator_name, property_prefix):
@@ -62,7 +78,8 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
     # addon updater preferences
 
     prefs_tabs: bpy.props.EnumProperty(items=(('GENERAL', "General", "General Settings"),
-                                              ('KEYMAPS', "Keymaps", "Keymaps")),
+                                              ('KEYMAPS', "Keymaps", "Keymap Settings"),
+                                              ('SUPPORT', "Support", "Support me")),
                                        default='GENERAL')
 
     next_cam_type: bpy.props.StringProperty(
@@ -217,7 +234,6 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
     # Gizmos
     show_dolly_gizmo: bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=False)
 
-    
     def draw(self, context):
         """ simple preference UI to define custom inputs and user preferences"""
         layout = self.layout
@@ -225,15 +241,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         row = layout.row(align=True)
         row.prop(self, "prefs_tabs", expand=True)
 
-        # Settings regarding the keymap
-        if self.prefs_tabs == 'KEYMAPS':
-            box = layout.box()
-
-            for title, value in keymaps_items_dict.items():
-                self.keymap_ui(box, title, value['name'], value["idname"], value["operator"])
-
-
-        else:
+        if self.prefs_tabs == 'GENERAL':
             box = layout.box()
             row = box.row()
             row.label(text='Always show Gizmo')
@@ -243,6 +251,71 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
             # updater draw function
             # could also pass in col as third arg
+
+
+        # Settings regarding the keymap
+        elif self.prefs_tabs == 'KEYMAPS':
+            box = layout.box()
+
+            for title, value in keymaps_items_dict.items():
+                self.keymap_ui(box, title, value['name'], value["idname"], value["operator"])
+
+
+        elif self.prefs_tabs == 'SUPPORT':
+            # Cross Promotion
+
+            text = "Explore my other Blender Addons designed for more efficient game asset workflows!"
+            label_multiline(
+                context=context,
+                text=text,
+                parent=layout
+            )
+
+            layout.label(text="Simple Tools ($)")
+
+            col = layout.column(align=True)
+            row = col.row(align=True)
+            row.label(text="Simple Collider")
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-collider"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/collider-tools"
+
+            row = col.row(align=True)
+            row.label(text="Simple Camera Manager")
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-camera-manager"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/Cam-Manager"
+
+            row = col.row(align=True)
+            row.label(text="Simple Export")
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-export"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple-export"
+
+
+            layout.label(text="Simple Renaming (Free)")
+            col = layout.column(align=True)
+            row = col.row(align=True)
+            row.label(text="Simple Renaming")
+            row.operator("wm.url_open", text="Blender Extensions",
+                         icon="URL").url = "https://extensions.blender.org/add-ons/simple-renaming-panel/"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_renaming"
+
+
+
+            col = layout.column(align=True)
+            row = col.row()
+            row.label(text='Support')
+            row = col.row()
+            row.label(text='Support is primarily provided through the store pages for Superhive and Gumroad.')
+            row.label(text='Questions or Feedback?')
+            row = col.row()
+            row.operator("wm.url_open", text="Discord", icon="URL").url = "https://discord.gg/kSWeQpfD"
+
 
 
 classes = (
