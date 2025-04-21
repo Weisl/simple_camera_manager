@@ -3,7 +3,7 @@ import bpy
 keymaps_items_dict = {
     "Simple Camera Manager": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
         'OBJECT_PT_camera_manager_popup', "type": 'C', "value": 'PRESS',
-                                    "ctrl": False, "shift": True, "alt": True, "active": True},
+                              "ctrl": False, "shift": True, "alt": True, "active": True},
     "Active Camera Pie": {"name": 'cam_pie', "idname": 'wm.call_menu_pie',
                           "operator": 'CAMERA_MT_pie_menu',
                           "type": 'C', "value": 'PRESS', "ctrl": False, "shift": False, "alt": True, "active": True},
@@ -15,6 +15,41 @@ keymaps_items_dict = {
                         "alt": False, "active": True}}
 
 
+def get_panel_keymap_string(panel_id):
+    # Get all keymaps
+    keymaps = bpy.context.window_manager.keyconfigs.user.keymaps
+
+    # Find the keymap item for the given panel
+    keymap_item = None
+    for km in keymaps:
+        for kmi in km.keymap_items:
+            if kmi.idname == "wm.call_panel" and kmi.properties.name == panel_id:
+                keymap_item = kmi
+                break
+        if keymap_item:
+            break
+
+    if not keymap_item:
+        return
+
+    # Extract the key information
+    modifiers = []
+    if keymap_item.ctrl:
+        modifiers.append("Ctrl")
+    if keymap_item.alt:
+        modifiers.append("Alt")
+    if keymap_item.shift:
+        modifiers.append("Shift")
+    if keymap_item.oskey:
+        modifiers.append("Cmd" if bpy.app.build_platform == 'Darwin' else "Win")
+
+    key = keymap_item.type
+
+    # Print the keymap in the desired format
+    keymap_str = " + ".join(modifiers + [key])
+    return keymap_str
+
+
 def add_key(context, idname, type, ctrl, shift, alt, operator, active):
     km = context.window_manager.keyconfigs.addon.keymaps.new(name="Window")
 
@@ -24,7 +59,6 @@ def add_key(context, idname, type, ctrl, shift, alt, operator, active):
 
     if operator != '':
         add_key_to_keymap(operator, kmi, active=active)
-
 
 
 def remove_key(context, idname, properties_name):
@@ -83,8 +117,6 @@ def remove_keymap():
         addon_keymaps.keymap_items.remove(kmi)
 
 
-
-
 class REMOVE_OT_hotkey(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "cam.remove_hotkey"
@@ -119,7 +151,6 @@ class BUTTON_OT_change_key(bpy.types.Operator):
     def __init__(self):
         self.my_event = ''
 
-    
     def invoke(self, context, event):
         prefs = bpy.context.preferences.addons[__package__].preferences
         self.prefs = prefs
@@ -140,7 +171,6 @@ class BUTTON_OT_change_key(bpy.types.Operator):
 
         return {'RUNNING_MODAL'}
 
-    
     def execute(self, context):
         self.report({'INFO'},
                     "Key change: " + bpy.types.Event.bl_rna.properties['type'].enum_items[self.my_event].name)

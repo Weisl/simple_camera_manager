@@ -2,13 +2,38 @@ import os
 import subprocess
 
 import bpy
-
+from .keymap import get_panel_keymap_string
 
 def get_addon_name():
     """
     Returns the addon name as a string.
     """
     return "Simple Camera Manager"
+
+
+
+def draw_simple_camera_manager_header(layout):
+    row = layout.row(align=True)
+    # Open documentation
+    row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/exporter_overview/"
+    # Open Preferences
+
+    addon_name = get_addon_name()
+    op = row.operator("simple_camera.open_preferences", text="", icon='PREFERENCES')
+    op.addon_name = addon_name
+    op.prefs_tabs = 'GENERAL'
+
+    # Open Export Popup
+    # Example usage
+    op = row.operator("wm.call_panel", text="", icon="WINDOW")
+    op.name = "SIMPLE_EXPORT_PT_simple_export_popup"
+
+    # Get the keymap for the panel
+    panel_id = "OBJECT_PT_camera_manager_popup"
+    popup_keymap = get_panel_keymap_string(panel_id)
+
+    # Display the combined label and keymap information
+    row.label(text=f"Simple Export ({popup_keymap})")
 
 
 class CAMERA_OT_open_in_explorer(bpy.types.Operator):
@@ -251,20 +276,14 @@ class CAM_MANAGER_PT_scene_panel:
 
 class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager"
-    bl_label = "Simple Camera Manager"
+    bl_label = ""
     bl_region_type = 'WINDOW'
     bl_context = "scene"
 
     def draw_header(self, context):
         layout = self.layout
+        draw_simple_camera_manager_header(layout)
 
-        addon_name = get_addon_name()
-
-        row = layout.row(align=True)
-        row.operator("wm.url_open", text="", icon='HELP').url = "https://weisl.github.io/camera_manager_Overview/"
-        op = row.operator("simple_camera.open_preferences", text="", icon='PREFERENCES')
-        op.addon_name = addon_name
-        op.prefs_tabs = 'GENERAL'
 
     def draw(self, context):
         layout = self.layout
