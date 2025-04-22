@@ -4,6 +4,7 @@ import textwrap
 from .keymap import add_keymap, add_key
 from .keymap import keymaps_items_dict
 from .keymap import remove_key
+from .ui import VIEW3D_PT_SimpleCameraManager
 
 
 def label_multiline(context, text, parent):
@@ -20,6 +21,29 @@ def label_multiline(context, text, parent):
     text_lines = wrapper.wrap(text=text)
     for text_line in text_lines:
         parent.label(text=text_line)
+
+
+def update_panel_category(self, context):
+    """Update panel tab for simple export"""
+    panels = [
+        VIEW3D_PT_SimpleCameraManager,
+    ]
+
+    for panel in panels:
+        try:
+            bpy.utils.unregister_class(panel)
+        except:
+            pass
+
+        prefs = context.preferences.addons[__package__].preferences
+        panel.bl_category = prefs.panel_category
+
+        if prefs.enable_n_panel:
+            try:
+                bpy.utils.register_class(panel)
+            except ValueError:
+                pass  # Avoid duplicate registrations
+    return
 
 
 def update_key(self, context, idname, operator_name, property_prefix):
@@ -198,6 +222,17 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         update=update_cam_menu_key
     )
 
+    panel_category: bpy.props.StringProperty(name="Category Tab",
+                                             description="The category name used to organize the addon in the properties panel for all the addons",
+                                             default='Simple Camera Manager',
+                                             update=update_panel_category)  # update = update_panel_position,
+
+    enable_n_panel: bpy.props.BoolProperty(
+        name="Enable Simple Export N-Panel",
+        description="Toggle the N-Panel on and off.",
+        default=True,
+        update=update_panel_category)
+
     def keymap_ui(self, layout, title, property_prefix, id_name, properties_name):
         box = layout.box()
         split = box.split(align=True, factor=0.5)
@@ -243,14 +278,22 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
         if self.prefs_tabs == 'GENERAL':
             box = layout.box()
+            box.label(text="UI")
+            box.prop(self, 'enable_n_panel')
+            box.prop(self, 'panel_category')
+            # updater draw function
+            # could also pass in col as third arg
+
+
+            box = layout.box()
+            box.label(text="Gizmos")
             row = box.row()
             row.label(text='Always show Gizmo')
-
             row = box.row()
             row.prop(self, "show_dolly_gizmo", expand=True)
 
-            # updater draw function
-            # could also pass in col as third arg
+
+
 
 
         # Settings regarding the keymap
@@ -295,7 +338,6 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/simple-export"
 
-
             layout.label(text="Simple Renaming (Free)")
             col = layout.column(align=True)
             row = col.row(align=True)
@@ -305,8 +347,6 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/simple_renaming"
 
-
-
             col = layout.column(align=True)
             row = col.row()
             row.label(text='Support')
@@ -315,7 +355,6 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.label(text='Questions or Feedback?')
             row = col.row()
             row.operator("wm.url_open", text="Discord", icon="URL").url = "https://discord.gg/kSWeQpfD"
-
 
 
 classes = (
@@ -331,6 +370,8 @@ def register():
 
     add_keymap()
 
+    # Initialize correct property panel for the Simple Export Panel
+    update_panel_category(None, bpy.context)
 
 def unregister():
     from bpy.utils import unregister_class

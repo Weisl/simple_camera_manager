@@ -1,15 +1,15 @@
+import bpy
 import os
 import subprocess
 
-import bpy
 from .keymap import get_panel_keymap_string
+
 
 def get_addon_name():
     """
     Returns the addon name as a string.
     """
     return "Simple Camera Manager"
-
 
 
 def draw_simple_camera_manager_header(layout):
@@ -266,6 +266,48 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
             layout.label(text=obj.name)
 
 
+class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
+    """Creates a Panel in the Object properties window"""
+
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Simple Camera Manager"
+    bl_label = ""
+
+    def draw_header(self, context):
+        layout = self.layout
+        draw_simple_camera_manager_header(layout)
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+
+        row = layout.row()
+        row.prop(scene, "camera")
+
+        row = layout.row()
+        # template_list now takes two new args.
+        # The first one is the identifier of the registered UIList to use (if you want only the default list,
+        # with no custom draw code, use "UI_UL_list").
+
+        row = layout.row()
+        row.template_list("CAMERA_UL_cameras_scene", "", scene, "objects", scene, "camera_list_index")
+        col = row.column(align=True)
+        col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
+        col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
+
+        layout.separator()
+        layout.label(text='All Cameras')
+
+        row = layout.row(align=True)
+        row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='Camera Collection')
+        row.operator("camera.create_collection", text='New Collection', icon='COLLECTION_NEW')
+
+        row = layout.row()
+        row.operator('cameras.all_to_collection')
+
+
 class CAM_MANAGER_PT_scene_panel:
     """Properties Panel in the scene tab"""
     bl_space_type = 'PROPERTIES'
@@ -282,7 +324,6 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
     def draw_header(self, context):
         layout = self.layout
         draw_simple_camera_manager_header(layout)
-
 
     def draw(self, context):
         layout = self.layout
@@ -426,8 +467,16 @@ class CameraCollectionProperty(bpy.types.PropertyGroup):
     collection: bpy.props.PointerProperty(name="Collection", type=bpy.types.Collection, )
 
 
-classes = (CameraCollectionProperty, CAMERA_OT_open_in_explorer, CAMERA_UL_cameras_popup, CAMERA_UL_cameras_scene,
-           CAM_MANAGER_PT_scene_properties, CAM_MANAGER_PT_popup, CAM_MANAGER_PT_camera_properties,)
+classes = (
+    CameraCollectionProperty,
+    CAMERA_OT_open_in_explorer,
+    CAMERA_UL_cameras_popup,
+    CAMERA_UL_cameras_scene,
+    CAM_MANAGER_PT_scene_properties,
+    CAM_MANAGER_PT_popup,
+    CAM_MANAGER_PT_camera_properties,
+    VIEW3D_PT_SimpleCameraManager
+)
 
 
 def register():
