@@ -14,23 +14,30 @@ keymaps_items_dict = {
                         "operator": '', "type": 'LEFT_ARROW', "value": 'PRESS', "ctrl": True, "shift": True,
                         "alt": False, "active": True}}
 
-
-def get_panel_keymap_string(panel_id):
+def get_keymap_string(item_id, item_type):
     # Get all keymaps
     keymaps = bpy.context.window_manager.keyconfigs.user.keymaps
 
-    # Find the keymap item for the given panel
+    # Find the keymap item for the given item_id and item_type
     keymap_item = None
     for km in keymaps:
         for kmi in km.keymap_items:
-            if kmi.idname == "wm.call_panel" and kmi.properties.name == panel_id:
+            if item_type == "PANEL" and kmi.idname == "wm.call_panel" and kmi.properties.name == item_id:
+                keymap_item = kmi
+                break
+            elif item_type == "MENU" and kmi.idname == "wm.call_menu_pie":
+                print(f"Menu Pie Keymap Item: {kmi.idname}, Name: {kmi.properties.name}")
+                if kmi.properties.name == item_id:
+                    keymap_item = kmi
+                    break
+            elif item_type == "OPERATOR" and kmi.idname == item_id:
                 keymap_item = kmi
                 break
         if keymap_item:
             break
 
     if not keymap_item:
-        return
+        return "Keymap not found"
 
     # Extract the key information
     modifiers = []
@@ -45,9 +52,9 @@ def get_panel_keymap_string(panel_id):
 
     key = keymap_item.type
 
-    # Print the keymap in the desired format
-    keymap_str = " + ".join(modifiers + [key])
-    return keymap_str
+    # Return the keymap in the desired format
+    return " + ".join(modifiers + [key])
+
 
 
 def add_key(context, idname, type, ctrl, shift, alt, operator, active):

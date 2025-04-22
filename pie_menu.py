@@ -4,6 +4,39 @@ from bpy.types import Menu
 
 # spawn an edit mode selection pie (run while object is in edit mode to get a valid output)
 
+def draw_camera_settings(context, layout, cam_obj):
+    if cam_obj is None:
+        return
+
+    # col.scale_y = 1
+    cam = cam_obj.data
+
+    row = layout.row(align=True)
+    row.label(text='Camera Settings')
+    row = layout.row(align=True)
+    row.prop(cam, "lens")
+    row = layout.row(align=True)
+    row.prop(cam, 'exposure', text='EXP')
+    row = layout.row(align=True)
+    row.prop(cam, "clip_start")
+    row = layout.row(align=True)
+    row.prop(cam, "clip_end")
+    row = layout.row(align=True)
+    dof = cam.dof
+    row.prop(dof, 'use_dof')
+
+    row = layout.row(align=True)
+    if dof.focus_object is None:
+        row.prop(dof, "focus_distance", text="Focus Distance")
+
+    # Camera Settings
+    row = layout.row(align=True)
+    row.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
+    row = layout.row(align=True)
+    row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
+
+    prefs = context.preferences.addons[__package__].preferences
+    row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
 
 class CAM_MANAGER_MT_PIE_camera_settings(Menu):
     # label is displayed at the center of the pie menu.
@@ -126,36 +159,9 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
             row = col.row(align=True)
             row.label(text="Camera has no Backround Images", icon='INFO')
 
-    def draw_center_column(self, context, col, cam_obj):
-        # col.scale_y = 1
-        cam = cam_obj.data
+    def draw_center_column(self, context, layout, cam_obj):
+        draw_camera_settings(context, layout, cam_obj)
 
-        row = col.row(align=True)
-        row.label(text='Camera Settings')
-        row = col.row(align=True)
-        row.prop(cam, "lens")
-        row = col.row(align=True)
-        row.prop(cam, 'exposure', text='EXP')
-        row = col.row(align=True)
-        row.prop(cam, "clip_start")
-        row = col.row(align=True)
-        row.prop(cam, "clip_end")
-        row = col.row(align=True)
-        dof = cam.dof
-        row.prop(dof, 'use_dof')
-
-        row = col.row(align=True)
-        if dof.focus_object is None:
-            row.prop(dof, "focus_distance", text="Focus Distance")
-
-        # Camera Settings
-        row = col.row(align=True)
-        row.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
-        row = col.row(align=True)
-        row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
-
-        prefs = context.preferences.addons[__package__].preferences
-        row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
 
     
     def draw_right_column(self, context, col, cam_obj):

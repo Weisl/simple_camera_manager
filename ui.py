@@ -2,8 +2,8 @@ import bpy
 import os
 import subprocess
 
-from .keymap import get_panel_keymap_string
-
+from .keymap import get_keymap_string
+from .pie_menu import draw_camera_settings
 
 def get_addon_name():
     """
@@ -27,12 +27,8 @@ def draw_simple_camera_manager_header(layout):
     op = row.operator("wm.call_panel", text="", icon="WINDOW")
     op.name = "OBJECT_PT_camera_manager_popup"
 
-    # Add keymap to label
-    panel_id = "OBJECT_PT_camera_manager_popup"
-    popup_keymap = get_panel_keymap_string(panel_id)
-
     # Display the combined label and keymap information
-    row.label(text=f"Simple Camera Manager ({popup_keymap})")
+    row.label(text=f"Simple Camera Manager")
 
 
 class CAMERA_OT_open_in_explorer(bpy.types.Operator):
@@ -238,12 +234,12 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
 
                 # COLUMN 02
                 row = col_02.row(align=True)
-                icon = 'HIDE_OFF' if obj.visible_get() else 'HIDE_ON'
-                op = row.operator("camera.hide_unhide", icon=icon, text='')
-                op.camera_name = obj.name
-                op.cam_hide = obj.visible_get()
-                op = row.prop(obj, "hide_viewport", text='')
-                op = row.prop(obj, "hide_select", text='')
+                # icon = 'HIDE_OFF' if obj.visible_get() else 'HIDE_ON'
+                # op = row.operator("camera.hide_unhide", icon=icon, text='')
+                # op.camera_name = obj.name
+                # op.cam_hide = obj.visible_get()
+                # op = row.prop(obj, "hide_viewport", text='')
+                # op = row.prop(obj, "hide_select", text='')
 
                 if obj.get('lock'):
                     op = row.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
@@ -254,8 +250,16 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
                     op.camera_name = obj.name
                     op.cam_lock = True
 
-                op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION', text='')
-                op.object_name = obj.name
+                row = row.row(align=True)
+
+                row.prop(cam, 'slot', text='')
+                # slot = cam.slot
+                # row.label (text=f"{slot}")
+                op = row.operator('cameras.custom_render', text='', icon='RENDER_STILL')
+                op.camera_name = obj.name
+
+                # op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION', text='')
+                # op.object_name = obj.name
 
             else:
                 layout.label(text=obj.name)
@@ -298,7 +302,7 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
 
         layout.separator()
-        layout.label(text='All Cameras')
+        layout.label(text='Move Cameras to Collection')
 
         row = layout.row(align=True)
         row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='Camera Collection')
@@ -307,6 +311,27 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         row = layout.row()
         row.operator('cameras.all_to_collection')
 
+
+
+        # Get the keymap for the panel
+        panel_keymap = get_keymap_string("OBJECT_PT_camera_manager_popup", "PANEL")
+        menu_keymap = get_keymap_string("CAMERA_MT_pie_menu", "MENU")
+        operator1_keymap = get_keymap_string("cam_manager.cycle_cameras_backward", "OPERATOR")
+        operator2_keymap = get_keymap_string("cam_manager.cycle_cameras_next", "OPERATOR")
+
+
+        box = layout.box()
+        box.label(text='Active Camera')
+        cam_obj = context.scene.camera
+        draw_camera_settings(context, box, cam_obj)
+
+        layout.separator()
+        layout.label(text='Keymap')
+        # Display the combined label and keymap information
+        layout.label(text=f"Camera Manager ({panel_keymap})")
+        layout.label(text=f"Camera Pie ({menu_keymap})")
+        layout.label(text=f"Previous Cam ({operator1_keymap})")
+        layout.label(text=f"Next Cam ({operator2_keymap})")
 
 class CAM_MANAGER_PT_scene_panel:
     """Properties Panel in the scene tab"""
