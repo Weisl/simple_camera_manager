@@ -26,7 +26,6 @@ def get_keymap_string(item_id, item_type):
                 keymap_item = kmi
                 break
             elif item_type == "MENU" and kmi.idname == "wm.call_menu_pie":
-                print(f"Menu Pie Keymap Item: {kmi.idname}, Name: {kmi.properties.name}")
                 if kmi.properties.name == item_id:
                     keymap_item = kmi
                     break

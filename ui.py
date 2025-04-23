@@ -444,7 +444,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         row = col_04.row(align=True)
         row.label(text="Collection")
         row = col_05.row(align=True)
-        row.label(text="Render")
+        row.label(text="Render Slot")
 
         row = layout.row()
         row.template_list("CAMERA_UL_cameras_popup", "", scene, "objects", scene, "camera_list_index")
@@ -517,9 +517,9 @@ def register():
                                                      description='User collection dedicated for the cameras',
                                                      type=CameraCollectionProperty)
 
-    scene.output_render = bpy.props.BoolProperty(name="Save Render", description="Save renders to disk", default=True)
+    scene.output_render = bpy.props.BoolProperty(name="Save Render to Disk", description="Save renders to disk", default=True)
 
-    scene.output_use_cam_name = bpy.props.BoolProperty(name="Camera as File Name",
+    scene.output_use_cam_name = bpy.props.BoolProperty(name="Use Camera Name as File Name",
                                                        description="Use camera name as file name", default=True)
 
 

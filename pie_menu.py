@@ -13,26 +13,31 @@ def draw_camera_settings(context, layout, cam_obj):
 
     row = layout.row(align=True)
     row.label(text='Camera Settings')
-    row = layout.row(align=True)
+
+    col = layout.column(align=True)
+    row = col.row(align=True)
+    row.prop(cam, "resolution", text="Resolution")
+    row = col.row(align=True)
     row.prop(cam, "lens")
-    row = layout.row(align=True)
+    row = col.row(align=True)
     row.prop(cam, 'exposure', text='EXP')
-    row = layout.row(align=True)
+    row = col.row(align=True)
     row.prop(cam, "clip_start")
-    row = layout.row(align=True)
+    row = col.row(align=True)
     row.prop(cam, "clip_end")
-    row = layout.row(align=True)
+    row = col.row(align=True)
     dof = cam.dof
     row.prop(dof, 'use_dof')
 
-    row = layout.row(align=True)
+    row = col.row(align=True)
     if dof.focus_object is None:
         row.prop(dof, "focus_distance", text="Focus Distance")
 
+    col = layout.column(align=True)
     # Camera Settings
-    row = layout.row(align=True)
+    row = col.row(align=True)
     row.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
-    row = layout.row(align=True)
+    row = col.row(align=True)
     row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
 
     prefs = context.preferences.addons[__package__].preferences
