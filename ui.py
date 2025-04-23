@@ -301,17 +301,6 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
 
-        layout.separator()
-        layout.label(text='Move Cameras to Collection')
-
-        row = layout.row(align=True)
-        row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='Camera Collection')
-        row.operator("camera.create_collection", text='New Collection', icon='COLLECTION_NEW')
-
-        row = layout.row()
-        row.operator('cameras.all_to_collection')
-
-
 
         # Get the keymap for the panel
         panel_keymap = get_keymap_string("OBJECT_PT_camera_manager_popup", "PANEL")
@@ -320,10 +309,13 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         operator2_keymap = get_keymap_string("cam_manager.cycle_cameras_next", "OPERATOR")
 
 
-        box = layout.box()
-        box.label(text='Active Camera')
-        cam_obj = context.scene.camera
-        draw_camera_settings(context, box, cam_obj)
+        # Draw the panel header
+        header, body = layout.panel(idname="ACTIVE_COL_PANEL", default_closed=False)
+        header.label(text=f"Active Camera:", icon='OUTLINER_COLLECTION')
+
+        if body:
+            cam_obj = context.scene.camera
+            draw_camera_settings(context, body, cam_obj)
 
         layout.separator()
         layout.label(text='Keymap')
@@ -332,6 +324,16 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         layout.label(text=f"Camera Pie ({menu_keymap})")
         layout.label(text=f"Previous Cam ({operator1_keymap})")
         layout.label(text=f"Next Cam ({operator2_keymap})")
+
+       # layout.separator()
+        # layout.label(text='Move Cameras to Collection')
+        #
+        # row = layout.row(align=True)
+        # row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='Camera Collection')
+        # row.operator("camera.create_collection", text='New Collection', icon='COLLECTION_NEW')
+        #
+        # row = layout.row()
+        # row.operator('cameras.all_to_collection')
 
 class CAM_MANAGER_PT_scene_panel:
     """Properties Panel in the scene tab"""

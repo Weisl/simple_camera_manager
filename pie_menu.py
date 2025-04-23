@@ -12,36 +12,72 @@ def draw_camera_settings(context, layout, cam_obj):
     cam = cam_obj.data
 
     row = layout.row(align=True)
-    row.label(text='Camera Settings')
+    row.prop(cam, "resolution", text="Resolution")
 
+    # Lens
     col = layout.column(align=True)
     row = col.row(align=True)
-    row.prop(cam, "resolution", text="Resolution")
-    row = col.row(align=True)
     row.prop(cam, "lens")
-    row = col.row(align=True)
-    row.prop(cam, 'exposure', text='EXP')
     row = col.row(align=True)
     row.prop(cam, "clip_start")
     row = col.row(align=True)
     row.prop(cam, "clip_end")
-    row = col.row(align=True)
-    dof = cam.dof
-    row.prop(dof, 'use_dof')
 
-    row = col.row(align=True)
-    if dof.focus_object is None:
-        row.prop(dof, "focus_distance", text="Focus Distance")
+    # Draw the panel header
+    header, body = layout.panel(idname="FOCUS_PANEL", default_closed=True)
+    header.label(text=f"Focus:")
+
+    if body:
+        dof = cam.dof
+        col = body.column(align=True)
+        row = col.row(align=True)
+        row.prop(dof, 'use_dof')
+        row = col.row(align=True)
+        row.prop(dof, 'focus_object', text="Focus Object")
+        row = col.row(align=True)
+        row.prop(dof, 'focus_distance')
+        row.operator(
+            "ui.eyedropper_depth",
+            icon='EYEDROPPER',
+            text="").prop_data_path = "scene.camera.data.dof.focus_distance"
+
+        row = col.row(align=True)
+        row.prop(cam, "dof_aperture_fstop", text="F-Stop")
+
+        if dof.focus_object is None:
+            row = col.row(align=True)
+            row.prop(dof, "focus_distance", text="Focus Distance")
+
+    # Draw the panel header
+    header, body = layout.panel(idname="LIGHT_PANEL", default_closed=True)
+    header.label(text=f"Lighting:")
+    if body:
+        col = body.column(align=False)
+
+        row = col.row(align=True)
+        row.prop(cam, 'exposure', text='Exposure')
+        row = col.row(align=True)
+        row.prop(cam, 'world', text='World')
+
+    header, body = layout.panel(idname="BACKGROUND_IMG", default_closed=True)
+    header.label(text=f"Background Image:")
+    if body:
+        col = body.column(align=True)
+        row = col.row(align=True)
+        row.prop(cam, "show_background_images", text="Show Background Images")
+        row = col.row(align=True)
+        row.prop(cam, "background_images", text="Background Images")
+        row.operator("cam_manager.add_background_image", text="Add Background Image", icon='ADD')
 
     col = layout.column(align=True)
-    # Camera Settings
-    row = col.row(align=True)
-    row.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
-    row = col.row(align=True)
-    row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
+    # # Camera Settings
+    # row = col.row(align=True)
+    # row.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
+    # row = col.row(align=True)
+    # row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
 
-    prefs = context.preferences.addons[__package__].preferences
-    row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
+    # prefs = context.preferences.addons[__package__].preferences
+    # row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
 
 class CAM_MANAGER_MT_PIE_camera_settings(Menu):
     # label is displayed at the center of the pie menu.
@@ -165,6 +201,9 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
             row.label(text="Camera has no Backround Images", icon='INFO')
 
     def draw_center_column(self, context, layout, cam_obj):
+        row = layout.row(align=True)
+        row.label(text='Camera Settings')
+
         draw_camera_settings(context, layout, cam_obj)
 
 
