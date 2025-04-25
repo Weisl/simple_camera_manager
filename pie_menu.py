@@ -25,28 +25,27 @@ def draw_camera_settings(context, layout, cam_obj):
 
     # Draw the panel header
     header, body = layout.panel(idname="FOCUS_PANEL", default_closed=True)
+
+    # header
+    dof = cam.dof
     header.label(text=f"Focus:")
+    header.prop(dof, 'use_dof')
 
     if body:
-        dof = cam.dof
-        col = body.column(align=True)
-        row = col.row(align=True)
-        row.prop(dof, 'use_dof')
-        row = col.row(align=True)
-        row.prop(dof, 'focus_object', text="Focus Object")
-        row = col.row(align=True)
-        row.prop(dof, 'focus_distance')
-        row.operator(
+        split = body.split()
+
+        col = split.column()
+        col.prop(dof, "focus_object", text="Focus on Object")
+        if dof.focus_object and dof.focus_object.type == 'ARMATURE':
+            col.prop_search(dof, "focus_subtarget", dof.focus_object.data, "bones", text="Focus Bone")
+
+        sub = col.row()
+        sub.active = dof.focus_object is None
+        sub.prop(dof, "focus_distance", text="Focus Distance")
+        sub.operator(
             "ui.eyedropper_depth",
             icon='EYEDROPPER',
             text="").prop_data_path = "scene.camera.data.dof.focus_distance"
-
-        row = col.row(align=True)
-        row.prop(cam, "dof_aperture_fstop", text="F-Stop")
-
-        if dof.focus_object is None:
-            row = col.row(align=True)
-            row.prop(dof, "focus_distance", text="Focus Distance")
 
     # Draw the panel header
     header, body = layout.panel(idname="LIGHT_PANEL", default_closed=True)
