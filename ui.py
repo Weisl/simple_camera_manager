@@ -316,8 +316,7 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
 
         if body:
             cam_obj = context.scene.camera
-            draw_camera_settings(context, body, cam_obj)
-
+            draw_camera_settings(context, body, cam_obj, use_subpanel=True)
 
         layout.label(text='Dolly Zoom', icon='VIEW_CAMERA')
         col = layout.column(align=True)
@@ -332,7 +331,7 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
 
         layout.separator()
         layout.label(text='Collection Operators')
-        layout.menu(CameraDropdownMenu.bl_idname,  icon='OUTLINER_COLLECTION')
+        layout.menu(CameraDropdownMenu.bl_idname, icon='OUTLINER_COLLECTION')
 
         layout.separator()
         layout.label(text='Keymap')
@@ -341,8 +340,6 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         layout.label(text=f"Camera Pie ({menu_keymap})")
         layout.label(text=f"Previous Cam ({operator1_keymap})")
         layout.label(text=f"Next Cam ({operator2_keymap})")
-
-
 
 
 class CAM_MANAGER_PT_scene_panel:

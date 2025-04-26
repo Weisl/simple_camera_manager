@@ -4,13 +4,13 @@ from bpy.types import Menu
 
 # spawn an edit mode selection pie (run while object is in edit mode to get a valid output)
 
-def draw_camera_settings(context, layout, cam_obj , use_subpanel=False):
+def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
     if cam_obj is None:
         return
 
-    # col.scale_y = 1
     cam = cam_obj.data
 
+    # Resolution
     row = layout.row(align=True)
     row.prop(cam, "resolution", text="Resolution")
 
@@ -27,18 +27,12 @@ def draw_camera_settings(context, layout, cam_obj , use_subpanel=False):
     row = col.row(align=True)
     row.prop(cam, "clip_end")
 
-    # Draw the panel header
-    header, body = layout.panel(idname="FOCUS_PANEL", default_closed=True)
+    def draw_focus_settings(layout):
+        dof = cam.dof
+        layout.label(text="Focus:")
+        layout.prop(dof, 'use_dof')
 
-    # header
-    dof = cam.dof
-    header.label(text=f"Focus:")
-    header.prop(dof, 'use_dof')
-
-    if body:
-        split = body.split()
-
-        col = split.column()
+        col = layout.column()
         col.prop(dof, "focus_object", text="Focus on Object")
         if dof.focus_object and dof.focus_object.type == 'ARMATURE':
             col.prop_search(dof, "focus_subtarget", dof.focus_object.data, "bones", text="Focus Bone")
@@ -49,26 +43,22 @@ def draw_camera_settings(context, layout, cam_obj , use_subpanel=False):
         sub.operator(
             "ui.eyedropper_depth",
             icon='EYEDROPPER',
-            text="").prop_data_path = "scene.camera.data.dof.focus_distance"
+            text=""
+        ).prop_data_path = "scene.camera.data.dof.focus_distance"
 
-    # Draw the panel header
-    header, body = layout.panel(idname="LIGHT_PANEL", default_closed=True)
-    header.label(text=f"Camera Lighting:")
-    if body:
-        col = body.column(align=False)
-
+    def draw_lighting_settings(layout):
+        layout.label(text="Camera Lighting:")
+        col = layout.column(align=False)
         row = col.row(align=True)
         row.prop(cam, 'exposure', text='Exposure')
         row = col.row(align=True)
         row.prop(cam, 'world', text='World')
 
-    header, body = layout.panel(idname="BACKGROUND_IMG", default_closed=True)
-    header.label(text=f"Background Image:")
-
-    if body:
-        col = body.column(align=True)
+    def draw_background_image_settings(layout):
+        layout.label(text="Background Image:")
+        col = layout.column(align=True)
         if not cam_obj.visible_get():
-            row = body.row(align=True)
+            row = layout.row(align=True)
             row.label(text="Camera is hidden", icon='ERROR')
 
         if len(cam.background_images) > 0:
@@ -84,8 +74,28 @@ def draw_camera_settings(context, layout, cam_obj , use_subpanel=False):
                 row.prop(img, "display_depth")
         else:
             row = col.row(align=True)
-            row.label(text="Camera has no Backround Images", icon='INFO')
-    col = layout.column(align=True)
+            row.label(text="Camera has no Background Images", icon='INFO')
+
+    # Conditionally use subpanels or direct layout
+    if use_subpanel:
+        header, body = layout.panel(idname="FOCUS_PANEL", default_closed=True)
+        header.label(text="Focus:")
+        if body:
+            draw_focus_settings(body)
+
+        header, body = layout.panel(idname="LIGHT_PANEL", default_closed=True)
+        header.label(text="Camera Lighting:")
+        if body:
+            draw_lighting_settings(body)
+
+        header, body = layout.panel(idname="BACKGROUND_IMG", default_closed=True)
+        header.label(text="Background Image:")
+        if body:
+            draw_background_image_settings(body)
+    else:
+        draw_focus_settings(layout)
+        draw_lighting_settings(layout)
+        draw_background_image_settings(layout)
 
 
 class CAM_MANAGER_MT_PIE_camera_settings(Menu):
@@ -93,7 +103,6 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
     bl_label = "Active Camera Pie "
     bl_idname = "CAMERA_MT_pie_menu"
 
-    
     def draw(self, context):
         layout = self.layout
 
@@ -214,10 +223,8 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
         row = layout.row(align=True)
         row.label(text='Camera Settings')
 
-        draw_camera_settings(context, layout, cam_obj)
+        draw_camera_settings(context, layout, cam_obj, use_subpanel=False)
 
-
-    
     def draw_right_column(self, context, col, cam_obj):
         # col.scale_x = 2
 
