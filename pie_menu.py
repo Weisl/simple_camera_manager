@@ -4,7 +4,7 @@ from bpy.types import Menu
 
 # spawn an edit mode selection pie (run while object is in edit mode to get a valid output)
 
-def draw_camera_settings(context, layout, cam_obj):
+def draw_camera_settings(context, layout, cam_obj , use_subpanel=False):
     if cam_obj is None:
         return
 
@@ -18,6 +18,10 @@ def draw_camera_settings(context, layout, cam_obj):
     col = layout.column(align=True)
     row = col.row(align=True)
     row.prop(cam, "lens")
+    row = col.row(align=True)
+    row.prop(cam, 'angle')
+
+    col = layout.column(align=True)
     row = col.row(align=True)
     row.prop(cam, "clip_start")
     row = col.row(align=True)
@@ -49,7 +53,7 @@ def draw_camera_settings(context, layout, cam_obj):
 
     # Draw the panel header
     header, body = layout.panel(idname="LIGHT_PANEL", default_closed=True)
-    header.label(text=f"Lighting:")
+    header.label(text=f"Camera Lighting:")
     if body:
         col = body.column(align=False)
 
@@ -60,23 +64,29 @@ def draw_camera_settings(context, layout, cam_obj):
 
     header, body = layout.panel(idname="BACKGROUND_IMG", default_closed=True)
     header.label(text=f"Background Image:")
+
     if body:
         col = body.column(align=True)
-        row = col.row(align=True)
-        row.prop(cam, "show_background_images", text="Show Background Images")
-        row = col.row(align=True)
-        row.prop(cam, "background_images", text="Background Images")
-        row.operator("cam_manager.add_background_image", text="Add Background Image", icon='ADD')
+        if not cam_obj.visible_get():
+            row = body.row(align=True)
+            row.label(text="Camera is hidden", icon='ERROR')
 
+        if len(cam.background_images) > 0:
+            for img in cam.background_images:
+                row = col.row(align=True)
+                row.prop(img, "show_background_image")
+                row = col.row(align=True)
+                op = row.operator("cam_manager.camera_resolutio_from_image", icon='IMAGE_BACKGROUND')
+                op.camera_name = cam.name
+                row = col.row(align=True)
+                row.prop(img, "alpha")
+                row = col.row(align=True)
+                row.prop(img, "display_depth")
+        else:
+            row = col.row(align=True)
+            row.label(text="Camera has no Backround Images", icon='INFO')
     col = layout.column(align=True)
-    # # Camera Settings
-    # row = col.row(align=True)
-    # row.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
-    # row = col.row(align=True)
-    # row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
 
-    # prefs = context.preferences.addons[__package__].preferences
-    # row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
 
 class CAM_MANAGER_MT_PIE_camera_settings(Menu):
     # label is displayed at the center of the pie menu.
@@ -189,7 +199,8 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
             for img in cam.background_images:
                 row = col.row(align=True)
                 row.prop(img, "show_background_image")
-                op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
+                row = col.row(align=True)
+                op = row.operator("cam_manager.camera_resolutio_from_image", icon='IMAGE_BACKGROUND')
                 op.camera_name = cam.name
                 row = col.row(align=True)
                 row.prop(img, "alpha")

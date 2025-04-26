@@ -5,6 +5,7 @@ import subprocess
 from .keymap import get_keymap_string
 from .pie_menu import draw_camera_settings
 
+
 def get_addon_name():
     """
     Returns the addon name as a string.
@@ -162,6 +163,7 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 row = col_02.row()
                 c = row.column(align=True)
                 c.prop(cam, 'lens', text='')
+                c.prop(cam, 'angle', text='')
                 c = row.column(align=True)
                 c.prop(cam, "resolution", text="")
                 op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
@@ -288,7 +290,8 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         scene = context.scene
 
         row = layout.row()
-        row.prop(scene, "camera")
+        cam = scene.camera
+        row.label(text=f"Active Camera: {cam.name}", icon='VIEW_CAMERA')
 
         row = layout.row()
         # template_list now takes two new args.
@@ -301,21 +304,35 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
 
-
         # Get the keymap for the panel
         panel_keymap = get_keymap_string("OBJECT_PT_camera_manager_popup", "PANEL")
         menu_keymap = get_keymap_string("CAMERA_MT_pie_menu", "MENU")
         operator1_keymap = get_keymap_string("cam_manager.cycle_cameras_backward", "OPERATOR")
         operator2_keymap = get_keymap_string("cam_manager.cycle_cameras_next", "OPERATOR")
 
-
         # Draw the panel header
         header, body = layout.panel(idname="ACTIVE_COL_PANEL", default_closed=False)
-        header.label(text=f"Active Camera:", icon='OUTLINER_COLLECTION')
+        header.label(text=f"Active Camera", icon='OUTLINER_COLLECTION')
 
         if body:
             cam_obj = context.scene.camera
             draw_camera_settings(context, body, cam_obj)
+
+
+        layout.label(text='Dolly Zoom', icon='VIEW_CAMERA')
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        row.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
+        row = col.row(align=True)
+        row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
+
+        row = col.row(align=True)
+        prefs = context.preferences.addons[__package__].preferences
+        row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
+
+        layout.separator()
+        layout.label(text='Collection Operators')
+        layout.menu(CameraDropdownMenu.bl_idname,  icon='OUTLINER_COLLECTION')
 
         layout.separator()
         layout.label(text='Keymap')
@@ -325,15 +342,8 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         layout.label(text=f"Previous Cam ({operator1_keymap})")
         layout.label(text=f"Next Cam ({operator2_keymap})")
 
-       # layout.separator()
-        # layout.label(text='Move Cameras to Collection')
-        #
-        # row = layout.row(align=True)
-        # row.prop_search(scene.cam_collection, "collection", bpy.data, "collections", text='Camera Collection')
-        # row.operator("camera.create_collection", text='New Collection', icon='COLLECTION_NEW')
-        #
-        # row = layout.row()
-        # row.operator('cameras.all_to_collection')
+
+
 
 class CAM_MANAGER_PT_scene_panel:
     """Properties Panel in the scene tab"""
@@ -494,6 +504,17 @@ class CameraCollectionProperty(bpy.types.PropertyGroup):
     collection: bpy.props.PointerProperty(name="Collection", type=bpy.types.Collection, )
 
 
+# Define the custom menu
+class CameraDropdownMenu(bpy.types.Menu):
+    bl_label = "Camera Collection Operator"
+    bl_idname = "OBJECT_MT_camera_dropdown_menu"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("camera.create_collection", text='Camera Collection', icon='COLLECTION_NEW')
+        layout.operator("cameras.all_to_collection", text='Move to Camera Collection', icon='OUTLINER_COLLECTION')
+
+
 classes = (
     CameraCollectionProperty,
     CAMERA_OT_open_in_explorer,
@@ -502,7 +523,8 @@ classes = (
     CAM_MANAGER_PT_scene_properties,
     CAM_MANAGER_PT_popup,
     CAM_MANAGER_PT_camera_properties,
-    VIEW3D_PT_SimpleCameraManager
+    VIEW3D_PT_SimpleCameraManager,
+    CameraDropdownMenu,
 )
 
 
@@ -519,7 +541,8 @@ def register():
                                                      description='User collection dedicated for the cameras',
                                                      type=CameraCollectionProperty)
 
-    scene.output_render = bpy.props.BoolProperty(name="Save Render to Disk", description="Save renders to disk", default=True)
+    scene.output_render = bpy.props.BoolProperty(name="Save Render to Disk", description="Save renders to disk",
+                                                 default=True)
 
     scene.output_use_cam_name = bpy.props.BoolProperty(name="Use Camera Name as File Name",
                                                        description="Use camera name as file name", default=True)
@@ -532,6 +555,8 @@ def unregister():
         unregister_class(cls)
 
     scene = bpy.types.Scene
+
+    del scene.my_operator
     del scene.output_use_cam_name
     del scene.output_render
     del scene.cam_collection
