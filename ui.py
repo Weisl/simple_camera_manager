@@ -510,6 +510,7 @@ class CameraDropdownMenu(bpy.types.Menu):
         layout = self.layout
         layout.operator("camera.create_collection", text='Camera Collection', icon='COLLECTION_NEW')
         layout.operator("cameras.all_to_collection", text='Move to Camera Collection', icon='OUTLINER_COLLECTION')
+        layout.operator("camera.create_camera_from_view", text='Create Camera from View', icon='VIEW_CAMERA')
 
 
 classes = (

@@ -81,6 +81,49 @@ def lock_camera(obj, lock):
     obj['lock'] = lock
 
 
+class OBJECT_OT_create_camera_from_view(bpy.types.Operator):
+    """Create a new camera matching the current viewport view"""
+    bl_idname = "camera.create_camera_from_view"
+    bl_label = "Create Camera from View"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        # Create a new camera
+        bpy.ops.object.camera_add()
+        camera = context.object  # Ensure we get the newly created camera
+        camera.name = 'ViewportCamera'
+        print(f"New camera created: {camera.name} at location {camera.location}")
+
+        # Store the original active camera
+        original_camera = context.scene.camera
+        print(f"Original active camera: {original_camera.name if original_camera else 'None'}")
+
+        # Set the new camera as the active scene camera
+        context.scene.camera = camera
+        print(f"Set active scene camera to: {context.scene.camera.name}")
+
+        # Get the 3D view area and region
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        # Align the new camera to the viewport view
+                        with context.temp_override(area=area, region=region, scene=context.scene):
+                            bpy.ops.view3d.camera_to_view()
+                        print(f"New camera aligned to viewport view. Location: {camera.location}")
+                        break
+
+        # Optionally, set the camera's lens to match the viewport
+        camera.data.lens = context.space_data.lens
+        print(f"Camera lens set to: {camera.data.lens}")
+
+        # Restore the original active camera
+        # context.scene.camera = original_camera
+        # print(f"Restored active scene camera to: {context.scene.camera.name if context.scene.camera else 'None'}")
+
+        self.report({'INFO'}, f"Camera '{camera.name}' created from the viewport view.")
+        return {'FINISHED'}
+
 class CAM_MANAGER_OT_lock_cameras(bpy.types.Operator):
     """Operator to lock and unlock all camera transforms"""
     bl_idname = "cam_manager.lock_unlock_camera"
@@ -90,7 +133,6 @@ class CAM_MANAGER_OT_lock_cameras(bpy.types.Operator):
     camera_name: bpy.props.StringProperty()
     cam_lock: bpy.props.BoolProperty(name="lock", default=True)
 
-    
     def execute(self, context):
         if self.camera_name and bpy.data.objects[self.camera_name]:
             obj = bpy.data.objects[self.camera_name]
@@ -177,7 +219,6 @@ class CAM_MANAGER_OT_resolution_from_img(bpy.types.Operator):
 
     camera_name: bpy.props.StringProperty()
 
-    
     def execute(self, context):
         if self.camera_name and bpy.data.cameras[self.camera_name]:
             camera = bpy.data.cameras[self.camera_name]
@@ -203,7 +244,6 @@ class CAM_MANAGER_OT_hide_unhide_camera(bpy.types.Operator):
     camera_name: bpy.props.StringProperty()
     cam_hide: bpy.props.BoolProperty(name="hide", default=True)
 
-    
     def execute(self, context):
         if self.camera_name and bpy.data.objects[self.camera_name]:
             obj = bpy.data.objects[self.camera_name]
@@ -425,7 +465,6 @@ def render_slot_update_funce(self, context):
             render_result.render_slots.active_index = self.slot - 1
 
 
-
 def update_func(self, context):
     self.show_limits = not self.show_limits
     self.show_limits = not self.show_limits
@@ -442,7 +481,8 @@ classes = (
     CAM_MANAGER_OT_lock_cameras,
     CAM_MANAGER_OT_hide_unhide_camera,
     CAM_MANAGER_OT_all_cameras_to_collection,
-    CAM_MANAGER_OT_select_active_cam
+    CAM_MANAGER_OT_select_active_cam,
+    OBJECT_OT_create_camera_from_view,
 )
 
 
