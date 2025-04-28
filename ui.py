@@ -221,12 +221,18 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
                 c = layout.column()
                 row = c.row()
 
+
+
                 split = row.split(factor=0.6)
                 col_01 = split.column()
                 col_02 = split.column()
 
                 # COLUMN 01
                 row = col_01.row(align=True)
+
+                # Checkbox for selecting the collection for export
+                row.prop(cam, "render_selected", text="")
+
                 # Change icon for already active cam
                 icon = 'VIEW_CAMERA' if obj == bpy.context.scene.camera else 'FORWARD'
                 op = row.operator("cam_manager.change_scene_camera", text='', icon=icon)
@@ -304,6 +310,7 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
 
+        layout.operator("cam_manager.multi_camera_rendering")
         # Get the keymap for the panel
         panel_keymap = get_keymap_string("OBJECT_PT_camera_manager_popup", "PANEL")
         menu_keymap = get_keymap_string("CAMERA_MT_pie_menu", "MENU")

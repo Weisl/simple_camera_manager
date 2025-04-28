@@ -1,7 +1,6 @@
-import blf
-import bpy
 import math
 
+import blf
 from mathutils import Vector
 
 
@@ -51,7 +50,6 @@ def set_cam_values(cam_dic, camera, distance):
 def distance_vec(point1: Vector, point2: Vector):
     """Calculates distance between two points."""
     return (point2 - point1).length
-
 
 
 def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, color):
@@ -110,7 +108,6 @@ def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, 
     return i
 
 
-
 def draw_callback_px(self, context):
     """Draw 3d viewport text for the dolly zoom modal operator"""
     scene = context.scene
@@ -144,6 +141,99 @@ def draw_callback_px(self, context):
         color = (1.0, 1.0, 1.0, 1.0)
 
     draw_title_text(self, font_id, i, vertical_px_offset, left_margin, 'IGNORE INPUT (ALT)', color)
+
+
+import bpy
+
+
+class CAM_MANAGER_OT_multi_camera_rendering(bpy.types.Operator):
+    """Render all selected cameras"""
+    bl_idname = "cam_manager.multi_camera_rendering"
+    bl_label = "Render All Selected Cameras"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    _timer = None
+    _cameras = []
+    _current_index = 0
+    _original_camera = None
+    _rendering = False
+
+    def render_complete_handler(self, scene, dummy):
+        self._rendering = False
+        print(f"Completed rendering camera: {self._cameras[self._current_index].name}")
+        self._current_index += 1
+        if self._current_index < len(self._cameras):
+            self.start_next_render()
+        else:
+            self.cancel(bpy.context)
+
+    def start_next_render(self):
+        if self._current_index < len(self._cameras):
+            camera = self._cameras[self._current_index]
+            print(f"Rendering camera: {camera.name}")
+            bpy.ops.cam_manager.change_scene_camera(camera_name=camera.name)
+            self.register_handlers()
+
+            # Use EXEC_DEFAULT to avoid opening the render window
+            bpy.ops.render.render('EXEC_DEFAULT', write_still=True)
+            self._rendering = True
+
+    def register_handlers(self):
+        if self.render_complete_handler not in bpy.app.handlers.render_complete:
+            bpy.app.handlers.render_complete.append(self.render_complete_handler)
+
+    def unregister_handlers(self):
+        if self.render_complete_handler in bpy.app.handlers.render_complete:
+            bpy.app.handlers.render_complete.remove(self.render_complete_handler)
+
+    def modal(self, context, event):
+        if event.type == 'ESC':
+            self.cancel(context)
+            return {'CANCELLED'}
+
+        if event.type == 'TIMER':
+            if not self._rendering and self._current_index < len(self._cameras):
+                self.start_next_render()
+
+        return {'PASS_THROUGH'}
+
+    def execute(self, context):
+        scene = context.scene
+        self._original_camera = scene.camera
+        self._cameras = [obj for obj in bpy.data.objects if
+                         obj.type == 'CAMERA' and getattr(obj.data, "render_selected", False)]
+
+        if not self._cameras:
+            self.report({'ERROR'}, "No cameras selected for rendering")
+            return {'CANCELLED'}
+
+        print(f"Cameras to render: {[cam.name for cam in self._cameras]}")
+
+        self._current_index = 0
+        self._rendering = False
+        wm = context.window_manager
+        self._timer = wm.event_timer_add(0.1, window=context.window)
+        wm.modal_handler_add(self)
+
+        # Open the render view
+        for window in context.window_manager.windows:
+            for area in window.screen.areas:
+                if area.type == 'IMAGE_EDITOR':
+                    for space in area.spaces:
+                        if space.type == 'IMAGE_EDITOR':
+                            space.image = bpy.data.images.get("Render Result")
+                            break
+                    break
+
+        return {'RUNNING_MODAL'}
+
+    def cancel(self, context):
+        wm = context.window_manager
+        wm.event_timer_remove(self._timer)
+        if self._original_camera:
+            bpy.ops.cam_manager.change_scene_camera(camera_name=self._original_camera.name)
+        self.unregister_handlers()
+        self.report({'INFO'}, "Rendering completed or aborted")
 
 
 class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
@@ -267,7 +357,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.report({'WARNING'}, "No scene camera assigned")
             return {'CANCELLED'}
 
-    
     def modal(self, context, event):
         """Calculate the FOV from the changed location to the target object """
 
@@ -285,6 +374,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.camera.data.angle = self.initial_cam_settings['camera_fov']
             self.camera.data.dolly_zoom_target_distance = self.initial_cam_settings['distance']
             prefs.show_dolly_gizmo = self.initial_gizmo_state
+
             # Remove Viewport Text
             try:
                 bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
@@ -428,6 +518,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
 classes = (
     CAM_MANAGER_OT_dolly_zoom,
+    CAM_MANAGER_OT_multi_camera_rendering,
 )
 
 

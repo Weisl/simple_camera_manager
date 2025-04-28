@@ -1,5 +1,6 @@
-import bpy
 import os
+
+import bpy
 
 cam_collection_name = 'Cameras'
 
@@ -123,6 +124,7 @@ class OBJECT_OT_create_camera_from_view(bpy.types.Operator):
 
         self.report({'INFO'}, f"Camera '{camera.name}' created from the viewport view.")
         return {'FINISHED'}
+
 
 class CAM_MANAGER_OT_lock_cameras(bpy.types.Operator):
     """Operator to lock and unlock all camera transforms"""
@@ -485,18 +487,32 @@ classes = (
     OBJECT_OT_create_camera_from_view,
 )
 
+def load_post_handler(dummy):
+    """Ensure all collections have the 'use_root_object' and 'root_object' properties set."""
+    for cam in bpy.data.cameras:
+        if not hasattr(cam, "render_selected"):
+            cam.root_object = False  # Ensure property exists
+
 
 def register():
+    # Register handler to ensure properties are set when loading an older .blend file
+    bpy.app.handlers.load_post.append(load_post_handler)
+
     scene = bpy.types.Scene
     scene.camera_list_index = bpy.props.IntProperty(name="Index for lis one", default=0)
 
     # data stored in camera
     cam = bpy.types.Camera
+
     cam.resolution = bpy.props.IntVectorProperty(name='Camera Resolution', description='Camera resolution in px',
                                                  default=(1920, 1080),
                                                  min=4, soft_min=800, soft_max=8096,
                                                  subtype='COORDINATES', size=2, update=resolution_update_func, get=None,
                                                  set=None)
+
+    cam.render_selected = bpy.props.BoolProperty(name="Select Camera",
+                                                 description="Select this camera for rendering",
+                                                 default=False)
 
     cam.exposure = bpy.props.FloatProperty(name='exposure', description='Camera exposure', default=0, soft_min=-10,
                                            soft_max=10, update=exposure_update_func)
@@ -528,6 +544,7 @@ def unregister():
     cam = bpy.types.Camera
 
     del cam.resolution
+    del cam.render_selected
     del cam.slot
     del cam.exposure
     del cam.world
