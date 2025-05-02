@@ -8,8 +8,8 @@ class CAM_MANAGER_BaseOperator:
     _current_index = 0
     _rendering = False
 
-    def set_camera_settings(self, camera):
-        scene = bpy.context.scene
+    def set_camera_settings(self, context, camera):
+        scene = context.scene
         print(f"Setting camera settings for: {camera.name}")
 
         # Set the active camera using the switch_camera operator
@@ -58,7 +58,7 @@ class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.
                 if self._current_index < len(self._cameras):
                     # Set camera settings for the next render
                     camera = self._cameras[self._current_index]
-                    self.set_camera_settings(camera)
+                    self.set_camera_settings(context, camera)
                     # Start the next render
                     print(f"Starting render for camera: {camera.name}")
                     self.report({'INFO'}, f"Starting render for camera: {camera.name}")
@@ -87,7 +87,7 @@ class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.
         # Set camera settings for the first render
         if self._cameras:
             first_camera = self._cameras[0]
-            self.set_camera_settings(first_camera)
+            self.set_camera_settings(context, first_camera)
 
         # Start the first render
         print(f"Starting first render for camera: {first_camera.name}")
@@ -115,20 +115,28 @@ class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, b
 
     def frame_change_pre_handler(self, scene, depsgraph):
         print(f"frame_change_pre_handler called for frame: {scene.frame_current}")
-        if self._current_frame <= len(self._cameras):
-            camera = self._cameras[self._current_frame - 1]
+        if self._current_index < len(self._cameras):
+            camera = self._cameras[self._current_index]
+            self.set_camera_settings(bpy.context, camera)
             print(f"Setting camera: {camera.name}")
             self.report({'INFO'}, f"Setting camera: {camera.name}")
-            self.set_camera_settings(camera)
+            # Trigger the render
+            self._rendering = True
+            for window in bpy.context.window_manager.windows:
+                for area in window.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        with bpy.context.temp_override(window=window, area=area):
+                            bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
+                        break
 
     def render_complete_handler(self, scene, depsgraph):
         print(f"render_complete_handler called for frame: {scene.frame_current}")
         self._rendering = False
-        self._current_frame += 1
-        if self._current_frame <= len(self._cameras):
+        self._current_index += 1
+        if self._current_index < len(self._cameras):
             # Trigger the next frame change
-            print(f"Setting frame to: {self._current_frame}")
-            scene.frame_set(self._current_frame)
+            print(f"Setting frame to: {self._current_index}")
+            scene.frame_set(self._current_index)
         else:
             self.cleanup(bpy.context)
 
@@ -141,13 +149,12 @@ class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, b
         bpy.app.handlers.render_complete.append(self.render_complete_handler)
 
         try:
-            # Start the first render
-            print(f"Starting first render for frame: {self._current_frame}")
-            self._rendering = True
-            bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
+            # Start the first render by setting the frame
+            print(f"Starting first render for frame: {self._current_index}")
+            context.scene.frame_set(self._current_index)
         except Exception as e:
             self.report({'ERROR'}, f"Rendering failed: {e}")
-            self.cleanup(context)
+            self.cleanup(context, aborted=True)
             return {'CANCELLED'}
 
         return {'RUNNING_MODAL'}

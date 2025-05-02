@@ -291,12 +291,20 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
             idx = objectlist.index(camera)
 
             if self.switch_to_cam:
-                for area in context.screen.areas:
-                    if area.type == 'VIEW_3D':
-                        for space in area.spaces:
-                            if space.type == 'VIEW_3D':
-                                space.region_3d.view_perspective = 'CAMERA'
-                                space.camera = camera
+                found_view_3d = False
+                for screen in bpy.data.screens:
+                    for area in screen.areas:
+                        if area.type == 'VIEW_3D':
+                            for space in area.spaces:
+                                if space.type == 'VIEW_3D':
+                                    space.region_3d.view_perspective = 'CAMERA'
+                                    space.camera = camera
+                                    found_view_3d = True
+                                    break
+                            if found_view_3d:
+                                break
+                    if found_view_3d:
+                        break
 
             scene.camera_list_index = idx
 
