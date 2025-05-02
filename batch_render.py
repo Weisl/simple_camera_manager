@@ -110,6 +110,9 @@ class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.
             bpy.app.timers.register(self.start_next_render, first_interval=1.0)
         else:
             self.cleanup(bpy.context)
+            # Ensure the handler is removed after the last render
+            if self.render_complete_handler in bpy.app.handlers.render_complete:
+                bpy.app.handlers.render_complete.remove(self.render_complete_handler)
 
     def start_next_render(self):
         if self._current_index < len(self._cameras):
@@ -139,6 +142,9 @@ class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, b
             bpy.app.timers.register(self.start_next_render, first_interval=1.0)
         else:
             self.cleanup(bpy.context)
+            # Ensure the handler is removed after the last render
+            if self.render_complete_handler in bpy.app.handlers.render_complete:
+                bpy.app.handlers.render_complete.remove(self.render_complete_handler)
 
     def start_next_render(self):
         if self._current_index < len(self._cameras):
