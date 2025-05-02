@@ -109,10 +109,8 @@ class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.
             # Add a delay before starting the next render
             bpy.app.timers.register(self.start_next_render, first_interval=1.0)
         else:
-            self.cleanup(bpy.context)
-            # Ensure the handler is removed after the last render
-            if self.render_complete_handler in bpy.app.handlers.render_complete:
-                bpy.app.handlers.render_complete.remove(self.render_complete_handler)
+            # Add a delay before final cleanup
+            bpy.app.timers.register(lambda: self.final_cleanup(bpy.context), first_interval=2.0)
 
     def start_next_render(self):
         if self._current_index < len(self._cameras):
@@ -124,6 +122,12 @@ class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.
             # Trigger the next render
             self._rendering = True
             bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
+
+    def final_cleanup(self, context):
+        self.cleanup(context)
+        # Ensure the handler is removed after the last render
+        if self.render_complete_handler in bpy.app.handlers.render_complete:
+            bpy.app.handlers.render_complete.remove(self.render_complete_handler)
 
 class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, bpy.types.Operator):
     """Render all selected cameras using handlers"""
@@ -141,10 +145,8 @@ class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, b
             # Add a delay before starting the next render
             bpy.app.timers.register(self.start_next_render, first_interval=1.0)
         else:
-            self.cleanup(bpy.context)
-            # Ensure the handler is removed after the last render
-            if self.render_complete_handler in bpy.app.handlers.render_complete:
-                bpy.app.handlers.render_complete.remove(self.render_complete_handler)
+            # Add a delay before final cleanup
+            bpy.app.timers.register(lambda: self.final_cleanup(bpy.context), first_interval=2.0)
 
     def start_next_render(self):
         if self._current_index < len(self._cameras):
@@ -156,6 +158,12 @@ class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, b
             # Trigger the next render
             self._rendering = True
             bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
+
+    def final_cleanup(self, context):
+        self.cleanup(context)
+        # Ensure the handler is removed after the last render
+        if self.render_complete_handler in bpy.app.handlers.render_complete:
+            bpy.app.handlers.render_complete.remove(self.render_complete_handler)
 
     def execute(self, context):
         if not self.initialize(context):
