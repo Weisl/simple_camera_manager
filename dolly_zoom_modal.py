@@ -152,53 +152,16 @@ class CAM_MANAGER_OT_multi_camera_rendering(bpy.types.Operator):
     bl_label = "Render All Selected Cameras"
     bl_options = {'REGISTER', 'UNDO'}
 
-    _timer = None
     _cameras = []
-    _current_index = 0
     _original_camera = None
-    _rendering = False
 
-    def render_complete_handler(self, scene, dummy):
-        self._rendering = False
-        camera_name = self._cameras[self._current_index].name
-        print(f"Completed rendering camera: {camera_name}")
-        self.report({'INFO'}, f"Completed rendering camera: {camera_name}")
-        self._current_index += 1
-        if self._current_index < len(self._cameras):
-            self.start_next_render()
-        else:
-            self.cancel(bpy.context)
-
-    def start_next_render(self):
-        if self._current_index < len(self._cameras):
-            camera = self._cameras[self._current_index]
+    def frame_change_pre_handler(self, scene, depsgraph):
+        frame = scene.frame_current
+        if frame <= len(self._cameras):
+            camera = self._cameras[frame - 1]
             print(f"Rendering camera: {camera.name}")
             self.report({'INFO'}, f"Rendering camera: {camera.name}")
             bpy.ops.cam_manager.change_scene_camera(camera_name=camera.name)  # Use custom camera switch
-            self.register_handlers()
-
-            # Use INVOKE_DEFAULT to open the render window and show progress
-            bpy.ops.render.render('INVOKE_DEFAULT', animation=False, write_still=True, use_viewport=False)
-            self._rendering = True
-
-    def register_handlers(self):
-        if self.render_complete_handler not in bpy.app.handlers.render_complete:
-            bpy.app.handlers.render_complete.append(self.render_complete_handler)
-
-    def unregister_handlers(self):
-        if self.render_complete_handler in bpy.app.handlers.render_complete:
-            bpy.app.handlers.render_complete.remove(self.render_complete_handler)
-
-    def modal(self, context, event):
-        if event.type == 'ESC':
-            self.cancel(context)
-            return {'CANCELLED'}
-
-        if event.type == 'TIMER':
-            if not self._rendering and self._current_index < len(self._cameras):
-                self.start_next_render()
-
-        return {'PASS_THROUGH'}
 
     def execute(self, context):
         scene = context.scene
@@ -213,24 +176,26 @@ class CAM_MANAGER_OT_multi_camera_rendering(bpy.types.Operator):
         print(f"Cameras to render: {[cam.name for cam in self._cameras]}")
         self.report({'INFO'}, f"Cameras to render: {[cam.name for cam in self._cameras]}")
 
+        # Set up the frame range to match the number of cameras
+        scene.frame_start = 1
+        scene.frame_end = len(self._cameras)
+        scene.frame_current = 1
+
+        # Register the frame change handler
+        bpy.app.handlers.frame_change_pre.append(self.frame_change_pre_handler)
+
         # Open the console window
         bpy.ops.wm.console_toggle()
 
-        self._current_index = 0
-        self._rendering = False
-        wm = context.window_manager
-        self._timer = wm.event_timer_add(0.1, window=context.window)
-        wm.modal_handler_add(self)
+        # Start the animation rendering
+        bpy.ops.render.render('INVOKE_DEFAULT', animation=True, write_still=True, use_viewport=False)
 
-        return {'RUNNING_MODAL'}
+        return {'FINISHED'}
 
     def cancel(self, context):
-        wm = context.window_manager
-        wm.event_timer_remove(self._timer)
         if self._original_camera:
             bpy.ops.cam_manager.change_scene_camera(
                 camera_name=self._original_camera.name)  # Restore the original camera
-        self.unregister_handlers()
         self.report({'INFO'}, "Rendering completed or aborted")
 
 
