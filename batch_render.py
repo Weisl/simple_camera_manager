@@ -1,6 +1,5 @@
 import bpy
 
-
 class CAM_MANAGER_BaseOperator:
     _cameras = []
     _original_camera = None
@@ -20,6 +19,10 @@ class CAM_MANAGER_BaseOperator:
             bpy.ops.cam_manager.change_scene_camera(camera_name=self._original_camera.name, switch_to_cam=True)
         if self._original_output_path:
             scene.render.filepath = self._original_output_path
+
+        # Remove handlers
+        if self.render_complete_handler in bpy.app.handlers.render_complete:
+            bpy.app.handlers.render_complete.remove(self.render_complete_handler)
 
         if aborted:
             self.report({'INFO'}, "Rendering aborted")
@@ -42,7 +45,6 @@ class CAM_MANAGER_BaseOperator:
 
         return True
 
-
 class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.types.Operator):
     """Render all selected cameras using modal operator"""
     bl_idname = "cam_manager.multi_camera_rendering_modal"
@@ -60,7 +62,7 @@ class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.
                     print(f"Starting render for camera: {camera.name}")
                     self.report({'INFO'}, f"Starting render for camera: {camera.name}")
                     self._rendering = True
-                    bpy.ops.render.render('EXEC_DEFAULT', write_still=True, use_viewport=False)
+                    bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
                 else:
                     self.cleanup(context)
                     return {'FINISHED'}
@@ -90,7 +92,7 @@ class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.
         print(f"Starting first render for camera: {first_camera.name}")
         self.report({'INFO'}, f"Starting first render for camera: {first_camera.name}")
         self._rendering = True
-        bpy.ops.render.render('EXEC_DEFAULT', write_still=True, use_viewport=False)
+        bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
 
         # Instruct the user to open the console for detailed feedback
         self.report({'INFO'}, "Open the console (Window > Toggle System Console) to see detailed feedback.")
@@ -103,6 +105,22 @@ class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.
         self._rendering = False
         self._current_index += 1
 
+        if self._current_index < len(self._cameras):
+            # Add a delay before starting the next render
+            bpy.app.timers.register(self.start_next_render, first_interval=1.0)
+        else:
+            self.cleanup(bpy.context)
+
+    def start_next_render(self):
+        if self._current_index < len(self._cameras):
+            # Set camera settings for the next render
+            camera = self._cameras[self._current_index]
+            self.set_camera_settings(bpy.context, camera)
+            print(f"Setting camera: {camera.name}")
+            self.report({'INFO'}, f"Setting camera: {camera.name}")
+            # Trigger the next render
+            self._rendering = True
+            bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
 
 class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, bpy.types.Operator):
     """Render all selected cameras using handlers"""
@@ -110,45 +128,47 @@ class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, b
     bl_label = "Render All Selected Cameras (Handlers)"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def frame_change_post_handler(self, scene, depsgraph):
-        print(f"frame_change_post_handler called for frame: {scene.frame_current}")
+    def render_complete_handler(self, scene, depsgraph):
+        print(f"Render complete for camera: {self._cameras[self._current_index].name}")
+        self.report({'INFO'}, f"Render complete for camera: {self._cameras[self._current_index].name}")
+        self._rendering = False
+        self._current_index += 1
+
         if self._current_index < len(self._cameras):
+            # Add a delay before starting the next render
+            bpy.app.timers.register(self.start_next_render, first_interval=1.0)
+        else:
+            self.cleanup(bpy.context)
+
+    def start_next_render(self):
+        if self._current_index < len(self._cameras):
+            # Set camera settings for the next render
             camera = self._cameras[self._current_index]
             self.set_camera_settings(bpy.context, camera)
             print(f"Setting camera: {camera.name}")
             self.report({'INFO'}, f"Setting camera: {camera.name}")
-            # Trigger the render
+            # Trigger the next render
             self._rendering = True
-            for window in bpy.context.window_manager.windows:
-                for area in window.screen.areas:
-                    if area.type == 'VIEW_3D':
-                        with bpy.context.temp_override(window=window, area=area):
-                            bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
-                        break
-
-    def render_complete_handler(self, scene, depsgraph):
-        print(f"render_complete_handler called for frame: {scene.frame_current}")
-        self._rendering = False
-        self._current_index += 1
-        if self._current_index < len(self._cameras):
-            # Trigger the next frame change
-            print(f"Setting frame to: {self._current_index}")
-            scene.frame_set(self._current_index)
-        else:
-            self.cleanup(bpy.context)
+            bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
 
     def execute(self, context):
         if not self.initialize(context):
             return {'CANCELLED'}
 
-        # Register the frame change and render complete handlers
-        bpy.app.handlers.frame_change_post.append(self.frame_change_post_handler)
+        # Register the render complete handler
         bpy.app.handlers.render_complete.append(self.render_complete_handler)
 
         try:
-            # Start the first render by setting the frame
-            print(f"Starting first render for frame: {self._current_index}")
-            context.scene.frame_set(self._current_index)
+            # Set camera settings for the first render
+            if self._cameras:
+                first_camera = self._cameras[0]
+                self.set_camera_settings(context, first_camera)
+
+            # Start the first render
+            print(f"Starting first render for camera: {first_camera.name}")
+            self.report({'INFO'}, f"Starting first render for camera: {first_camera.name}")
+            self._rendering = True
+            bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
         except Exception as e:
             self.report({'ERROR'}, f"Rendering failed: {e}")
             self.cleanup(context, aborted=True)
@@ -156,19 +176,16 @@ class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, b
 
         return {'RUNNING_MODAL'}
 
-
 classes = (
     CAM_MANAGER_OT_multi_camera_rendering_modal,
     CAM_MANAGER_OT_multi_camera_rendering_handlers,
 )
-
 
 def register():
     from bpy.utils import register_class
 
     for cls in classes:
         register_class(cls)
-
 
 def unregister():
     from bpy.utils import unregister_class
