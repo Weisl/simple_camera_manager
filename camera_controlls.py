@@ -1,6 +1,5 @@
-import os
-
 import bpy
+import os
 
 cam_collection_name = 'Cameras'
 
@@ -264,7 +263,7 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
 
     def execute(self, context):
         scene = context.scene
-        if self.camera_name and scene.objects[self.camera_name]:
+        if self.camera_name and scene.objects.get(self.camera_name):
             camera = scene.objects[self.camera_name]
 
             if camera.data.resolution:
@@ -273,18 +272,17 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
                 scene.render.resolution_y = resolution[1]
 
             # if camera.data.exposure: #returns 0 when exposure = 0
-            context.scene.view_settings.exposure = camera.data.exposure
+            scene.view_settings.exposure = camera.data.exposure
 
             if camera.data.world:
                 try:
                     world = camera.data.world
-                    context.scene.world = world
+                    scene.world = world
                 except KeyError:
                     self.report({'WARNING'}, 'World material could not be found')
                     pass
 
             scene.camera = camera
-
             context.view_layer.objects.active = camera
             bpy.ops.object.select_all(action='DESELECT')
             camera.select_set(True)
@@ -293,8 +291,13 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
             idx = objectlist.index(camera)
 
             if self.switch_to_cam:
-                if context.area.type == 'VIEW_3D':
-                    context.screen.areas.spaces[0].region_3d.view_perspective = 'CAMERA'
+                for area in context.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        for space in area.spaces:
+                            if space.type == 'VIEW_3D':
+                                space.region_3d.view_perspective = 'CAMERA'
+                                space.camera = camera
+
             scene.camera_list_index = idx
 
             if camera.data.slot <= len(bpy.data.images['Render Result'].render_slots):
@@ -486,6 +489,7 @@ classes = (
     CAM_MANAGER_OT_select_active_cam,
     OBJECT_OT_create_camera_from_view,
 )
+
 
 def load_post_handler(dummy):
     """Ensure all collections have the 'use_root_object' and 'root_object' properties set."""

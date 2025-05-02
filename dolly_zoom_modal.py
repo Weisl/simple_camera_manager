@@ -1,6 +1,6 @@
-import math
-
 import blf
+import bpy
+import math
 from mathutils import Vector
 
 
@@ -141,135 +141,6 @@ def draw_callback_px(self, context):
         color = (1.0, 1.0, 1.0, 1.0)
 
     draw_title_text(self, font_id, i, vertical_px_offset, left_margin, 'IGNORE INPUT (ALT)', color)
-
-
-import bpy
-import os
-
-
-class CAM_MANAGER_OT_multi_camera_rendering(bpy.types.Operator):
-    """Render all selected cameras"""
-    bl_idname = "cam_manager.multi_camera_rendering"
-    bl_label = "Render All Selected Cameras"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    _cameras = []
-    _original_camera = None
-    _original_output_path = None
-    _current_frame = 1
-
-    def frame_change_pre_handler(self, scene, depsgraph):
-        print(f"frame_change_pre_handler called for frame: {scene.frame_current}")
-        if self._current_frame <= len(self._cameras):
-            camera = self._cameras[self._current_frame - 1]
-            print(f"Setting camera: {camera.name}")
-            self.report({'INFO'}, f"Setting camera: {camera.name}")
-            self.set_camera_settings(camera)
-
-    def render_complete_handler(self, scene, depsgraph):
-        print(f"render_complete_handler called for frame: {scene.frame_current}")
-        self._current_frame += 1
-        if self._current_frame <= len(self._cameras):
-            # Trigger the next frame change
-            print(f"Setting frame to: {self._current_frame}")
-            scene.frame_set(self._current_frame)
-            # Start the next render
-            print(f"Starting render for frame: {self._current_frame}")
-            bpy.ops.render.render('EXEC_DEFAULT', write_still=True, use_viewport=False)
-        else:
-            self.cleanup(bpy.context)
-
-    def execute(self, context):
-        scene = context.scene
-        self._original_camera = scene.camera
-        self._original_output_path = scene.render.filepath
-        self._cameras = [obj for obj in bpy.data.objects if
-                         obj.type == 'CAMERA' and getattr(obj.data, "render_selected", False)]
-
-        if not self._cameras:
-            self.report({'ERROR'}, "No cameras selected for rendering")
-            return {'CANCELLED'}
-
-        print(f"Cameras to render: {[cam.name for cam in self._cameras]}")
-        self.report({'INFO'}, f"Cameras to render: {[cam.name for cam in self._cameras]}")
-
-        # Set up the frame range to match the number of cameras
-        scene.frame_start = 1
-        scene.frame_end = len(self._cameras)
-        scene.frame_current = 1
-
-        # Register the frame change and render complete handlers
-        bpy.app.handlers.frame_change_pre.append(self.frame_change_pre_handler)
-        bpy.app.handlers.render_complete.append(self.render_complete_handler)
-
-        try:
-            # Start the first render
-            print(f"Starting first render for frame: {self._current_frame}")
-            bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
-        except Exception as e:
-            self.report({'ERROR'}, f"Rendering failed: {e}")
-            self.cleanup(context)
-            return {'CANCELLED'}
-
-        return {'RUNNING_MODAL'}
-
-    def cleanup(self, context):
-        scene = context.scene
-        print("Cleanup called")
-        # Restore the original camera and output path
-        if self._original_camera:
-            scene.camera = self._original_camera
-        if self._original_output_path:
-            scene.render.filepath = self._original_output_path
-
-        # Remove the handlers
-        if self.frame_change_pre_handler in bpy.app.handlers.frame_change_pre:
-            bpy.app.handlers.frame_change_pre.remove(self.frame_change_pre_handler)
-        if self.render_complete_handler in bpy.app.handlers.render_complete:
-            bpy.app.handlers.render_complete.remove(self.render_complete_handler)
-
-        self.report({'INFO'}, "Rendering completed or aborted")
-
-    def set_camera_settings(self, camera):
-        scene = bpy.context.scene
-        print(f"Setting camera settings for: {camera.name}")
-
-        # Set the active camera
-        scene.camera = camera
-
-        # Update resolution
-        if hasattr(camera.data, 'resolution') and camera.data.resolution:
-            scene.render.resolution_x = camera.data.resolution[0]
-            scene.render.resolution_y = camera.data.resolution[1]
-            print(f"Resolution set to: {camera.data.resolution}")
-
-        # Update exposure
-        scene.view_settings.exposure = getattr(camera.data, 'exposure', 0)
-        print(f"Exposure set to: {scene.view_settings.exposure}")
-
-        # Update world settings
-        if hasattr(camera.data, 'world') and camera.data.world:
-            try:
-                scene.world = camera.data.world
-                print(f"World set to: {camera.data.world.name}")
-            except KeyError:
-                self.report({'WARNING'}, 'World material could not be found')
-
-        # Update render slot
-        if hasattr(camera.data, 'slot') and camera.data.slot <= len(bpy.data.images['Render Result'].render_slots):
-            bpy.data.images['Render Result'].render_slots.active_index = camera.data.slot - 1
-            print(f"Render slot set to: {camera.data.slot}")
-
-        # Update output path
-        if scene.output_use_cam_name:
-            old_path = bpy.context.scene.render.filepath
-            path, basename = os.path.split(old_path)
-            new_path = os.path.join(path, camera.name)
-            bpy.context.scene.render.filepath = new_path
-            print(f"Output path set to: {new_path}")
-
-        # Ensure the render settings are updated
-        bpy.context.view_layer.update()
 
 
 class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
@@ -554,7 +425,6 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
 classes = (
     CAM_MANAGER_OT_dolly_zoom,
-    CAM_MANAGER_OT_multi_camera_rendering,
 )
 
 
