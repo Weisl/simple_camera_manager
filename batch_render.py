@@ -9,10 +9,7 @@ class CAM_MANAGER_BaseOperator:
     _rendering = False
 
     def set_camera_settings(self, context, camera):
-        scene = context.scene
         print(f"Setting camera settings for: {camera.name}")
-
-        # Set the active camera using the switch_camera operator
         bpy.ops.cam_manager.change_scene_camera(camera_name=camera.name, switch_to_cam=True)
 
     def cleanup(self, context, aborted=False):
@@ -113,8 +110,8 @@ class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, b
     bl_label = "Render All Selected Cameras (Handlers)"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def frame_change_pre_handler(self, scene, depsgraph):
-        print(f"frame_change_pre_handler called for frame: {scene.frame_current}")
+    def frame_change_post_handler(self, scene, depsgraph):
+        print(f"frame_change_post_handler called for frame: {scene.frame_current}")
         if self._current_index < len(self._cameras):
             camera = self._cameras[self._current_index]
             self.set_camera_settings(bpy.context, camera)
@@ -145,7 +142,7 @@ class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, b
             return {'CANCELLED'}
 
         # Register the frame change and render complete handlers
-        bpy.app.handlers.frame_change_pre.append(self.frame_change_pre_handler)
+        bpy.app.handlers.frame_change_post.append(self.frame_change_post_handler)
         bpy.app.handlers.render_complete.append(self.render_complete_handler)
 
         try:
