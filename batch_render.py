@@ -15,7 +15,7 @@ class CAM_MANAGER_BaseOperator:
         # Set the active camera using the switch_camera operator
         bpy.ops.cam_manager.change_scene_camera(camera_name=camera.name, switch_to_cam=True)
 
-    def cleanup(self, context):
+    def cleanup(self, context, aborted=False):
         scene = context.scene
         print("Cleanup called")
         # Restore the original camera and output path
@@ -24,7 +24,10 @@ class CAM_MANAGER_BaseOperator:
         if self._original_output_path:
             scene.render.filepath = self._original_output_path
 
-        self.report({'INFO'}, "Rendering completed or aborted")
+        if aborted:
+            self.report({'INFO'}, "Rendering aborted")
+        else:
+            self.report({'INFO'}, f"Rendering completed. {self._current_index} cameras rendered.")
 
     def initialize(self, context):
         scene = context.scene
@@ -65,7 +68,7 @@ class CAM_MANAGER_OT_multi_camera_rendering_modal(CAM_MANAGER_BaseOperator, bpy.
                     self.cleanup(context)
                     return {'FINISHED'}
         elif event.type == 'ESC':
-            self.cleanup(context)
+            self.cleanup(context, aborted=True)
             return {'CANCELLED'}
 
         return {'PASS_THROUGH'}
