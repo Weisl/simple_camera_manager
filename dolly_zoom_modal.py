@@ -1,7 +1,6 @@
 import math
 
 import blf
-import bpy
 from mathutils import Vector
 
 
@@ -144,6 +143,9 @@ def draw_callback_px(self, context):
     draw_title_text(self, font_id, i, vertical_px_offset, left_margin, 'IGNORE INPUT (ALT)', color)
 
 
+import bpy
+
+
 class CAM_MANAGER_OT_multi_camera_rendering(bpy.types.Operator):
     """Render all selected cameras"""
     bl_idname = "cam_manager.multi_camera_rendering"
@@ -158,7 +160,9 @@ class CAM_MANAGER_OT_multi_camera_rendering(bpy.types.Operator):
 
     def render_complete_handler(self, scene, dummy):
         self._rendering = False
-        print(f"Completed rendering camera: {self._cameras[self._current_index].name}")
+        camera_name = self._cameras[self._current_index].name
+        print(f"Completed rendering camera: {camera_name}")
+        self.report({'INFO'}, f"Completed rendering camera: {camera_name}")
         self._current_index += 1
         if self._current_index < len(self._cameras):
             self.start_next_render()
@@ -169,35 +173,13 @@ class CAM_MANAGER_OT_multi_camera_rendering(bpy.types.Operator):
         if self._current_index < len(self._cameras):
             camera = self._cameras[self._current_index]
             print(f"Rendering camera: {camera.name}")
-            bpy.ops.cam_manager.change_scene_camera(camera_name=camera.name)
+            self.report({'INFO'}, f"Rendering camera: {camera.name}")
+            bpy.ops.cam_manager.change_scene_camera(camera_name=camera.name)  # Use custom camera switch
             self.register_handlers()
 
-            # Switch to the 3D view for camera change
-            self.switch_to_3d_view()
-
-            # Use EXEC_DEFAULT to avoid opening the render window
-            bpy.ops.render.render('EXEC_DEFAULT', write_still=True)
+            # Use INVOKE_DEFAULT to open the render window and show progress
+            bpy.ops.render.render('INVOKE_DEFAULT', animation=False, write_still=True, use_viewport=False)
             self._rendering = True
-
-            # Switch to the render view for rendering
-            self.switch_to_render_view()
-
-    def switch_to_3d_view(self):
-        # Switch to the 3D view
-        for window in bpy.context.window_manager.windows:
-            for area in window.screen.areas:
-                if area.type == 'IMAGE_EDITOR':
-                    area.type = 'VIEW_3D'
-                    break
-
-    def switch_to_render_view(self):
-        # Switch to the render view
-        for window in bpy.context.window_manager.windows:
-            for area in window.screen.areas:
-                if area.type == 'VIEW_3D':
-                    area.type = 'IMAGE_EDITOR'
-                    area.spaces.active.image = bpy.data.images.get("Render Result")
-                    break
 
     def register_handlers(self):
         if self.render_complete_handler not in bpy.app.handlers.render_complete:
@@ -229,6 +211,10 @@ class CAM_MANAGER_OT_multi_camera_rendering(bpy.types.Operator):
             return {'CANCELLED'}
 
         print(f"Cameras to render: {[cam.name for cam in self._cameras]}")
+        self.report({'INFO'}, f"Cameras to render: {[cam.name for cam in self._cameras]}")
+
+        # Open the console window
+        bpy.ops.wm.console_toggle()
 
         self._current_index = 0
         self._rendering = False
@@ -236,20 +222,16 @@ class CAM_MANAGER_OT_multi_camera_rendering(bpy.types.Operator):
         self._timer = wm.event_timer_add(0.1, window=context.window)
         wm.modal_handler_add(self)
 
-        # Switch to the render view initially
-        self.switch_to_render_view()
-
         return {'RUNNING_MODAL'}
 
     def cancel(self, context):
         wm = context.window_manager
         wm.event_timer_remove(self._timer)
         if self._original_camera:
-            bpy.ops.cam_manager.change_scene_camera(camera_name=self._original_camera.name)
+            bpy.ops.cam_manager.change_scene_camera(
+                camera_name=self._original_camera.name)  # Restore the original camera
         self.unregister_handlers()
         self.report({'INFO'}, "Rendering completed or aborted")
-        # Switch back to the 3D view after completion
-        self.switch_to_3d_view()
 
 
 class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
