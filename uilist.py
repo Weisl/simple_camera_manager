@@ -1,13 +1,14 @@
 import bpy
 
+import bpy
 
 def filter_list(self, context):
     """
-    Filter cameras from all objects for the UI list and soft them
+    Filter cameras from all objects for the UI list and sort them
     :param self:
     :param context:
     :return: flt_flags is a bit-flag containing the filtering and flt
-            flt_neworder defines the order of all cameras
+             flt_neworder defines the order of all cameras
     """
     helper_funcs = bpy.types.UI_UL_list
 
@@ -19,19 +20,34 @@ def filter_list(self, context):
     objects = context.scene.objects
 
     # Create bitmask for all objects
-    flt_flags = [self.bitflag_filter_item] * len(objects)
+    flt_flags = [0] * len(objects)
 
-    # Filter by object type.
+    # Filter by object type and name.
+    filter_name = self.filter_name.lower()
+    invert_filter = self.use_filter_name_reverse
+    filtered_cameras = []
+
     for idx, obj in enumerate(objects):
         if obj.type == "CAMERA":
-            flt_flags[idx] |= self.CAMERA_FILTER
+            name_match = not filter_name or filter_name in obj.name.lower()
+            if (name_match and not invert_filter) or (not name_match and invert_filter):
+                flt_flags[idx] = self.bitflag_filter_item | self.CAMERA_FILTER
+                filtered_cameras.append(idx)
+            else:
+                flt_flags[idx] = 0
         else:
-            flt_flags[idx] &= ~self.bitflag_filter_item
+            flt_flags[idx] = 0
 
-    flt_neworder = helper_funcs.sort_items_by_name(objects, "name")
+    # Sort filtered cameras by name.
+    if self.use_order_name:
+        filtered_cameras.sort(key=lambda idx: objects[idx].name.lower())
+        if self.use_filter_orderby_invert:
+            filtered_cameras.reverse()
+
+    # Create new order list.
+    flt_neworder = filtered_cameras + [idx for idx in range(len(objects)) if idx not in filtered_cameras]
 
     return flt_flags, flt_neworder
-
 
 class CAMERA_UL_cameras_popup(bpy.types.UIList):
     """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
@@ -158,6 +174,58 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
     """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
     CAMERA_FILTER = 1 << 0
 
+    use_filter_name_reverse: bpy.props.BoolProperty(
+        name="Reverse Name",
+        default=False,
+        options=set(),
+        description="Reverse name filtering",
+    )
+
+    use_filter_orderby_invert: bpy.props.BoolProperty(
+        name="Reverse Order",
+        default=False,
+        options=set(),
+        description="Reverse name filtering",
+    )
+
+    # This allows us to have mutually exclusive options, which are also all disable-able!
+    def _gen_order_update(name1, name2):
+        def _u(self, ctxt):
+            if (getattr(self, name1)):
+                setattr(self, name2, False)
+
+        return _u
+
+    use_order_name: bpy.props.BoolProperty(
+        name="Name", default=False, options=set(),
+        description="Sort groups by their name (case-insensitive)",
+        update=_gen_order_update("use_order_name", "use_order_importance"),
+    )
+    use_order_importance: bpy.props.BoolProperty(
+        name="Importance",
+        default=False,
+        options=set(),
+        description="Sort groups by their average weight in the mesh",
+        update=_gen_order_update("use_order_importance", "use_order_name"),
+    )
+
+    def draw_filter(self, context, layout):
+        # Nothing much to say here, it's usual UI code...
+        row = layout.row()
+
+        subrow = row.row(align=True)
+        subrow.prop(self, "filter_name", text="")
+        icon = 'ZOOM_OUT' if self.use_filter_name_reverse else 'ZOOM_IN'
+        subrow.prop(self, "use_filter_name_reverse", text="", icon=icon)
+
+        row = layout.row(align=True)
+        row.label(text="Order by:")
+        row.prop(self, "use_order_name", toggle=True)
+        row.prop(self, "use_order_importance", toggle=True)
+        icon = 'TRIA_UP' if self.use_filter_orderby_invert else 'TRIA_DOWN'
+        row.prop(self, "use_filter_orderby_invert", text="", icon=icon)
+
+
     def filter_items(self, context, data, propname):
         flt_flags, flt_neworder = filter_list(self, context)
         return flt_flags, flt_neworder
@@ -221,6 +289,7 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
             layout.alignment = 'CENTER'
             layout.label(text=obj.name)
 
+
 class UIListDropdownMenu(bpy.types.Menu):
     bl_label = "Camera List Operators"
     bl_idname = "OBJECT_MT_camera_list_dropdown_menu"
@@ -244,9 +313,9 @@ def register():
     for cls in classes:
         register_class(cls)
 
+
 def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
         unregister_class(cls)
-
