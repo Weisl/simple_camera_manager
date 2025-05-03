@@ -309,12 +309,12 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         col = row.column(align=True)
         col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
+        col.menu(UIListDropdownMenu.bl_idname, icon='DOWNARROW_HLT', text="")
 
         row = layout.row()
         col = row.column(align=True)
         col.operator("cam_manager.multi_camera_rendering_handlers", text="Batch Render ", icon="RENDER_ANIMATION")
         col.operator("cam_manager.multi_camera_rendering_modal", text="Batch Render (Background)", icon="FILE_SCRIPT")
-
 
         # Get the keymap for the panel
         panel_keymap = get_keymap_string("OBJECT_PT_camera_manager_popup", "PANEL")
@@ -343,7 +343,7 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
 
         layout.separator()
         layout.label(text='Collection Operators')
-        layout.menu(CameraDropdownMenu.bl_idname, icon='OUTLINER_COLLECTION')
+        layout.menu(CameraOperatorDropdownMenu.bl_idname, icon='OUTLINER_COLLECTION')
 
         layout.separator()
         layout.label(text='Keymap')
@@ -513,8 +513,21 @@ class CameraCollectionProperty(bpy.types.PropertyGroup):
     collection: bpy.props.PointerProperty(name="Collection", type=bpy.types.Collection, )
 
 
+class CAMERA_OT_SelectAllCameras(bpy.types.Operator):
+    bl_idname = "cam_manager.select_all_cameras"
+    bl_label = "Select All Collections"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    invert: bpy.props.BoolProperty()
+
+    def execute(self, context):
+        for cam in bpy.data.cameras:
+            cam.render_selected = not self.invert
+        return {'FINISHED'}
+
+
 # Define the custom menu
-class CameraDropdownMenu(bpy.types.Menu):
+class CameraOperatorDropdownMenu(bpy.types.Menu):
     bl_label = "Camera Collection Operator"
     bl_idname = "OBJECT_MT_camera_dropdown_menu"
 
@@ -525,16 +538,28 @@ class CameraDropdownMenu(bpy.types.Menu):
         layout.operator("camera.create_camera_from_view", text='Create Camera from View', icon='VIEW_CAMERA')
 
 
+class UIListDropdownMenu(bpy.types.Menu):
+    bl_label = "Camera List Operators"
+    bl_idname = "OBJECT_MT_camera_list_dropdown_menu"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("cam_manager.select_all_cameras", text='Select All', icon='CHECKBOX_HLT').invert = False
+        layout.operator("cam_manager.select_all_cameras", text='Select None', icon='CHECKBOX_DEHLT').invert = True
+
+
 classes = (
     CameraCollectionProperty,
     CAMERA_OT_open_in_explorer,
     CAMERA_UL_cameras_popup,
     CAMERA_UL_cameras_scene,
+    CAMERA_OT_SelectAllCameras,
     CAM_MANAGER_PT_scene_properties,
     CAM_MANAGER_PT_popup,
     CAM_MANAGER_PT_camera_properties,
     VIEW3D_PT_SimpleCameraManager,
-    CameraDropdownMenu,
+    CameraOperatorDropdownMenu,
+    UIListDropdownMenu,
 )
 
 
