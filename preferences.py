@@ -314,7 +314,18 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
                 parent=layout
             )
 
-            layout.label(text="Simple Tools ($)")
+            layout.label(text="Leave a Review or Rating! ♡♡♡")
+            col = layout.column(align=True)
+
+            row = col.row(align=True)
+            row.label(text="Simple Camera Manager")
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-camera-manager"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/Cam-Manager"
+
+
+            layout.label(text="Other Simple Tools ($)")
 
             col = layout.column(align=True)
             row = col.row(align=True)
@@ -325,20 +336,13 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
                          icon="URL").url = "https://weisl.gumroad.com/l/collider-tools"
 
             row = col.row(align=True)
-            row.label(text="Simple Camera Manager")
-            row.operator("wm.url_open", text="Superhive",
-                         icon="URL").url = "https://superhivemarket.com/products/simple-camera-manager"
-            row.operator("wm.url_open", text="Gumroad",
-                         icon="URL").url = "https://weisl.gumroad.com/l/Cam-Manager"
-
-            row = col.row(align=True)
             row.label(text="Simple Export")
             row.operator("wm.url_open", text="Superhive",
                          icon="URL").url = "https://superhivemarket.com/products/simple-export"
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/simple-export"
 
-            layout.label(text="Simple Renaming (Free)")
+            layout.label(text="Free Simple Tools")
             col = layout.column(align=True)
             row = col.row(align=True)
             row.label(text="Simple Renaming")
