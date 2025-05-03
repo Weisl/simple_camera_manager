@@ -1,6 +1,7 @@
-import bpy
 import os
 import subprocess
+
+import bpy
 
 from .keymap import get_keymap_string
 from .pie_menu import draw_camera_settings
@@ -221,8 +222,6 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
                 c = layout.column()
                 row = c.row()
 
-
-
                 split = row.split(factor=0.6)
                 col_01 = split.column()
                 col_02 = split.column()
@@ -297,9 +296,10 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
 
         row = layout.row()
         cam = scene.camera
-        row.label(text=f"Active Camera: {cam.name}", icon='VIEW_CAMERA')
 
-        row = layout.row()
+        if cam:
+            row.label(text=f"Active Camera: {cam.name}", icon='VIEW_CAMERA')
+
         # template_list now takes two new args.
         # The first one is the identifier of the registered UIList to use (if you want only the default list,
         # with no custom draw code, use "UI_UL_list").
