@@ -241,12 +241,6 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
 
                 # COLUMN 02
                 row = col_02.row(align=True)
-                # icon = 'HIDE_OFF' if obj.visible_get() else 'HIDE_ON'
-                # op = row.operator("camera.hide_unhide", icon=icon, text='')
-                # op.camera_name = obj.name
-                # op.cam_hide = obj.visible_get()
-                # op = row.prop(obj, "hide_viewport", text='')
-                # op = row.prop(obj, "hide_select", text='')
 
                 if obj.get('lock'):
                     op = row.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
@@ -260,13 +254,9 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
                 row = row.row(align=True)
 
                 row.prop(cam, 'slot', text='')
-                # slot = cam.slot
-                # row.label (text=f"{slot}")
                 op = row.operator('cameras.custom_render', text='', icon='RENDER_STILL')
                 op.camera_name = obj.name
 
-                # op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION', text='')
-                # op.object_name = obj.name
 
             else:
                 layout.label(text=obj.name)
@@ -314,7 +304,7 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         row = layout.row()
         col = row.column(align=True)
         col.operator("cam_manager.multi_camera_rendering_handlers", text="Batch Render ", icon="RENDER_ANIMATION")
-        col.operator("cam_manager.multi_camera_rendering_modal", text="Batch Render (Background)", icon="FILE_SCRIPT")
+        # col.operator("cam_manager.multi_camera_rendering_modal", text="Batch Render (Background)", icon="FILE_SCRIPT")
 
         # Get the keymap for the panel
         panel_keymap = get_keymap_string("OBJECT_PT_camera_manager_popup", "PANEL")
