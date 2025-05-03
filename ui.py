@@ -310,8 +310,11 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
 
-        layout.operator("cam_manager.multi_camera_rendering_modal", icon="FILE_SCRIPT")
-        layout.operator("cam_manager.multi_camera_rendering_handlers", icon="RENDER_ANIMATION")
+        row = layout.row()
+        col = row.column(align=True)
+        col.operator("cam_manager.multi_camera_rendering_handlers", text="Batch Render ", icon="RENDER_ANIMATION")
+        col.operator("cam_manager.multi_camera_rendering_modal", text="Batch Render (Background)", icon="FILE_SCRIPT")
+
 
         # Get the keymap for the panel
         panel_keymap = get_keymap_string("OBJECT_PT_camera_manager_popup", "PANEL")
