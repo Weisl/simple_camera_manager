@@ -1,5 +1,4 @@
 import os
-import subprocess
 
 import bpy
 
@@ -39,232 +38,10 @@ class CAMERA_OT_open_in_explorer(bpy.types.Operator):
     bl_label = "Open Folder"
     bl_description = "Open the render output folder in explorer"
 
-
     def execute(self, context):
         filepath = os.path.dirname(os.path.abspath(context.scene.render.filepath))
         bpy.ops.file.external_operation(filepath=filepath, operation='FOLDER_OPEN')
         return {'FINISHED'}
-
-
-def filter_list(self, context):
-    """
-    Filter cameras from all objects for the UI list and soft them
-    :param self:
-    :param context:
-    :return: flt_flags is a bit-flag containing the filtering and flt
-            flt_neworder defines the order of all cameras
-    """
-    helper_funcs = bpy.types.UI_UL_list
-
-    # Default return values.
-    flt_flags = []
-    flt_neworder = []
-
-    # Get all objects from scene.
-    objects = context.scene.objects
-
-    # Create bitmask for all objects
-    flt_flags = [self.bitflag_filter_item] * len(objects)
-
-    # Filter by object type.
-    for idx, obj in enumerate(objects):
-        if obj.type == "CAMERA":
-            flt_flags[idx] |= self.CAMERA_FILTER
-        else:
-            flt_flags[idx] &= ~self.bitflag_filter_item
-
-    flt_neworder = helper_funcs.sort_items_by_name(objects, "name")
-
-    return flt_flags, flt_neworder
-
-
-class CAMERA_UL_cameras_popup(bpy.types.UIList):
-    """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
-    # The draw_item function is called for each item of the collection that is visible in the list.
-    #   data is the RNA object containing the collection,
-    #   item is the current drawn item of the collection,
-    #   icon is the "computed" icon for the item (as an integer, because some objects like materials or textures
-    #   have custom icons ID, which are not available as enum items).
-    #   active_data is the RNA object containing the active property for the collection (i.e. integer pointing to the
-    #   active item of the collection).
-    #   active_propname is the name of the active property (use 'getattr(active_data, active_propname)').
-    #   index is index of the current item in the collection.
-    #   flt_flag is the result of the filtering process for this item.
-    #   Note: as index and flt_flag are optional arguments, you do not have to use/declare them here if you don't
-    #         need them.
-
-    # Constants (flags)
-    # Be careful not to shadow FILTER_ITEM!
-    CAMERA_FILTER = 1 << 0
-
-    def filter_items(self, context, data, propname):
-        # This function gets the collection property (as the usual tuple (data, propname)), and must return two lists:
-        # * The first one is for filtering, it must contain 32bit integers were self.bitflag_filter_item marks the
-        #   matching item as filtered (i.e. to be shown), and 31 other bits are free for custom needs. Here we use the
-        #   first one to mark CAMERA_FILTER.
-        # * The second one is for reordering, it must return a list containing the new indices of the items (which
-        #   gives us a mapping org_idx -> new_idx).
-        # Please note that the default UI_UL_list defines helper functions for common tasks (see its doc for more info).
-        # If you do not make filtering and/or ordering, return empty list(s) (this will be more efficient than
-        # returning full lists doing nothing!).
-        flt_flags, flt_neworder = filter_list(self, context)
-        return flt_flags, flt_neworder
-
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
-
-        obj = item
-        cam = item.data
-
-        # draw_item must handle the three layout types. Usually 'DEFAULT' and 'COMPACT' can share the same code.
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-            # this will also make the row easily selectable in the list! The latter also enables ctrl-click rename.
-            # We use icon_value of label, as our given icon is an integer value, not an enum ID.
-            # Note "data" names should never be translated!
-            if obj.type == 'CAMERA':
-
-                split = layout.split(factor=0.6)
-                split_left = split.column().split(factor=0.45)
-                # Camera name
-                col_01 = split_left.column()
-                col_02 = split_left.column()
-                split_right = split.column().split(factor=0.5)
-                col_03 = split_right.column()
-                split_right_02 = split_right.split(factor=0.5)
-                col_04 = split_right_02.column()
-                col_05 = split_right_02.column()
-
-                ###### Col01 #####
-                # Camera name and visibility
-
-                row = col_01.row(align=True)
-                icon = 'VIEW_CAMERA' if obj == bpy.context.scene.camera else 'FORWARD'
-                op = row.operator("cam_manager.change_scene_camera", text='', icon=icon)
-                op.camera_name = obj.name
-                op.switch_to_cam = False
-                row.prop(obj, 'name', text='')
-
-                icon = 'HIDE_OFF' if obj.visible_get() else 'HIDE_ON'
-                op = row.operator("camera.hide_unhide", icon=icon, text='')
-                op.camera_name = obj.name
-                op.cam_hide = obj.visible_get()
-                row.prop(obj, "hide_viewport", text='')
-                row.prop(obj, "hide_select", text='')
-
-                if obj.get('lock'):
-                    op = row.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
-                    op.camera_name = obj.name
-                    op.cam_lock = False
-                else:
-                    op = row.operator("cam_manager.lock_unlock_camera", icon='UNLOCKED', text='')
-                    op.camera_name = obj.name
-                    op.cam_lock = True
-
-                ###### Col02 #####
-                row = col_02.row()
-                c = row.column(align=True)
-                c.prop(cam, 'lens', text='')
-                c.prop(cam, 'angle', text='')
-                c = row.column(align=True)
-                c.prop(cam, "resolution", text="")
-                op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
-                op.camera_name = cam.name
-                c = row.column(align=True)
-                c.prop(cam, "clip_start", text="")
-                c.prop(cam, "clip_end", text="")
-
-                ###### Col03 #####
-                row = col_03.row(align=True)
-                row.prop_search(cam, "world", bpy.data, "worlds", text='')
-                row.prop(cam, 'exposure', text='EXP')
-
-                ###### Col04 #####
-                row = col_04.row(align=True)
-                op = row.operator("cameras.add_collection", icon='OUTLINER_COLLECTION')
-                op.object_name = obj.name
-
-                ###### Col05 #####
-                row = col_05.row(align=True)
-                row.prop(cam, "slot")
-                op = row.operator('cameras.custom_render', text='', icon='RENDER_STILL')
-                op.camera_name = obj.name
-
-
-            else:
-                layout.label(text=obj.name)
-
-        # 'GRID' layout type should be as compact as possible (typically a single icon!).
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
-            layout.label(text=obj.name)
-
-
-class CAMERA_UL_cameras_scene(bpy.types.UIList):
-    """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
-    CAMERA_FILTER = 1 << 0
-
-    def filter_items(self, context, data, propname):
-        flt_flags, flt_neworder = filter_list(self, context)
-        return flt_flags, flt_neworder
-
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
-
-        obj = item
-        cam = item.data
-
-        # draw_item must handle the three layout types. Usually 'DEFAULT' and 'COMPACT' can share the same code.
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            # You should always start your row layout by a label (icon + text), or a non-embossed text field,
-            # this will also make the row easily selectable in the list! The latter also enables ctrl-click rename.
-            # We use icon_value of label, as our given icon is an integer value, not an enum ID.
-            # Note "data" names should never be translated!
-            if obj.type == 'CAMERA':
-                c = layout.column()
-                row = c.row()
-
-                split = row.split(factor=0.6)
-                col_01 = split.column()
-                col_02 = split.column()
-
-                # COLUMN 01
-                row = col_01.row(align=True)
-
-                # Checkbox for selecting the collection for export
-                row.prop(cam, "render_selected", text="")
-
-                # Change icon for already active cam
-                icon = 'VIEW_CAMERA' if obj == bpy.context.scene.camera else 'FORWARD'
-                op = row.operator("cam_manager.change_scene_camera", text='', icon=icon)
-                op.camera_name = obj.name
-                op.switch_to_cam = False
-                row.prop(obj, 'name', text='')
-
-                # COLUMN 02
-                row = col_02.row(align=True)
-
-                if obj.get('lock'):
-                    op = row.operator("cam_manager.lock_unlock_camera", icon='LOCKED', text='')
-                    op.camera_name = obj.name
-                    op.cam_lock = False
-                else:
-                    op = row.operator("cam_manager.lock_unlock_camera", icon='UNLOCKED', text='')
-                    op.camera_name = obj.name
-                    op.cam_lock = True
-
-                row = row.row(align=True)
-
-                row.prop(cam, 'slot', text='')
-                op = row.operator('cameras.custom_render', text='', icon='RENDER_STILL')
-                op.camera_name = obj.name
-
-
-            else:
-                layout.label(text=obj.name)
-
-        # 'GRID' layout type should be as compact as possible (typically a single icon!).
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
-            layout.label(text=obj.name)
 
 
 class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
@@ -299,7 +76,7 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         col = row.column(align=True)
         col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
-        col.menu(UIListDropdownMenu.bl_idname, icon='DOWNARROW_HLT', text="")
+        col.menu("OBJECT_MT_camera_list_dropdown_menu", icon='DOWNARROW_HLT', text="")
 
         row = layout.row()
         row.operator("cam_manager.multi_camera_rendering_handlers", text="Batch Render ", icon="RENDER_ANIMATION")
@@ -528,28 +305,16 @@ class CameraOperatorDropdownMenu(bpy.types.Menu):
         layout.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
         layout.operator("cameras.open_in_explorer", text='Open Render Folder', icon='FILE_FOLDER')
 
-class UIListDropdownMenu(bpy.types.Menu):
-    bl_label = "Camera List Operators"
-    bl_idname = "OBJECT_MT_camera_list_dropdown_menu"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.operator("cam_manager.select_all_cameras", text='Select All', icon='CHECKBOX_HLT').invert = False
-        layout.operator("cam_manager.select_all_cameras", text='Select None', icon='CHECKBOX_DEHLT').invert = True
-
 
 classes = (
     CameraCollectionProperty,
     CAMERA_OT_open_in_explorer,
-    CAMERA_UL_cameras_popup,
-    CAMERA_UL_cameras_scene,
     CAMERA_OT_SelectAllCameras,
     CAM_MANAGER_PT_scene_properties,
     CAM_MANAGER_PT_popup,
     CAM_MANAGER_PT_camera_properties,
     VIEW3D_PT_SimpleCameraManager,
     CameraOperatorDropdownMenu,
-    UIListDropdownMenu,
 )
 
 
