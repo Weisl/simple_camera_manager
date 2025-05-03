@@ -314,7 +314,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
                 parent=layout
             )
 
-            layout.label(text="Leave a Review or Rating! ♡♡♡")
+            layout.label(text="♥♥♥ Leave a Review or Rating! ♥♥♥")
             col = layout.column(align=True)
 
             row = col.row(align=True)
@@ -353,12 +353,12 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
             col = layout.column(align=True)
             row = col.row()
-            row.label(text='Support')
+            row.label(text='Support & Feedback')
             row = col.row()
             row.label(text='Support is primarily provided through the store pages for Superhive and Gumroad.')
             row.label(text='Questions or Feedback?')
             row = col.row()
-            row.operator("wm.url_open", text="Discord", icon="URL").url = "https://discord.gg/kSWeQpfD"
+            row.operator("wm.url_open", text="Join Discord", icon="URL").url = "https://discord.gg/kSWeQpfD"
 
 
 classes = (
