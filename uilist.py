@@ -1,6 +1,5 @@
 import bpy
 
-import bpy
 
 def filter_list(self, context):
     """
@@ -48,6 +47,7 @@ def filter_list(self, context):
     flt_neworder = filtered_cameras + [idx for idx in range(len(objects)) if idx not in filtered_cameras]
 
     return flt_flags, flt_neworder
+
 
 class CAMERA_UL_cameras_popup(bpy.types.UIList):
     """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
@@ -181,12 +181,6 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
         description="Reverse name filtering",
     )
 
-    use_filter_orderby_invert: bpy.props.BoolProperty(
-        name="Reverse Order",
-        default=False,
-        options=set(),
-        description="Reverse name filtering",
-    )
 
     # This allows us to have mutually exclusive options, which are also all disable-able!
     def _gen_order_update(name1, name2):
@@ -215,16 +209,8 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
 
         subrow = row.row(align=True)
         subrow.prop(self, "filter_name", text="")
-        icon = 'ZOOM_OUT' if self.use_filter_name_reverse else 'ZOOM_IN'
+        icon = 'ARROW_LEFTRIGHT'
         subrow.prop(self, "use_filter_name_reverse", text="", icon=icon)
-
-        row = layout.row(align=True)
-        row.label(text="Order by:")
-        row.prop(self, "use_order_name", toggle=True)
-        row.prop(self, "use_order_importance", toggle=True)
-        icon = 'TRIA_UP' if self.use_filter_orderby_invert else 'TRIA_DOWN'
-        row.prop(self, "use_filter_orderby_invert", text="", icon=icon)
-
 
     def filter_items(self, context, data, propname):
         flt_flags, flt_neworder = filter_list(self, context)
