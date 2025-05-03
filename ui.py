@@ -36,13 +36,13 @@ def draw_simple_camera_manager_header(layout):
 class CAMERA_OT_open_in_explorer(bpy.types.Operator):
     """Open render output directory in Explorer"""
     bl_idname = "cameras.open_in_explorer"
-    bl_label = "Open Render Folder"
+    bl_label = "Open Folder"
     bl_description = "Open the render output folder in explorer"
 
+
     def execute(self, context):
-        # TODO: Might cause issues on Linux and Mac
         filepath = os.path.dirname(os.path.abspath(context.scene.render.filepath))
-        subprocess.Popen(["explorer.exe", filepath])
+        bpy.ops.file.external_operation(filepath=filepath, operation='FOLDER_OPEN')
         return {'FINISHED'}
 
 
@@ -302,8 +302,9 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         col.menu(UIListDropdownMenu.bl_idname, icon='DOWNARROW_HLT', text="")
 
         row = layout.row()
-        col = row.column(align=True)
-        col.operator("cam_manager.multi_camera_rendering_handlers", text="Batch Render ", icon="RENDER_ANIMATION")
+        row.operator("cam_manager.multi_camera_rendering_handlers", text="Batch Render ", icon="RENDER_ANIMATION")
+        row = layout.row()
+        row.prop(context.scene.render, 'filepath', text='Folder')
         # col.operator("cam_manager.multi_camera_rendering_modal", text="Batch Render (Background)", icon="FILE_SCRIPT")
 
         # Get the keymap for the panel
@@ -322,8 +323,6 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
 
         layout.label(text='Dolly Zoom', icon='VIEW_CAMERA')
         col = layout.column(align=True)
-        row = col.row(align=True)
-        row.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
         row = col.row(align=True)
         row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
 
@@ -469,7 +468,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         row.prop(scene, 'output_use_cam_name')
         row = layout.row()
         row.prop(context.scene.render, 'filepath')
-        # col_01.operator('cameras.open_in_explorer')
+        row.operator('cameras.open_in_explorer', text='Open Render Folder', Icon='FILE_FOLDER')
         row = layout.row()  # layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
 
 
@@ -526,7 +525,8 @@ class CameraOperatorDropdownMenu(bpy.types.Menu):
         layout.operator("camera.create_collection", text='Camera Collection', icon='COLLECTION_NEW')
         layout.operator("cameras.all_to_collection", text='Move to Camera Collection', icon='OUTLINER_COLLECTION')
         layout.operator("camera.create_camera_from_view", text='Create Camera from View', icon='VIEW_CAMERA')
-
+        layout.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
+        layout.operator("cameras.open_in_explorer", text='Open Render Folder', icon='FILE_FOLDER')
 
 class UIListDropdownMenu(bpy.types.Menu):
     bl_label = "Camera List Operators"
