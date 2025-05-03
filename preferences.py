@@ -335,12 +335,12 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/collider-tools"
 
-            row = col.row(align=True)
-            row.label(text="Simple Export")
-            row.operator("wm.url_open", text="Superhive",
-                         icon="URL").url = "https://superhivemarket.com/products/simple-export"
-            row.operator("wm.url_open", text="Gumroad",
-                         icon="URL").url = "https://weisl.gumroad.com/l/simple-export"
+            # row = col.row(align=True)
+            # row.label(text="Simple Export")
+            # row.operator("wm.url_open", text="Superhive",
+            #              icon="URL").url = "https://superhivemarket.com/products/simple-export"
+            # row.operator("wm.url_open", text="Gumroad",
+            #              icon="URL").url = "https://weisl.gumroad.com/l/simple-export"
 
             layout.label(text="Free Simple Tools")
             col = layout.column(align=True)
