@@ -68,16 +68,44 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
     # Be careful not to shadow FILTER_ITEM!
     CAMERA_FILTER = 1 << 0
 
+    use_filter_name_reverse: bpy.props.BoolProperty(
+        name="Reverse Name",
+        default=False,
+        options=set(),
+        description="Reverse name filtering",
+    )
+
+    # This allows us to have mutually exclusive options, which are also all disable-able!
+    def _gen_order_update(name1, name2):
+        def _u(self, ctxt):
+            if (getattr(self, name1)):
+                setattr(self, name2, False)
+
+        return _u
+
+    use_order_name: bpy.props.BoolProperty(
+        name="Name", default=False, options=set(),
+        description="Sort groups by their name (case-insensitive)",
+        update=_gen_order_update("use_order_name", "use_order_importance"),
+    )
+    use_order_importance: bpy.props.BoolProperty(
+        name="Importance",
+        default=False,
+        options=set(),
+        description="Sort groups by their average weight in the mesh",
+        update=_gen_order_update("use_order_importance", "use_order_name"),
+    )
+
+    def draw_filter(self, context, layout):
+        # Nothing much to say here, it's usual UI code...
+        row = layout.row()
+
+        subrow = row.row(align=True)
+        subrow.prop(self, "filter_name", text="")
+        icon = 'ARROW_LEFTRIGHT'
+        subrow.prop(self, "use_filter_name_reverse", text="", icon=icon)
+
     def filter_items(self, context, data, propname):
-        # This function gets the collection property (as the usual tuple (data, propname)), and must return two lists:
-        # * The first one is for filtering, it must contain 32bit integers were self.bitflag_filter_item marks the
-        #   matching item as filtered (i.e. to be shown), and 31 other bits are free for custom needs. Here we use the
-        #   first one to mark CAMERA_FILTER.
-        # * The second one is for reordering, it must return a list containing the new indices of the items (which
-        #   gives us a mapping org_idx -> new_idx).
-        # Please note that the default UI_UL_list defines helper functions for common tasks (see its doc for more info).
-        # If you do not make filtering and/or ordering, return empty list(s) (this will be more efficient than
-        # returning full lists doing nothing!).
         flt_flags, flt_neworder = filter_list(self, context)
         return flt_flags, flt_neworder
 
@@ -180,7 +208,6 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
         options=set(),
         description="Reverse name filtering",
     )
-
 
     # This allows us to have mutually exclusive options, which are also all disable-able!
     def _gen_order_update(name1, name2):
