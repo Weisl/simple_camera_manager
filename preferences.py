@@ -322,7 +322,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Superhive",
                          icon="URL").url = "https://superhivemarket.com/products/simple-camera-manager"
             row.operator("wm.url_open", text="Gumroad",
-                         icon="URL").url = "https://weisl.gumroad.com/l/Cam-Manager"
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_camera_manager"
 
 
             layout.label(text="Other Simple Tools ($)")
@@ -333,14 +333,14 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Superhive",
                          icon="URL").url = "https://superhivemarket.com/products/simple-collider"
             row.operator("wm.url_open", text="Gumroad",
-                         icon="URL").url = "https://weisl.gumroad.com/l/collider-tools"
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_collider"
 
             # row = col.row(align=True)
             # row.label(text="Simple Export")
             # row.operator("wm.url_open", text="Superhive",
             #              icon="URL").url = "https://superhivemarket.com/products/simple-export"
             # row.operator("wm.url_open", text="Gumroad",
-            #              icon="URL").url = "https://weisl.gumroad.com/l/simple-export"
+            #              icon="URL").url = "https://weisl.gumroad.com/l/simple_export"
 
             layout.label(text="Free Simple Tools")
             col = layout.column(align=True)
