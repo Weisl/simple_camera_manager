@@ -108,7 +108,6 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
 
         layout.separator()
-        layout.label(text='Collection Operators')
         layout.menu(CameraOperatorDropdownMenu.bl_idname, icon='OUTLINER_COLLECTION')
 
         layout.separator()
@@ -294,7 +293,7 @@ class CAMERA_OT_SelectAllCameras(bpy.types.Operator):
 
 # Define the custom menu
 class CameraOperatorDropdownMenu(bpy.types.Menu):
-    bl_label = "Camera Collection Operator"
+    bl_label = "Camera Operators"
     bl_idname = "OBJECT_MT_camera_dropdown_menu"
 
     def draw(self, context):
