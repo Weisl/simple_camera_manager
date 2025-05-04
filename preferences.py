@@ -228,7 +228,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
                                              update=update_panel_category)  # update = update_panel_position,
 
     enable_n_panel: bpy.props.BoolProperty(
-        name="Enable Simple Export N-Panel",
+        name="Enable Simple Camera Manager N-Panel",
         description="Toggle the N-Panel on and off.",
         default=True,
         update=update_panel_category)
@@ -314,7 +314,18 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
                 parent=layout
             )
 
-            layout.label(text="Simple Tools ($)")
+            layout.label(text="♥♥♥ Leave a Review or Rating! ♥♥♥")
+            col = layout.column(align=True)
+
+            row = col.row(align=True)
+            row.label(text="Simple Camera Manager")
+            row.operator("wm.url_open", text="Superhive",
+                         icon="URL").url = "https://superhivemarket.com/products/simple-camera-manager"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/Cam-Manager"
+
+
+            layout.label(text="Other Simple Tools ($)")
 
             col = layout.column(align=True)
             row = col.row(align=True)
@@ -324,21 +335,14 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/collider-tools"
 
-            row = col.row(align=True)
-            row.label(text="Simple Camera Manager")
-            row.operator("wm.url_open", text="Superhive",
-                         icon="URL").url = "https://superhivemarket.com/products/simple-camera-manager"
-            row.operator("wm.url_open", text="Gumroad",
-                         icon="URL").url = "https://weisl.gumroad.com/l/Cam-Manager"
+            # row = col.row(align=True)
+            # row.label(text="Simple Export")
+            # row.operator("wm.url_open", text="Superhive",
+            #              icon="URL").url = "https://superhivemarket.com/products/simple-export"
+            # row.operator("wm.url_open", text="Gumroad",
+            #              icon="URL").url = "https://weisl.gumroad.com/l/simple-export"
 
-            row = col.row(align=True)
-            row.label(text="Simple Export")
-            row.operator("wm.url_open", text="Superhive",
-                         icon="URL").url = "https://superhivemarket.com/products/simple-export"
-            row.operator("wm.url_open", text="Gumroad",
-                         icon="URL").url = "https://weisl.gumroad.com/l/simple-export"
-
-            layout.label(text="Simple Renaming (Free)")
+            layout.label(text="Free Simple Tools")
             col = layout.column(align=True)
             row = col.row(align=True)
             row.label(text="Simple Renaming")
@@ -349,12 +353,12 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
             col = layout.column(align=True)
             row = col.row()
-            row.label(text='Support')
+            row.label(text='Support & Feedback')
             row = col.row()
             row.label(text='Support is primarily provided through the store pages for Superhive and Gumroad.')
             row.label(text='Questions or Feedback?')
             row = col.row()
-            row.operator("wm.url_open", text="Discord", icon="URL").url = "https://discord.gg/kSWeQpfD"
+            row.operator("wm.url_open", text="Join Discord", icon="URL").url = "https://discord.gg/kSWeQpfD"
 
 
 classes = (
