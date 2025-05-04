@@ -228,7 +228,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
                                              update=update_panel_category)  # update = update_panel_position,
 
     enable_n_panel: bpy.props.BoolProperty(
-        name="Enable Simple Export N-Panel",
+        name="Enable Simple Camera Manager N-Panel",
         description="Toggle the N-Panel on and off.",
         default=True,
         update=update_panel_category)
