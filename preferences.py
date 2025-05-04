@@ -358,7 +358,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.label(text='Support is primarily provided through the store pages for Superhive and Gumroad.')
             row.label(text='Questions or Feedback?')
             row = col.row()
-            row.operator("wm.url_open", text="Join Discord", icon="URL").url = "https://discord.gg/kSWeQpfD"
+            row.operator("wm.url_open", text="Join Discord", icon="URL").url = "https://discord.gg/VRzdcFpczm"
 
 
 classes = (
