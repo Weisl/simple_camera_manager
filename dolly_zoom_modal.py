@@ -1,6 +1,7 @@
+import math
+
 import blf
 import bpy
-import math
 from mathutils import Vector
 
 
@@ -270,9 +271,13 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         camera = self.camera
         scene = context.scene
 
-        # Set Gizmo to be visibile during the modal operation. Dirty!
+        # Set Gizmo to be visible during the modal operation. Dirty!
         prefs = context.preferences.addons[__package__].preferences
         prefs.show_dolly_gizmo = True
+
+        # Display keymap information
+        context.area.header_text_set(
+            "Dolly Zoom: Left Mouse: Confirm, Right Mouse/ESC: Cancel, F: Toggle Width, D: Toggle Distance, Shift/Ctrl: Adjust Sensitivity")
 
         # Cancel Operator
         if event.type in {'RIGHTMOUSE', 'ESC'}:
@@ -283,47 +288,43 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             prefs.show_dolly_gizmo = self.initial_gizmo_state
 
             # Remove Viewport Text
+            context.area.header_text_set(None)
             try:
                 bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
             except ValueError:
                 pass
             return {'CANCELLED'}
 
-
         # Apply operator
         elif event.type == 'LEFTMOUSE':
             # Remove Viewport Text
             prefs.show_dolly_gizmo = self.initial_gizmo_state
+            context.area.header_text_set(None)
             try:
                 bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
             except ValueError:
                 pass
             return {'FINISHED'}
 
-
         elif event.alt:
             # update reference camera settings to current camera settings
             self.ignore_input = True
             self.force_redraw()
-
             return {'RUNNING_MODAL'}
 
         elif event.type == 'F' and event.value == 'RELEASE':
             self.set_width = not self.set_width
             self.set_distance = False
-
             self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
                                                    self.camera.data.dolly_zoom_target_distance)
 
         elif event.type == 'D' and event.value == 'RELEASE':
             self.set_distance = not self.set_distance
             self.set_width = False
-
             if self.set_distance:
                 self.tmp_distance = self.ref_cam_settings['distance']
             else:
                 self.tmp_distance = False
-
             self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
                                                    self.camera.data.dolly_zoom_target_distance)
 
@@ -333,13 +334,10 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
                                                    self.camera.data.dolly_zoom_target_distance)
             self.tmp_distance = self.ref_cam_settings['distance']
-
             # update ref mouse position to current
             self.mouse_initial_x = event.mouse_x
-
             # Alt is not pressed anymore after release
             self.ignore_input = False
-
             return {'RUNNING_MODAL'}
 
         # Ignore Mouse Movement. The Operator will behave as starting it newly
@@ -348,20 +346,16 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
                                                    self.camera.data.dolly_zoom_target_distance)
             self.tmp_distance = self.ref_cam_settings['distance']
-
             # update ref mouse position to current
             self.mouse_initial_x = event.mouse_x
-
             # Alt is not pressed anymore after release
             self.ignore_input = False
             return {'RUNNING_MODAL'}
 
         elif event.type == 'MOUSEMOVE':
             self.ignore_input = False
-
             # calculate mouse movement and offset camera
             delta = int(self.mouse_initial_x - event.mouse_x)
-
             # Ignore if Alt is pressed
             if event.alt:
                 self.ignore_input = True
@@ -369,44 +363,34 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
             elif self.set_width:
                 # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
-
                 factor = 0.005
                 if event.ctrl:
                     factor = 0.015
                 elif event.shift:
                     factor = 0.001
-
                 # calculate width offset
                 offset = delta * factor
                 width = abs(self.ref_cam_settings['target_width'] + offset)
-
                 # set operator variables and camera property
                 self.camera.data.dolly_zoom_target_scale = width
-
                 # update camera
                 self.update_camera()
 
             elif self.set_distance:
-
                 factor = 0.05
                 if event.ctrl:
                     factor = 0.15
                 elif event.shift:
                     factor = 0.005
-
                 # calculate width offset
                 offset = delta * factor
                 distance = abs(self.tmp_distance + offset)
-
                 self.camera.data.dolly_zoom_target_distance = distance
                 self.ref_cam_settings['distance'] = distance
-
                 # Target
                 width = calculate_target_width(camera.data.dolly_zoom_target_distance, camera.data.angle)
                 camera.data.dolly_zoom_target_scale = width
-
                 # update camera
-                # self.update_camera()
 
             else:
                 # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
@@ -415,9 +399,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
                     factor = 0.15
                 elif event.shift:
                     factor = 0.005
-
                 cam_offset = delta * factor
-
                 self.update_camera(cam_offset=cam_offset, use_cam_offset=True)
 
         return {'RUNNING_MODAL'}
