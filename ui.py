@@ -244,7 +244,7 @@ class CAM_MANAGER_PT_popup(bpy.types.Panel):
         row.prop(scene, 'output_use_cam_name')
         row = layout.row()
         row.prop(context.scene.render, 'filepath')
-        row.operator('cameras.open_in_explorer', text='Open Render Folder', Icon='FILE_FOLDER')
+        row.operator('cameras.open_in_explorer', text='Open Render Folder', icon='FILE_FOLDER')
         row = layout.row()  # layout.label(text="Output path" + os.path.abspath(context.scene.render.filepath))
 
 
