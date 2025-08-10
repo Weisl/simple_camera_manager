@@ -12,6 +12,15 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
 
     # Resolution
     row = layout.row(align=True)
+
+    col = layout.column(align=True)
+    row.prop(cam, "resolution_overwrite"),
+    if cam.resolution_overwrite:
+        row = col.row(align=True)
+    else:
+        row = col.row(align=True)
+        row.enabled = False
+
     row.prop(cam, "resolution", text="Resolution")
 
     # Lens
