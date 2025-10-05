@@ -277,17 +277,14 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
         elif self.prefs_tabs == 'SUPPORT':
             # Cross Promotion
+            box = layout.box()
 
-            text = "Explore my other Blender Addons designed for more efficient game asset workflows!"
-            label_multiline(
-                context=context,
-                text=text,
-                parent=layout
-            )
-
-            layout.label(text="♥♥♥ Leave a Review or Rating! ♥♥♥")
-            col = layout.column(align=True)
-
+            ### SIMPLE Camera Manager
+            col = box.column(align=True)
+            row = col.row()
+            row.label(text="♥♥♥ Leave a Review or Rating! ♥♥♥")
+            row = col.row()
+            row.label(text='Support & Feedback')
             row = col.row(align=True)
             row.label(text="Simple Camera Manager")
             row.operator("wm.url_open", text="Superhive",
@@ -295,9 +292,26 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/Cam-Manager"
 
-            layout.label(text="Other Simple Tools ($)")
+            col = box.column(align=True)
+            row = col.row()
+            row.label(text='Join the Discussion!')
+            row = col.row()
+            row.operator("wm.url_open", text="Join Discord", icon="URL").url = "https://discord.gg/VRzdcFpczm"
 
-            col = layout.column(align=True)
+
+            ### SIMPLE TOOLS PROMOTION
+
+            box = layout.box()
+            col = box.column(align=True)
+            text = "Explore my other Blender Addons designed for more efficient game asset workflows!"
+            label_multiline(
+                context=context,
+                text=text,
+                parent=col
+            )
+
+            box.label(text="Simple Tools ($)")
+            col = box.column(align=True)
             row = col.row(align=True)
             row.label(text="Simple Collider")
             row.operator("wm.url_open", text="Superhive",
@@ -305,15 +319,15 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/collider-tools"
 
-            # row = col.row(align=True)
-            # row.label(text="Simple Export")
+            row = col.row(align=True)
+            row.label(text="Simple Export")
             # row.operator("wm.url_open", text="Superhive",
             #              icon="URL").url = "https://superhivemarket.com/products/simple-export"
-            # row.operator("wm.url_open", text="Gumroad",
-            #              icon="URL").url = "https://weisl.gumroad.com/l/simple-export"
+            row.operator("wm.url_open", text="Gumroad",
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_export"
 
-            layout.label(text="Free Simple Tools")
-            col = layout.column(align=True)
+            box.label(text="Simple Tools (Free)")
+            col = box.column(align=True)
             row = col.row(align=True)
             row.label(text="Simple Renaming")
             row.operator("wm.url_open", text="Blender Extensions",
@@ -321,14 +335,6 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Gumroad",
                          icon="URL").url = "https://weisl.gumroad.com/l/simple_renaming"
 
-            col = layout.column(align=True)
-            row = col.row()
-            row.label(text='Support & Feedback')
-            row = col.row()
-            row.label(text='Support is primarily provided through the store pages for Superhive and Gumroad.')
-            row.label(text='Questions or Feedback?')
-            row = col.row()
-            row.operator("wm.url_open", text="Join Discord", icon="URL").url = "https://discord.gg/kSWeQpfD"
 
 
 classes = (
