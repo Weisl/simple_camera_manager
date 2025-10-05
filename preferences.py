@@ -290,7 +290,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Superhive",
                          icon="URL").url = "https://superhivemarket.com/products/simple-camera-manager"
             row.operator("wm.url_open", text="Gumroad",
-                         icon="URL").url = "https://weisl.gumroad.com/l/Cam-Manager"
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_camera_manager"
 
             col = box.column(align=True)
             row = col.row()
@@ -317,7 +317,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.operator("wm.url_open", text="Superhive",
                          icon="URL").url = "https://superhivemarket.com/products/simple-collider"
             row.operator("wm.url_open", text="Gumroad",
-                         icon="URL").url = "https://weisl.gumroad.com/l/collider-tools"
+                         icon="URL").url = "https://weisl.gumroad.com/l/simple_collider"
 
             row = col.row(align=True)
             row.label(text="Simple Export")
