@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "simple_camera_manager"
-version = "1.6.0"
+version = "1.6.1"
 name = "Simple Camera Manager"
 tagline = "Simple Camera Manager is a simple tools for managing multiple cameras"
 maintainer = "Matthias Patscheider <patscheider.matthias@gmail.com>"
