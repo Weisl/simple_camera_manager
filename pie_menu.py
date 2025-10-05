@@ -107,7 +107,7 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
         draw_background_image_settings(layout)
 
 
-class CAM_MANAGER_MT_PIE_camera_settings(Menu):
+class CAMERA_MT_pie_menu(Menu):
     # label is displayed at the center of the pie menu.
     bl_label = "Active Camera Pie "
     bl_idname = "CAMERA_MT_pie_menu"
@@ -276,7 +276,7 @@ class CAM_MANAGER_MT_PIE_camera_settings(Menu):
 
 
 classes = (
-    CAM_MANAGER_MT_PIE_camera_settings,
+    CAMERA_MT_pie_menu,
 )
 
 

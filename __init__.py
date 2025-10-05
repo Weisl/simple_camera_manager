@@ -22,8 +22,8 @@ else:
     from . import camera_gizmos
     from . import ui
     from . import uilist
-    from . import keymap
     from . import preferences
+    from . import keymap
     from . import pie_menu
 
 
