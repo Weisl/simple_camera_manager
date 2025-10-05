@@ -166,7 +166,7 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
         row.operator('cameras.all_to_collection')
 
 
-class CAM_MANAGER_PT_popup(bpy.types.Panel):
+class OBJECT_PT_camera_manager_popup(bpy.types.Panel):
     bl_idname = "OBJECT_PT_camera_manager_popup"
     bl_label = "Simple Camera Manager Popup"
     bl_space_type = 'VIEW_3D'
@@ -310,7 +310,7 @@ classes = (
     CAMERA_OT_open_in_explorer,
     CAMERA_OT_SelectAllCameras,
     CAM_MANAGER_PT_scene_properties,
-    CAM_MANAGER_PT_popup,
+    OBJECT_PT_camera_manager_popup,
     CAM_MANAGER_PT_camera_properties,
     VIEW3D_PT_SimpleCameraManager,
     CameraOperatorDropdownMenu,
@@ -345,7 +345,6 @@ def unregister():
 
     scene = bpy.types.Scene
 
-    del scene.my_operator
     del scene.output_use_cam_name
     del scene.output_render
     del scene.cam_collection

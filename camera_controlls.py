@@ -223,6 +223,7 @@ class CAM_MANAGER_OT_resolution_from_img(bpy.types.Operator):
     def execute(self, context):
         if self.camera_name and bpy.data.cameras[self.camera_name]:
             camera = bpy.data.cameras[self.camera_name]
+            camera.resolution_overwrite = True
 
             if len(bpy.data.cameras[self.camera_name].background_images) > 0:
                 resolution = camera.background_images[0].image.size
@@ -267,9 +268,10 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
             camera = scene.objects[self.camera_name]
 
             if camera.data.resolution:
-                resolution = camera.data.resolution
-                scene.render.resolution_x = resolution[0]
-                scene.render.resolution_y = resolution[1]
+                if camera.data.resolution_overwrite:
+                    resolution = camera.data.resolution
+                    scene.render.resolution_x = resolution[0]
+                    scene.render.resolution_y = resolution[1]
 
             # if camera.data.exposure: #returns 0 when exposure = 0
             scene.view_settings.exposure = camera.data.exposure
@@ -516,6 +518,8 @@ def register():
     # data stored in camera
     cam = bpy.types.Camera
 
+    cam.resolution_overwrite = bpy.props.BoolProperty(name="Resolution Overwrite", description="Overwrite scene resolution for this camera", default=False)
+
     cam.resolution = bpy.props.IntVectorProperty(name='Camera Resolution', description='Camera resolution in px',
                                                  default=(1920, 1080),
                                                  min=4, soft_min=800, soft_max=8096,
@@ -545,6 +549,8 @@ def register():
     # The PointerProperty has to be after registering the classes to know about the custom property type
     cam.world = bpy.props.PointerProperty(update=world_update_func, type=bpy.types.World,
                                           name="World Material")  # type=WorldMaterialProperty, name="World Material", description='World material assigned to the camera',
+
+
 
 
 def unregister():

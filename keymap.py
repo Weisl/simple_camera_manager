@@ -1,8 +1,8 @@
 import bpy
 
 keymaps_items_dict = {
-    "Simple Camera Manager": {"name": 'cam_menu', "idname": 'wm.call_panel', "operator":
-        'OBJECT_PT_camera_manager_popup', "type": 'C', "value": 'PRESS',
+    "Simple Camera Manager": {"name": 'cam_menu', "idname": 'wm.call_panel',
+                              "operator": 'OBJECT_PT_camera_manager_popup', "type": 'C', "value": 'PRESS',
                               "ctrl": False, "shift": True, "alt": True, "active": True},
     "Active Camera Pie": {"name": 'cam_pie', "idname": 'wm.call_menu_pie',
                           "operator": 'CAMERA_MT_pie_menu',
@@ -13,6 +13,7 @@ keymaps_items_dict = {
     "Previous Camera": {"name": 'prev_cam', "idname": 'cam_manager.cycle_cameras_backward',
                         "operator": '', "type": 'LEFT_ARROW', "value": 'PRESS', "ctrl": True, "shift": True,
                         "alt": False, "active": True}}
+
 
 def get_keymap_string(item_id, item_type):
     # Get all keymaps
@@ -55,30 +56,34 @@ def get_keymap_string(item_id, item_type):
     return " + ".join(modifiers + [key])
 
 
-
 def add_key(context, idname, type, ctrl, shift, alt, operator, active):
-    km = context.window_manager.keyconfigs.addon.keymaps.new(name="Window")
-
-    kmi = km.keymap_items.new(idname=idname, type=type, value='PRESS',
-                              ctrl=ctrl, shift=shift,
-                              alt=alt)
-
+    wm = context.window_manager
+    addon_km = wm.keyconfigs.addon.keymaps.get('3D View')
+    if not addon_km:
+        addon_km = wm.keyconfigs.addon.keymaps.new(name="3D View")
+    kmi = addon_km.keymap_items.new(idname=idname, type=type, value='PRESS', ctrl=ctrl, shift=shift, alt=alt)
     if operator != '':
-        add_key_to_keymap(operator, kmi, active=active)
+        kmi.properties.name = operator
+    kmi.active = active
 
 
 def remove_key(context, idname, properties_name):
     """Removes addon hotkeys from the keymap"""
-    wm = bpy.context.window_manager
-    km = wm.keyconfigs.addon.keymaps['Window']
-
-    for kmi in km.keymap_items:
+    wm = context.window_manager
+    addon_km = wm.keyconfigs.addon.keymaps.get('3D View')
+    if not addon_km:
+        return
+    items_to_remove = []
+    for kmi in addon_km.keymap_items:
         if properties_name:
-            if kmi.idname == idname and kmi.properties.name == properties_name:
-                km.keymap_items.remove(kmi)
+            if kmi.idname == idname and hasattr(kmi.properties, 'name') and kmi.properties.name == properties_name:
+                items_to_remove.append(kmi)
         else:
             if kmi.idname == idname:
-                km.keymap_items.remove(kmi)
+                items_to_remove.append(kmi)
+    for kmi in items_to_remove:
+        addon_km.keymap_items.remove(kmi)
+
 
 
 def add_keymap():
@@ -104,7 +109,7 @@ def add_key_to_keymap(idname, kmi, active=True):
 
 def remove_keymap():
     wm = bpy.context.window_manager
-    addon_keymaps = wm.keyconfigs.addon.keymaps.get('Window')
+    addon_keymaps = wm.keyconfigs.addon.keymaps.get('3D View')
 
     if not addon_keymaps:
         return
@@ -153,9 +158,6 @@ class BUTTON_OT_change_key(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     property_prefix: bpy.props.StringProperty()
-
-    def __init__(self):
-        self.my_event = ''
 
     def invoke(self, context, event):
         prefs = bpy.context.preferences.addons[__package__].preferences

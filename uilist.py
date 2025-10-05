@@ -165,6 +165,10 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
                 c.prop(cam, 'lens', text='')
                 c.prop(cam, 'angle', text='')
                 c = row.column(align=True)
+                c.prop(cam, 'resolution_overwrite')
+                c = row.column(align=True)
+                if not cam.resolution_overwrite:
+                    c.enabled = False
                 c.prop(cam, "resolution", text="")
                 op = row.operator("cam_manager.camera_resolutio_from_image", text="", icon='IMAGE_BACKGROUND')
                 op.camera_name = cam.name
