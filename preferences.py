@@ -48,7 +48,7 @@ def update_panel_category(self, context):
 def update_key(self, context, property_prefix):
     """Update keymap for a given property prefix (e.g., 'next_cam', 'prev_cam')."""
     wm = context.window_manager
-    km = wm.keyconfigs.addon.keymaps.get("3D View")
+    km = wm.keyconfigs.active.keymaps.get("3D View")
     if not km:
         return
     prefs = context.preferences.addons[__package__].preferences
