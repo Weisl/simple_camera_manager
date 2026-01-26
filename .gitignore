@@ -1,8 +1,54 @@
-
+# Python
+__pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Blender
+*.blend1
+*.blend2
+*.blend~
+.blend_thumb/
+*.blend_bak
+*.blend_autosave
+*.blend_autosave.tmp
+
+# Virtual Environment
+venv/
+.env/
+.venv/
+
+# IDE/Editor
+.vscode/
+.idea/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Build/Dist
+build/
+dist/
+*.egg-info/
+
+# Archives
+*.zip
+*.7z
+*.rar
+
+# Logs
+*.log
+
+# Media
 *.mp4
+
+# Data
 *.json
 
-__pycache__/
+# Updaters (your existing entries)
 cameramanager_updater/
 cam-manager_updater/
+
+# Vim
+*.swp
+*.swo
