@@ -48,7 +48,7 @@ def update_panel_category(self, context):
 def update_key(self, context, property_prefix):
     """Update keymap for a given property prefix (e.g., 'next_cam', 'prev_cam')."""
     wm = context.window_manager
-    km = wm.keyconfigs.addon.keymaps.get("3D View")
+    km = wm.keyconfigs.addon.keymaps.get('Window') # Using Window instead of 3D View to fix issue of keymap not working on Linux
     if not km:
         return
     prefs = context.preferences.addons[__package__].preferences
