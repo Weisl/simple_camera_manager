@@ -45,7 +45,8 @@ def cycleCamera(context, direction):
     """
 
     scene = context.scene
-    cam_objects = [ob for ob in scene.objects if ob.type == 'CAMERA']
+    vl_objects = context.view_layer.objects
+    cam_objects = [ob for ob in scene.objects if ob.type == 'CAMERA' and ob.name in vl_objects]
 
     if len(cam_objects) == 0:
         return False
@@ -285,9 +286,10 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
                     pass
 
             scene.camera = camera
-            context.view_layer.objects.active = camera
-            bpy.ops.object.select_all(action='DESELECT')
-            camera.select_set(True)
+            if camera.name in context.view_layer.objects:
+                context.view_layer.objects.active = camera
+                bpy.ops.object.select_all(action='DESELECT')
+                camera.select_set(True)
 
             objectlist = list(context.scene.objects)
             idx = objectlist.index(camera)
@@ -485,7 +487,64 @@ def update_func(self, context):
     self.show_limits = not self.show_limits
 
 
+class CAM_MANAGER_OT_reload_addon(bpy.types.Operator):
+    """Reload all Simple Camera Manager scripts."""
+    bl_idname = "cam_manager.reload_addon"
+    bl_label = "Reload Addon"
+    bl_description = "Reload all Simple Camera Manager scripts"
+
+    def execute(self, context):
+        import importlib
+        import sys
+
+        # All sub-modules share __package__ as the root package name.
+        # Works for both legacy addons ("simple_camera_manager")
+        # and extensions ("bl_ext.user_default.simple_camera_manager").
+        root_pkg = __package__
+
+        # Snapshot module names before any reload happens.
+        # Sort key: deeper modules first, alphabetically within same depth.
+        mod_names = sorted(
+            [name for name in sys.modules
+             if name == root_pkg or name.startswith(root_pkg + ".")],
+            key=lambda n: (-n.count("."), n),
+        )
+
+        # Defer the actual reload to the next event-loop iteration so that this
+        # operator's own execute() has finished before we unregister everything.
+        def _do_reload():
+            root_mod = sys.modules.get(root_pkg)
+            if root_mod and hasattr(root_mod, "unregister"):
+                try:
+                    root_mod.unregister()
+                except Exception as exc:
+                    print(f"[CAM_MANAGER] unregister error: {exc}")
+
+            for name in mod_names:
+                mod = sys.modules.get(name)
+                if mod is not None:
+                    try:
+                        importlib.reload(mod)
+                    except Exception as exc:
+                        print(f"[CAM_MANAGER] reload error for '{name}': {exc}")
+
+            # Re-fetch root after in-place reload to pick up any top-level changes.
+            root_mod = sys.modules.get(root_pkg)
+            if root_mod and hasattr(root_mod, "register"):
+                try:
+                    root_mod.register()
+                except Exception as exc:
+                    print(f"[CAM_MANAGER] register error: {exc}")
+
+            print(f"[CAM_MANAGER] Reloaded {len(mod_names)} modules from '{root_pkg}'")
+
+        bpy.app.timers.register(_do_reload, first_interval=0.0)
+        self.report({'INFO'}, f"Queued reload of {len(mod_names)} modules…")
+        return {'FINISHED'}
+
+
 classes = (
+    CAM_MANAGER_OT_reload_addon,
     CAM_MANAGER_OT_camera_to_collection,
     CAM_MANAGER_OT_create_collection,
     CAM_MANAGER_OT_render,

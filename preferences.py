@@ -22,6 +22,29 @@ def label_multiline(context, text, parent):
         parent.label(text=text_line)
 
 
+def update_popup_size(self, context):
+    """Defer re-registration so the preferences window has finished its event."""
+    def _apply():
+        from .ui import OBJECT_PT_camera_manager_popup
+        prefs = bpy.context.preferences.addons[__package__].preferences
+
+        # Close the popup if it is open — it lives as a temporary window.
+        # Must happen before unregister_class while the popup holds a reference.
+        for window in list(bpy.context.window_manager.windows):
+            if window.screen.is_temporary:
+                with bpy.context.temp_override(window=window):
+                    bpy.ops.wm.window_close()
+
+        try:
+            bpy.utils.unregister_class(OBJECT_PT_camera_manager_popup)
+            OBJECT_PT_camera_manager_popup.bl_ui_units_x = prefs.popup_width
+            bpy.utils.register_class(OBJECT_PT_camera_manager_popup)
+        except Exception as e:
+            print(f"[CAM_MANAGER] Could not apply popup size: {e}")
+
+    bpy.app.timers.register(_apply, first_interval=0.0)
+
+
 def update_panel_category(self, context):
     """Update panel tab for simple export"""
     panels = [
@@ -210,6 +233,14 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         default=True,
         update=update_panel_category)
 
+    popup_width: bpy.props.IntProperty(
+        name="Popup Width",
+        description="Width of the Simple Camera Manager popup window in UI units",
+        default=65,
+        min=10,
+        max=100,
+        update=update_popup_size)
+
     def keymap_ui(self, layout, title, property_prefix):
         box = layout.box()
         split = box.split(align=True, factor=0.5)
@@ -253,8 +284,15 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             box.label(text="UI")
             box.prop(self, 'enable_n_panel')
             box.prop(self, 'panel_category')
+
+            box = layout.box()
+            box.label(text="Popup Window Size")
+            box.prop(self, 'popup_width')
             # updater draw function
             # could also pass in col as third arg
+
+            box = layout.box()
+            box.operator("cam_manager.reload_addon", icon='FILE_REFRESH')
 
             box = layout.box()
             box.label(text="Gizmos")
@@ -343,17 +381,27 @@ classes = (
 
 
 def register():
-    from bpy.utils import register_class
+    from bpy.utils import register_class, unregister_class  # unregister_class used below for popup resize
 
     for cls in classes:
         register_class(cls)
-
 
     # Initialize correct property panel for the Simple Export Panel
     update_panel_category(None, bpy.context)
 
     from .keymap import add_keymap
     add_keymap()
+
+    # Apply the saved popup width — ui.register() already registered the class,
+    # so just set the attribute directly and re-register to push it into RNA.
+    try:
+        from .ui import OBJECT_PT_camera_manager_popup
+        prefs = bpy.context.preferences.addons[__package__].preferences
+        unregister_class(OBJECT_PT_camera_manager_popup)
+        OBJECT_PT_camera_manager_popup.bl_ui_units_x = prefs.popup_width
+        register_class(OBJECT_PT_camera_manager_popup)
+    except Exception as e:
+        print(f"[CAM_MANAGER] Could not apply popup size: {e}")
 
 def unregister():
     from bpy.utils import unregister_class
