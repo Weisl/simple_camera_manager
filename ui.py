@@ -141,6 +141,9 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
 
         layout.separator()
+        layout.operator("camera.create_camera_from_view", text="Camera from View", icon='VIEW_CAMERA')
+
+        layout.separator()
         layout.menu(CameraOperatorDropdownMenu.bl_idname, icon='OUTLINER_COLLECTION')
 
         layout.separator()

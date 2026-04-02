@@ -4,6 +4,15 @@ import os
 cam_collection_name = 'Cameras'
 
 
+def get_next_free_slot():
+    """Return the lowest render slot number not already assigned to any camera."""
+    used_slots = {cam.slot for cam in bpy.data.cameras}
+    slot = 1
+    while slot in used_slots:
+        slot += 1
+    return slot
+
+
 def make_collection(collection_name, parent_collection):
     """
     return existing collection if a collection with the according name exists, otherwise return a newly created one
@@ -89,38 +98,48 @@ class OBJECT_OT_create_camera_from_view(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        # Create a new camera
-        bpy.ops.object.camera_add()
-        camera = context.object  # Ensure we get the newly created camera
-        camera.name = 'ViewportCamera'
-        print(f"New camera created: {camera.name} at location {camera.location}")
-
-        # Store the original active camera
-        original_camera = context.scene.camera
-        print(f"Original active camera: {original_camera.name if original_camera else 'None'}")
-
-        # Set the new camera as the active scene camera
-        context.scene.camera = camera
-        print(f"Set active scene camera to: {context.scene.camera.name}")
-
-        # Get the 3D view area and region
-        for area in bpy.context.screen.areas:
+        # Find the 3D view area and window region first
+        view_area = None
+        view_region = None
+        for area in context.screen.areas:
             if area.type == 'VIEW_3D':
                 for region in area.regions:
                     if region.type == 'WINDOW':
-                        # Align the new camera to the viewport view
-                        with context.temp_override(area=area, region=region, scene=context.scene):
-                            bpy.ops.view3d.camera_to_view()
-                        print(f"New camera aligned to viewport view. Location: {camera.location}")
+                        view_area = area
+                        view_region = region
                         break
+                if view_area:
+                    break
 
-        # Optionally, set the camera's lens to match the viewport
-        camera.data.lens = context.space_data.lens
-        print(f"Camera lens set to: {camera.data.lens}")
+        if not view_area:
+            self.report({'WARNING'}, "No 3D Viewport found.")
+            return {'CANCELLED'}
 
-        # Restore the original active camera
-        # context.scene.camera = original_camera
-        # print(f"Restored active scene camera to: {context.scene.camera.name if context.scene.camera else 'None'}")
+        # Determine a free render slot before adding the camera so the new
+        # camera's own default (slot=1) doesn't pollute the lookup.
+        next_slot = get_next_free_slot()
+
+        # Create a new camera
+        bpy.ops.object.camera_add()
+        camera = context.object
+        camera.name = 'ViewportCamera'
+        camera.data.slot = next_slot
+
+        # Set the new camera as the active scene camera
+        context.scene.camera = camera
+
+        # Align the camera to the current viewport view
+        with context.temp_override(area=view_area, region=view_region, scene=context.scene):
+            bpy.ops.view3d.camera_to_view()
+
+        # Blender's viewport FOV is computed with a 32 mm sensor reference,
+        # while a camera object uses its own sensor_width (default 36 mm).
+        # Copying the raw lens number gives the camera a wider FOV than the
+        # viewport; the ratio sensor_width/32 corrects for this so the render
+        # frame matches the viewport view exactly when the render aspect ratio
+        # equals the viewport aspect ratio.
+        view_lens = view_area.spaces.active.lens
+        camera.data.lens = view_lens * camera.data.sensor_width / 32.0
 
         self.report({'INFO'}, f"Camera '{camera.name}' created from the viewport view.")
         return {'FINISHED'}
