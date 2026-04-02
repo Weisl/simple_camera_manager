@@ -147,6 +147,9 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         layout.label(text=f"Previous Cam ({operator1_keymap})")
         layout.label(text=f"Next Cam ({operator2_keymap})")
 
+        layout.separator()
+        layout.operator("cam_manager.reload_addon", text="Reload Addon", icon='FILE_REFRESH')
+
 
 class CAM_MANAGER_PT_scene_panel:
     """Properties Panel in the scene tab"""

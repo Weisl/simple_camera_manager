@@ -1,3 +1,6 @@
+import bpy
+import gpu
+from gpu_extras.batch import batch_for_shader
 from bpy.types import (
     GizmoGroup,
     Gizmo
@@ -5,6 +8,85 @@ from bpy.types import (
 from .dolly_zoom_modal import calculate_target_width
 
 import mathutils
+
+
+# ---------------------------------------------------------------------------
+# Passepartout colour overlay
+# ---------------------------------------------------------------------------
+
+_draw_handler = None
+
+
+def _get_camera_frame_rect(region, scene):
+    """Return (x, y, w, h) of the camera frame in region pixel space."""
+    render = scene.render
+    res_x = render.resolution_x * render.pixel_aspect_x
+    res_y = render.resolution_y * render.pixel_aspect_y
+    cam_aspect = res_x / res_y if res_y else 1.0
+
+    vp_w = region.width
+    vp_h = region.height
+    vp_aspect = vp_w / vp_h if vp_h else 1.0
+
+    if cam_aspect >= vp_aspect:
+        frame_w = vp_w
+        frame_h = vp_w / cam_aspect
+    else:
+        frame_h = vp_h
+        frame_w = vp_h * cam_aspect
+
+    x = (vp_w - frame_w) * 0.5
+    y = (vp_h - frame_h) * 0.5
+    return x, y, frame_w, frame_h
+
+
+def _draw_camera_passepartout_overlay():
+    context = bpy.context
+    if not context or not context.scene:
+        return
+
+    rv3d = context.region_data
+    if not rv3d or rv3d.view_perspective != 'CAMERA':
+        return
+
+    space = context.space_data
+    if not space or space.type != 'VIEW_3D':
+        return
+
+    cam_ob = context.scene.camera
+    if not cam_ob or cam_ob.type != 'CAMERA':
+        return
+
+    is_locked = bool(cam_ob.get('lock', False))
+    is_linked = space.lock_camera
+
+    if not is_locked and not is_linked:
+        return
+
+    try:
+        prefs = context.preferences.addons[__package__].preferences
+    except (KeyError, AttributeError):
+        return
+
+    color = tuple(prefs.locked_camera_overlay_color) if is_locked else tuple(prefs.linked_camera_overlay_color)
+
+    region = context.region
+    x, y, fw, fh = _get_camera_frame_rect(region, context.scene)
+    W, H = region.width, region.height
+
+    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+    gpu.state.blend_set('ALPHA')
+    shader.uniform_float("color", color)
+
+    for quad in (
+        ((0, y + fh), (W, y + fh), (W, H),          (0, H)),           # top
+        ((0, 0),      (W, 0),      (W, y),           (0, y)),           # bottom
+        ((0, y),      (x, y),      (x, y + fh),      (0, y + fh)),      # left
+        ((x + fw, y), (W, y),      (W, y + fh),      (x + fw, y + fh)), # right
+    ):
+        batch_for_shader(shader, 'TRI_FAN', {"pos": quad}).draw(shader)
+
+    gpu.state.blend_set('NONE')
 
 # # Coordinates (each one is a line).
 custom_shape_verts_02 = (
@@ -173,14 +255,24 @@ classes = (
 
 
 def register():
+    global _draw_handler
     from bpy.utils import register_class
 
     for cls in classes:
         register_class(cls)
 
+    _draw_handler = bpy.types.SpaceView3D.draw_handler_add(
+        _draw_camera_passepartout_overlay, (), 'WINDOW', 'POST_PIXEL'
+    )
+
 
 def unregister():
+    global _draw_handler
     from bpy.utils import unregister_class
+
+    if _draw_handler is not None:
+        bpy.types.SpaceView3D.draw_handler_remove(_draw_handler, 'WINDOW')
+        _draw_handler = None
 
     for cls in reversed(classes):
         unregister_class(cls)

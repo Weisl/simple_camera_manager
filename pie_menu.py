@@ -104,7 +104,6 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
     else:
         draw_focus_settings(layout)
         draw_lighting_settings(layout)
-        draw_background_image_settings(layout)
 
 
 class CAMERA_MT_pie_menu(Menu):

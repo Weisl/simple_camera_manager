@@ -46,7 +46,7 @@ def cycleCamera(context, direction):
 
     scene = context.scene
     vl_objects = context.view_layer.objects
-    cam_objects = [ob for ob in scene.objects if ob.type == 'CAMERA' and ob.name in vl_objects]
+    cam_objects = sorted([ob for ob in scene.objects if ob.type == 'CAMERA' and ob.name in vl_objects], key=lambda ob: ob.name.lower())
 
     if len(cam_objects) == 0:
         return False

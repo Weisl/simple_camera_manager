@@ -269,6 +269,24 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         row.prop(self, f"{property_prefix}_shift")
         row.prop(self, f"{property_prefix}_alt")
 
+    locked_camera_overlay_color: bpy.props.FloatVectorProperty(
+        name="Locked Camera",
+        description="Passepartout tint colour when the active camera is locked",
+        subtype='COLOR_GAMMA',
+        size=4,
+        min=0.0, max=1.0,
+        default=(0.1, 0.3, 1.0, 0.4),
+    )
+
+    linked_camera_overlay_color: bpy.props.FloatVectorProperty(
+        name="Viewport Linked Camera",
+        description="Passepartout tint colour when the viewport is locked to the camera",
+        subtype='COLOR_GAMMA',
+        size=4,
+        min=0.0, max=1.0,
+        default=(1.0, 0.2, 0.1, 0.4),
+    )
+
     # Gizmos
     show_dolly_gizmo: bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=False)
 
@@ -293,6 +311,13 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
             box = layout.box()
             box.operator("cam_manager.reload_addon", icon='FILE_REFRESH')
+
+            box = layout.box()
+            box.label(text="Camera Overlay Colours")
+            row = box.row()
+            row.prop(self, "locked_camera_overlay_color")
+            row = box.row()
+            row.prop(self, "linked_camera_overlay_color")
 
             box = layout.box()
             box.label(text="Gizmos")

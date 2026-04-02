@@ -1,50 +1,90 @@
 import bpy
 
 
+SORT_ITEMS = [
+    ('NAME',         "Name",             "Sort alphabetically by name",                  'SORTALPHA',           0),
+    ('ACTIVE_FIRST', "Active First",     "Active camera always at top",                  'VIEW_CAMERA',         1),
+    ('COLLECTION',   "Collection",       "Sort by collection, then by name",             'OUTLINER_COLLECTION', 2),
+    ('FOCAL_LENGTH', "Focal Length",     "Sort by focal length",                         'DRIVER_DISTANCE',     3),
+    ('RENDER_SLOT',  "Render Slot",      "Sort by render slot number",                   'IMAGE_DATA',          4),
+    ('RESOLUTION',   "Resolution",       "Sort by total pixel count",                    'IMAGE_PLANE',         5),
+    ('BG_IMAGE',     "Background Image", "Cameras with a background image assigned first", 'IMAGE_BACKGROUND',  6),
+]
+
+
 def filter_list(self, context):
-    """
-    Filter cameras from all objects for the UI list and sort them
-    :param self:
-    :param context:
-    :return: flt_flags is a bit-flag containing the filtering and flt
-             flt_neworder defines the order of all cameras
-    """
-    helper_funcs = bpy.types.UI_UL_list
-
-    # Default return values.
-    flt_flags = []
-    flt_neworder = []
-
-    # Get all objects from scene.
     objects = context.scene.objects
-
-    # Create bitmask for all objects
     flt_flags = [0] * len(objects)
-
-    # Filter by object type and name.
-    filter_name = self.filter_name.lower()
-    invert_filter = self.use_filter_name_reverse
     filtered_cameras = []
 
+    filter_name = self.filter_name.lower()
+    invert_name = self.use_filter_name_reverse
+
     for idx, obj in enumerate(objects):
-        if obj.type == "CAMERA":
-            name_match = not filter_name or filter_name in obj.name.lower()
-            if (name_match and not invert_filter) or (not name_match and invert_filter):
-                flt_flags[idx] = self.bitflag_filter_item | self.CAMERA_FILTER
-                filtered_cameras.append(idx)
-            else:
-                flt_flags[idx] = 0
-        else:
-            flt_flags[idx] = 0
+        if obj.type != 'CAMERA':
+            continue
 
-    # Sort filtered cameras by name.
-    if self.use_order_name:
-        filtered_cameras.sort(key=lambda idx: objects[idx].name.lower())
-        if self.use_filter_orderby_invert:
-            filtered_cameras.reverse()
+        # Name filter
+        name_match = not filter_name or filter_name in obj.name.lower()
+        if not ((name_match and not invert_name) or (not name_match and invert_name)):
+            continue
 
-    # Create new order list.
-    flt_neworder = filtered_cameras + [idx for idx in range(len(objects)) if idx not in filtered_cameras]
+        # Visible-only filter
+        if self.use_filter_visible_only and not obj.visible_get():
+            continue
+
+        # Render-selected filter
+        if self.use_filter_render_selected and not obj.data.render_selected:
+            continue
+
+        flt_flags[idx] = self.bitflag_filter_item | self.CAMERA_FILTER
+        filtered_cameras.append(idx)
+
+    # --- Sort ---
+    scene = context.scene
+    reverse = self.use_filter_sort_reverse
+
+    if self.sort_type == 'NAME':
+        filtered_cameras.sort(key=lambda i: objects[i].name.lower(), reverse=reverse)
+
+    elif self.sort_type == 'ACTIVE_FIRST':
+        active = scene.camera
+        filtered_cameras.sort(
+            key=lambda i: (0 if objects[i] == active else 1, objects[i].name.lower()),
+            reverse=reverse,
+        )
+
+    elif self.sort_type == 'COLLECTION':
+        def _col_key(i):
+            cols = objects[i].users_collection
+            return (cols[0].name.lower() if cols else '', objects[i].name.lower())
+        filtered_cameras.sort(key=_col_key, reverse=reverse)
+
+    elif self.sort_type == 'FOCAL_LENGTH':
+        filtered_cameras.sort(key=lambda i: objects[i].data.lens, reverse=reverse)
+
+    elif self.sort_type == 'RENDER_SLOT':
+        filtered_cameras.sort(key=lambda i: objects[i].data.slot, reverse=reverse)
+
+    elif self.sort_type == 'RESOLUTION':
+        filtered_cameras.sort(
+            key=lambda i: objects[i].data.resolution[0] * objects[i].data.resolution[1],
+            reverse=reverse,
+        )
+
+    elif self.sort_type == 'BG_IMAGE':
+        filtered_cameras.sort(
+            key=lambda i: (0 if objects[i].data.background_images else 1, objects[i].name.lower()),
+            reverse=reverse,
+        )
+
+    # Build flt_neworder[original_index] = new_display_position
+    filtered_set = set(filtered_cameras)
+    flt_neworder = [0] * len(objects)
+    for new_pos, old_idx in enumerate(filtered_cameras):
+        flt_neworder[old_idx] = new_pos
+    for i, old_idx in enumerate(idx for idx in range(len(objects)) if idx not in filtered_set):
+        flt_neworder[old_idx] = len(filtered_cameras) + i
 
     return flt_flags, flt_neworder
 
@@ -69,41 +109,41 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
     CAMERA_FILTER = 1 << 0
 
     use_filter_name_reverse: bpy.props.BoolProperty(
-        name="Reverse Name",
+        name="Invert Name Filter",
         default=False,
         options=set(),
-        description="Reverse name filtering",
+        description="Invert the name filter",
     )
-
-    # This allows us to have mutually exclusive options, which are also all disable-able!
-    def _gen_order_update(name1, name2):
-        def _u(self, ctxt):
-            if (getattr(self, name1)):
-                setattr(self, name2, False)
-
-        return _u
-
-    use_order_name: bpy.props.BoolProperty(
-        name="Name", default=False, options=set(),
-        description="Sort groups by their name (case-insensitive)",
-        update=_gen_order_update("use_order_name", "use_order_importance"),
-    )
-    use_order_importance: bpy.props.BoolProperty(
-        name="Importance",
+    use_filter_visible_only: bpy.props.BoolProperty(
+        name="Visible Only",
         default=False,
         options=set(),
-        description="Sort groups by their average weight in the mesh",
-        update=_gen_order_update("use_order_importance", "use_order_name"),
+        description="Show only cameras that are visible in the viewport",
+    )
+    use_filter_render_selected: bpy.props.BoolProperty(
+        name="Render Selected Only",
+        default=False,
+        options=set(),
+        description="Show only cameras marked for batch rendering",
+    )
+    sort_type: bpy.props.EnumProperty(
+        name="Sort By",
+        default='NAME',
+        items=SORT_ITEMS,
     )
 
     def draw_filter(self, context, layout):
-        # Nothing much to say here, it's usual UI code...
-        row = layout.row()
+        row = layout.row(align=True)
+        row.prop(self, "filter_name", text="")
+        row.prop(self, "use_filter_name_reverse", text="", icon='ARROW_LEFTRIGHT')
 
-        subrow = row.row(align=True)
-        subrow.prop(self, "filter_name", text="")
-        icon = 'ARROW_LEFTRIGHT'
-        subrow.prop(self, "use_filter_name_reverse", text="", icon=icon)
+        row = layout.row(align=True)
+        row.prop(self, "use_filter_visible_only",    text="Visible", toggle=True, icon='HIDE_OFF')
+        row.prop(self, "use_filter_render_selected", text="Render",  toggle=True, icon='RENDER_STILL')
+
+        row = layout.row(align=True)
+        row.prop(self, "sort_type", text="")
+        row.prop(self, "use_filter_sort_reverse", text="", icon='SORT_DESC')
 
     def filter_items(self, context, data, propname):
         flt_flags, flt_neworder = filter_list(self, context)
@@ -207,41 +247,41 @@ class CAMERA_UL_cameras_scene(bpy.types.UIList):
     CAMERA_FILTER = 1 << 0
 
     use_filter_name_reverse: bpy.props.BoolProperty(
-        name="Reverse Name",
+        name="Invert Name Filter",
         default=False,
         options=set(),
-        description="Reverse name filtering",
+        description="Invert the name filter",
     )
-
-    # This allows us to have mutually exclusive options, which are also all disable-able!
-    def _gen_order_update(name1, name2):
-        def _u(self, ctxt):
-            if (getattr(self, name1)):
-                setattr(self, name2, False)
-
-        return _u
-
-    use_order_name: bpy.props.BoolProperty(
-        name="Name", default=False, options=set(),
-        description="Sort groups by their name (case-insensitive)",
-        update=_gen_order_update("use_order_name", "use_order_importance"),
-    )
-    use_order_importance: bpy.props.BoolProperty(
-        name="Importance",
+    use_filter_visible_only: bpy.props.BoolProperty(
+        name="Visible Only",
         default=False,
         options=set(),
-        description="Sort groups by their average weight in the mesh",
-        update=_gen_order_update("use_order_importance", "use_order_name"),
+        description="Show only cameras that are visible in the viewport",
+    )
+    use_filter_render_selected: bpy.props.BoolProperty(
+        name="Render Selected Only",
+        default=False,
+        options=set(),
+        description="Show only cameras marked for batch rendering",
+    )
+    sort_type: bpy.props.EnumProperty(
+        name="Sort By",
+        default='NAME',
+        items=SORT_ITEMS,
     )
 
     def draw_filter(self, context, layout):
-        # Nothing much to say here, it's usual UI code...
-        row = layout.row()
+        row = layout.row(align=True)
+        row.prop(self, "filter_name", text="")
+        row.prop(self, "use_filter_name_reverse", text="", icon='ARROW_LEFTRIGHT')
 
-        subrow = row.row(align=True)
-        subrow.prop(self, "filter_name", text="")
-        icon = 'ARROW_LEFTRIGHT'
-        subrow.prop(self, "use_filter_name_reverse", text="", icon=icon)
+        row = layout.row(align=True)
+        row.prop(self, "use_filter_visible_only",    text="Visible", toggle=True, icon='HIDE_OFF')
+        row.prop(self, "use_filter_render_selected", text="Render",  toggle=True, icon='RENDER_STILL')
+
+        row = layout.row(align=True)
+        row.prop(self, "sort_type", text="")
+        row.prop(self, "use_filter_sort_reverse", text="", icon='SORT_DESC')
 
     def filter_items(self, context, data, propname):
         flt_flags, flt_neworder = filter_list(self, context)
