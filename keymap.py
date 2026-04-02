@@ -61,6 +61,7 @@ def add_key(context, idname, type, ctrl, shift, alt, operator, active):
     addon_km = wm.keyconfigs.addon.keymaps.get('Window') # Using Window instead of 3D View to fix issue of keymap not working on Linux
     if not addon_km:
         addon_km = wm.keyconfigs.addon.keymaps.new(name="Window")
+
     kmi = addon_km.keymap_items.new(idname=idname, type=type, value='PRESS', ctrl=ctrl, shift=shift, alt=alt)
     if operator != '':
         kmi.properties.name = operator
@@ -71,6 +72,7 @@ def remove_key(context, idname, properties_name):
     """Removes addon hotkeys from the keymap"""
     wm = context.window_manager
     addon_km = wm.keyconfigs.addon.keymaps.get('Window')
+
     if not addon_km:
         return
     items_to_remove = []

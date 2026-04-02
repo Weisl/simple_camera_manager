@@ -52,3 +52,4 @@ cam-manager_updater/
 # Vim
 *.swp
 *.swo
+venv/

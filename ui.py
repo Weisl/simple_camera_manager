@@ -24,12 +24,41 @@ def draw_simple_camera_manager_header(layout):
     op.addon_name = addon_name
     op.prefs_tabs = 'GENERAL'
 
-    # Open Export Popup
-    op = row.operator("wm.call_panel", text="", icon="WINDOW")
-    op.name = "OBJECT_PT_camera_manager_popup"
+    # Open Camera Manager Popup
+    row.operator("cam_manager.open_popup", text="", icon="WINDOW")
 
     # Display the combined label and keymap information
     row.label(text=f"Simple Camera Manager")
+
+
+class CAM_MANAGER_OT_open_popup(bpy.types.Operator):
+    """Open the Simple Camera Manager popup window"""
+    bl_idname = "cam_manager.open_popup"
+    bl_label = "Open Camera Manager Popup"
+    bl_description = "Open the Simple Camera Manager popup window"
+
+    def invoke(self, context, _event):
+        prefs = context.preferences.addons[__package__].preferences
+
+        # Capture context references now, while they are valid.
+        # The actual unregister/register sends NC_SCREEN|NA_EDITED which would
+        # cancel any active text-edit in the preferences window if called
+        # synchronously. Deferring via a timer (first_interval=0) lets the
+        # current event fully finish before we touch the class registry.
+        window = context.window
+        area = context.area
+        region = next((r for r in area.regions if r.type == 'WINDOW'), None)
+        width = prefs.popup_width
+
+        def _open():
+            bpy.utils.unregister_class(OBJECT_PT_camera_manager_popup)
+            OBJECT_PT_camera_manager_popup.bl_ui_units_x = width
+            bpy.utils.register_class(OBJECT_PT_camera_manager_popup)
+            with bpy.context.temp_override(window=window, area=area, region=region):
+                bpy.ops.wm.call_panel(name="OBJECT_PT_camera_manager_popup")
+
+        bpy.app.timers.register(_open, first_interval=0.0)
+        return {'FINISHED'}
 
 
 class CAMERA_OT_open_in_explorer(bpy.types.Operator):
@@ -172,7 +201,7 @@ class OBJECT_PT_camera_manager_popup(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'WINDOW'
     bl_context = "empty"
-    bl_ui_units_x = 45
+    bl_ui_units_x = 65
 
     def draw(self, context):
         layout = self.layout
@@ -307,6 +336,7 @@ class CameraOperatorDropdownMenu(bpy.types.Menu):
 
 classes = (
     CameraCollectionProperty,
+    CAM_MANAGER_OT_open_popup,
     CAMERA_OT_open_in_explorer,
     CAMERA_OT_SelectAllCameras,
     CAM_MANAGER_PT_scene_properties,
