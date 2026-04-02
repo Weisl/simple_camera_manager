@@ -131,7 +131,7 @@ class CAM_MANAGER_OT_lock_cameras(bpy.types.Operator):
     bl_idname = "cam_manager.lock_unlock_camera"
     bl_label = "Lock/Unlock Camera"
     bl_description = "Lock/unlock location, rotation, and scaling of a camera"
-
+    
     camera_name: bpy.props.StringProperty()
     cam_lock: bpy.props.BoolProperty(name="lock", default=True)
 
@@ -141,7 +141,6 @@ class CAM_MANAGER_OT_lock_cameras(bpy.types.Operator):
             lock_camera(obj, self.cam_lock)
 
         return {'FINISHED'}
-
 
 class CAM_MANAGER_OT_cycle_cameras_next(bpy.types.Operator):
     """Cycle through available cameras"""
