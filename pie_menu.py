@@ -2,6 +2,78 @@ import bpy
 from bpy.types import Menu
 
 
+RESOLUTION_PRESET_ITEMS = [
+    ('512x512', "Square (Low Res)  512x512", "512x512 (1:1)"),
+    ('1080x1080', "Square (HD)  1080x1080", "1080x1080 (1:1)"),
+    ('4096x4096', "Square (4K)  4096x4096", "4096x4096 (1:1)"),
+    ('1280x720', "HD (720p)  1280x720", "1280x720 (16:9)"),
+    ('1920x1080', "Full HD (1080p)  1920x1080", "1920x1080 (16:9)"),
+    ('2560x1440', "QHD (1440p)  2560x1440", "2560x1440 (16:9)"),
+    ('3840x2160', "4K UHD  3840x2160", "3840x2160 (16:9)"),
+    ('7680x4320', "8K UHD  7680x4320", "7680x4320 (16:9)"),
+    ('2560x1080', "Ultra-Wide HD  2560x1080", "2560x1080 (21:9)"),
+    ('3440x1440', "Ultra-Wide QHD  3440x1440", "3440x1440 (21:9)"),
+    ('5120x2160', "Ultra-Wide 4K  5120x2160", "5120x2160 (21:9)"),
+    ('1080x1080_insta', "Instagram Square  1080x1080", "1080x1080 (1:1)"),
+    ('1080x1350_insta', "Instagram Portrait  1080x1350", "1080x1350 (4:5)"),
+    ('1080x608_insta', "Instagram Landscape  1080x608", "1080x608 (1.91:1)"),
+    ('820x312_fb', "Facebook Cover  820x312", "820x312 (2.63:1)"),
+    ('1280x720_yt', "YouTube Thumbnail  1280x720", "1280x720 (16:9)"),
+    ('1500x500_tw', "Twitter Header  1500x500", "1500x500 (3:1)"),
+    ('1584x396_linkedin', "LinkedIn Banner  1584x396", "1584x396 (4:1)"),
+    ('720x480', "SD (Standard Definition)  720x480", "720x480 (4:3)"),
+    ('2048x1080', "2K (DCI)  2048x1080", "2048x1080 (17:9)"),
+    ('4096x2160', "4K DCI  4096x2160", "4096x2160 (17:9)"),
+]
+
+RESOLUTION_PRESET_MAP = {
+    '512x512': (512, 512),
+    '1080x1080': (1080, 1080),
+    '4096x4096': (4096, 4096),
+    '1280x720': (1280, 720),
+    '1920x1080': (1920, 1080),
+    '2560x1440': (2560, 1440),
+    '3840x2160': (3840, 2160),
+    '7680x4320': (7680, 4320),
+    '2560x1080': (2560, 1080),
+    '3440x1440': (3440, 1440),
+    '5120x2160': (5120, 2160),
+    '1080x1080_insta': (1080, 1080),
+    '1080x1350_insta': (1080, 1350),
+    '1080x608_insta': (1080, 608),
+    '820x312_fb': (820, 312),
+    '1280x720_yt': (1280, 720),
+    '1500x500_tw': (1500, 500),
+    '1584x396_linkedin': (1584, 396),
+    '720x480': (720, 480),
+    '2048x1080': (2048, 1080),
+    '4096x2160': (4096, 2160),
+}
+
+
+class CAM_MANAGER_OT_apply_resolution_preset(bpy.types.Operator):
+    """Apply a common resolution preset to the active camera"""
+    bl_idname = "cam_manager.apply_resolution_preset"
+    bl_label = "Resolution Preset"
+    bl_description = "Apply a common resolution preset to the camera and enable resolution overwrite"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    preset: bpy.props.EnumProperty(
+        name="Preset",
+        items=RESOLUTION_PRESET_ITEMS,
+    )
+
+    def execute(self, context):
+        cam_obj = context.scene.camera
+        if cam_obj is None:
+            return {'CANCELLED'}
+        cam = cam_obj.data
+        w, h = RESOLUTION_PRESET_MAP[self.preset]
+        cam.resolution = (w, h)
+        cam.resolution_overwrite = True
+        return {'FINISHED'}
+
+
 # spawn an edit mode selection pie (run while object is in edit mode to get a valid output)
 
 def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
@@ -12,16 +84,13 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
 
     # Resolution
     row = layout.row(align=True)
-
     col = layout.column(align=True)
-    row.prop(cam, "resolution_overwrite"),
-    if cam.resolution_overwrite:
-        row = col.row(align=True)
-    else:
-        row = col.row(align=True)
-        row.enabled = False
+    row.prop(cam, "resolution_overwrite")
 
+    row = col.row(align=True)
+    row.enabled = cam.resolution_overwrite
     row.prop(cam, "resolution", text="Resolution")
+    row.operator_menu_enum("cam_manager.apply_resolution_preset", "preset", text="", icon='DOWNARROW_HLT')
 
     # Lens
     col = layout.column(align=True)
@@ -275,6 +344,7 @@ class CAMERA_MT_pie_menu(Menu):
 
 
 classes = (
+    CAM_MANAGER_OT_apply_resolution_preset,
     CAMERA_MT_pie_menu,
 )
 

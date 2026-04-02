@@ -267,11 +267,17 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
         if self.camera_name and scene.objects.get(self.camera_name):
             camera = scene.objects[self.camera_name]
 
-            if camera.data.resolution:
-                if camera.data.resolution_overwrite:
-                    resolution = camera.data.resolution
-                    scene.render.resolution_x = resolution[0]
-                    scene.render.resolution_y = resolution[1]
+            currently_overwriting = scene.camera is not None and scene.camera.data.resolution_overwrite
+            if camera.data.resolution_overwrite:
+                if not currently_overwriting:
+                    scene.cam_manager_base_res_x = scene.render.resolution_x
+                    scene.cam_manager_base_res_y = scene.render.resolution_y
+                resolution = camera.data.resolution
+                scene.render.resolution_x = resolution[0]
+                scene.render.resolution_y = resolution[1]
+            elif currently_overwriting:
+                scene.render.resolution_x = scene.cam_manager_base_res_x
+                scene.render.resolution_y = scene.cam_manager_base_res_y
 
             # if camera.data.exposure: #returns 0 when exposure = 0
             scene.view_settings.exposure = camera.data.exposure
@@ -572,6 +578,8 @@ def register():
 
     scene = bpy.types.Scene
     scene.camera_list_index = bpy.props.IntProperty(name="Index for lis one", default=0)
+    scene.cam_manager_base_res_x = bpy.props.IntProperty(name="Base Resolution X", default=1920, min=4)
+    scene.cam_manager_base_res_y = bpy.props.IntProperty(name="Base Resolution Y", default=1080, min=4)
 
     # data stored in camera
     cam = bpy.types.Camera
@@ -616,6 +624,10 @@ def unregister():
 
     for cls in reversed(classes):
         unregister_class(cls)
+
+    scene = bpy.types.Scene
+    del scene.cam_manager_base_res_x
+    del scene.cam_manager_base_res_y
 
     cam = bpy.types.Camera
 
