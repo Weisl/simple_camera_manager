@@ -26,6 +26,23 @@ RESOLUTION_PRESET_ITEMS = [
     ('4096x2160', "4K DCI  4096x2160", "4096x2160 (17:9)"),
 ]
 
+FOCAL_LENGTH_PRESET_ITEMS = [
+    ('14', "Ultra Wide  14mm", "14mm — Ultra Wide"),
+    ('18', "Wide  18mm", "18mm — Wide"),
+    ('24', "Wide  24mm", "24mm — Wide"),
+    ('28', "Wide  28mm", "28mm — Wide"),
+    ('35', "Standard Wide  35mm", "35mm — Standard Wide"),
+    ('40', "Standard Wide  40mm", "40mm — Standard Wide"),
+    ('50', "Normal  50mm", "50mm — Normal"),
+    ('85', "Portrait  85mm", "85mm — Portrait"),
+    ('100', "Macro / Portrait  100mm", "100mm — Macro / Portrait"),
+    ('105', "Portrait / Macro  105mm", "105mm — Portrait / Macro"),
+    ('120', "Medium Telephoto  120mm", "120mm — Medium Telephoto"),
+    ('135', "Short Telephoto  135mm", "135mm — Short Telephoto"),
+    ('200', "Telephoto  200mm", "200mm — Telephoto"),
+]
+
+
 RESOLUTION_PRESET_MAP = {
     '512x512': (512, 512),
     '1080x1080': (1080, 1080),
@@ -74,6 +91,26 @@ class CAM_MANAGER_OT_apply_resolution_preset(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class CAM_MANAGER_OT_apply_focal_length_preset(bpy.types.Operator):
+    """Apply a common focal length preset to the active camera"""
+    bl_idname = "cam_manager.apply_focal_length_preset"
+    bl_label = "Focal Length Preset"
+    bl_description = "Apply a common focal length preset to the camera"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    preset: bpy.props.EnumProperty(
+        name="Preset",
+        items=FOCAL_LENGTH_PRESET_ITEMS,
+    )
+
+    def execute(self, context):
+        cam_obj = context.scene.camera
+        if cam_obj is None:
+            return {'CANCELLED'}
+        cam_obj.data.lens = float(self.preset)
+        return {'FINISHED'}
+
+
 # spawn an edit mode selection pie (run while object is in edit mode to get a valid output)
 
 def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
@@ -96,6 +133,7 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
     col = layout.column(align=True)
     row = col.row(align=True)
     row.prop(cam, "lens")
+    row.operator_menu_enum("cam_manager.apply_focal_length_preset", "preset", text="", icon='DOWNARROW_HLT')
     row = col.row(align=True)
     row.prop(cam, 'angle')
 
@@ -345,6 +383,7 @@ class CAMERA_MT_pie_menu(Menu):
 
 classes = (
     CAM_MANAGER_OT_apply_resolution_preset,
+    CAM_MANAGER_OT_apply_focal_length_preset,
     CAMERA_MT_pie_menu,
 )
 

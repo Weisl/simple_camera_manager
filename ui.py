@@ -107,6 +107,10 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
         col.menu("OBJECT_MT_camera_list_dropdown_menu", icon='DOWNARROW_HLT', text="")
 
+        row = layout.row(align=True)
+        row.operator("cam_manager.select_all_cameras", text="All").invert = False
+        row.operator("cam_manager.select_all_cameras", text="None").invert = True
+
         row = layout.row()
         row.operator("cam_manager.multi_camera_rendering_handlers", text="Batch Render ", icon="RENDER_ANIMATION")
         row = layout.row()
@@ -269,6 +273,10 @@ class OBJECT_PT_camera_manager_popup(bpy.types.Panel):
         col = row.column(align=True)
         col.operator("cam_manager.cycle_cameras_backward", text="", icon='TRIA_UP')
         col.operator("cam_manager.cycle_cameras_next", text="", icon='TRIA_DOWN')
+
+        row = layout.row(align=True)
+        row.operator("cam_manager.select_all_cameras", text="All").invert = False
+        row.operator("cam_manager.select_all_cameras", text="None").invert = True
 
         row = layout.row()
         row.prop(scene, 'output_render')
