@@ -185,9 +185,9 @@ class CAM_MANAGER_OT_cycle_cameras_next(bpy.types.Operator):
 
 
 class CAM_MANAGER_OT_cycle_cameras_backward(bpy.types.Operator):
-    """Changes active camera to previous camera from Camera list"""
+    """Changes the active camera to the previous camera in the camera list."""
     bl_idname = "cam_manager.cycle_cameras_backward"
-    bl_label = "Previous Cameras"
+    bl_label = "Previous Camera"
     bl_description = "Change the active camera to the previous camera"
     bl_options = {'REGISTER'}
 
@@ -350,10 +350,10 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
 
 
 class CAM_MANAGER_OT_camera_to_collection(bpy.types.Operator):
-    """Moves a camera to another collection"""
+    """Moves a camera to another collection."""
     bl_idname = "cameras.add_collection"
     bl_label = "To Collection"
-    bl_description = "Move the camera to a another collection"
+    bl_description = "Move the camera to another collection"
 
     object_name: bpy.props.StringProperty()
 
@@ -377,9 +377,10 @@ class CAM_MANAGER_OT_camera_to_collection(bpy.types.Operator):
 
 
 class CAM_MANAGER_OT_select_active_cam(bpy.types.Operator):
-    """Selects the currently active camera and sets it to be the active object"""
+    """Selects the scene camera and makes it the active object."""
     bl_idname = "cameras.select_active_cam"
-    bl_label = "Select active camera"
+    bl_label = "Select Active Camera"
+    bl_description = "Select the scene camera and make it the active object"
 
     @classmethod
     def poll(cls, context):
@@ -395,9 +396,9 @@ class CAM_MANAGER_OT_select_active_cam(bpy.types.Operator):
 
 
 class CAM_MANAGER_OT_all_cameras_to_collection(bpy.types.Operator):
-    """Moves all camera to another collection"""
+    """Moves all cameras to the specified camera collection."""
     bl_idname = "cameras.all_to_collection"
-    bl_label = "All to collection "
+    bl_label = "All Cameras to Collection"
     bl_description = "Move all cameras to a specified collection"
 
     def execute(self, context):

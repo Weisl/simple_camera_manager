@@ -118,6 +118,7 @@ class CAM_MANAGER_OT_apply_focal_length_preset(bpy.types.Operator):
 # spawn an edit mode selection pie (run while object is in edit mode to get a valid output)
 
 def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
+    """Draw resolution, lens, clipping, focus, lighting, and background image settings for a camera."""
     if cam_obj is None:
         return
 
@@ -225,7 +226,7 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
 
 class CAMERA_MT_pie_menu(Menu):
     # label is displayed at the center of the pie menu.
-    bl_label = "Active Camera Pie "
+    bl_label = "Active Camera Pie"
     bl_idname = "CAMERA_MT_pie_menu"
 
     def draw(self, context):
@@ -342,7 +343,7 @@ class CAMERA_MT_pie_menu(Menu):
                 row.prop(img, "display_depth")
         else:
             row = col.row(align=True)
-            row.label(text="Camera has no Backround Images", icon='INFO')
+            row.label(text="Camera has no Background Images", icon='INFO')
 
     def draw_center_column(self, context, layout, cam_obj):
         row = layout.row(align=True)

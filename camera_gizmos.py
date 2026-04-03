@@ -18,7 +18,7 @@ _draw_handler = None
 
 
 def _get_camera_frame_rect(region, scene):
-    """Return (x, y, w, h) of the camera frame in region pixel space."""
+    """Return (x, y, width, height) of the camera frame in region pixel space, letterboxed to fit the viewport."""
     render = scene.render
     res_x = render.resolution_x * render.pixel_aspect_x
     res_y = render.resolution_y * render.pixel_aspect_y
@@ -41,6 +41,7 @@ def _get_camera_frame_rect(region, scene):
 
 
 def _draw_camera_passepartout_overlay():
+    """Draw a colour overlay outside the camera frame for locked or linked cameras."""
     context = bpy.context
     if not context or not context.scene:
         return
@@ -102,6 +103,8 @@ custom_shape_verts_02 = (
 
 
 class MyCustomShapeWidget(Gizmo):
+    """Custom gizmo widget that draws the dolly zoom target frame and handles drag interaction."""
+
     bl_idname = "Custom_Dolly_Gizmo"
     bl_target_properties = (
         {"id": "offset", "type": 'FLOAT', "array_length": 1},
@@ -163,6 +166,8 @@ class MyCustomShapeWidget(Gizmo):
 
 
 class CameraFocusDistance(GizmoGroup):
+    """Gizmo group that displays the dolly zoom target distance frame in the 3D viewport."""
+
     bl_idname = "OBJECT_GGT_focus_distance_camera"
     bl_label = "Camera Focus Distance Widget"
     bl_space_type = 'VIEW_3D'

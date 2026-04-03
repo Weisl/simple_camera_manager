@@ -1,9 +1,10 @@
 import bpy
 
 class EXPORTER_OT_open_preferences(bpy.types.Operator):
-    """Tooltip"""
+    """Open the addon preferences and navigate to a specific tab."""
     bl_idname = "simple_camera.open_preferences"
-    bl_label = "Open Addon preferences"
+    bl_label = "Open Addon Preferences"
+    bl_description = "Open the Simple Camera Manager addon preferences"
 
     addon_name: bpy.props.StringProperty()
     prefs_tabs: bpy.props.StringProperty()

@@ -6,11 +6,13 @@ from mathutils import Vector
 
 
 def calculate_target_width(distance, fov):
+    """Return the half-width of the camera frustum at the given distance for the given horizontal FOV."""
     width = distance * math.tan(0.5 * fov)
     return width
 
 
 def generate_target_location(camera, distance):
+    """Return the world-space position directly in front of the camera at the given distance."""
     # Create the transformation matrix to move 1 unit along x
     vec = Vector((0.0, 0.0, -distance))
 
@@ -145,11 +147,11 @@ def draw_callback_px(self, context):
 
 
 class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
-    """Modlar operator that keeps the object size in viewport when changing the focal lenght """
+    """Modal operator that keeps the subject size constant in the frame while changing focal length."""
 
     bl_idname = "cam_manager.modal_camera_dolly_zoom"
     bl_label = "Dolly Zoom"
-    bl_description = "Change focal lenght while keeping the target object at the same size in the camera view"
+    bl_description = "Change focal length while keeping the target at the same size in the camera view"
     bl_options = {'REGISTER', 'UNDO'}
 
     def force_redraw(self):

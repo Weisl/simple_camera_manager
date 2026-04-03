@@ -104,7 +104,7 @@ def add_keymap():
 
 
 def add_key_to_keymap(idname, kmi, active=True):
-    """ Add ta key to the appropriate keymap """
+    """Add a key to the appropriate keymap."""
     kmi.properties.name = idname
     kmi.active = active
 
@@ -131,10 +131,10 @@ def remove_keymap():
 
 
 class REMOVE_OT_hotkey(bpy.types.Operator):
-    """Tooltip"""
+    """Remove an assigned hotkey from the addon keymap."""
     bl_idname = "cam.remove_hotkey"
-    bl_label = "Remove hotkey"
-    bl_description = "Remove hotkey"
+    bl_label = "Remove Hotkey"
+    bl_description = "Remove the assigned hotkey for this action"
     bl_options = {'REGISTER', 'INTERNAL'}
 
     idname: bpy.props.StringProperty()
@@ -154,9 +154,10 @@ class REMOVE_OT_hotkey(bpy.types.Operator):
 
 
 class BUTTON_OT_change_key(bpy.types.Operator):
-    """UI button to assign a new key to an addon hotkey"""
+    """Modal operator that waits for a key press and assigns it to an addon hotkey."""
     bl_idname = "cam.key_selection_button"
-    bl_label = "Press the button you want to assign to this operation."
+    bl_label = "Press the key you want to assign to this action"
+    bl_description = "Click then press a key to assign it as the hotkey for this action"
     bl_options = {'REGISTER', 'INTERNAL'}
 
     property_prefix: bpy.props.StringProperty()
