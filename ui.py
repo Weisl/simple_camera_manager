@@ -137,8 +137,11 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
 
         row = col.row(align=True)
-        prefs = context.preferences.addons[__package__].preferences
-        row.prop(prefs, "show_dolly_gizmo", text="Gizmo")
+        ob = context.object
+        if ob and ob.type == 'CAMERA':
+            row.prop(ob.data, "show_dolly_gizmo", text="Gizmo")
+        else:
+            row.label(text="No camera selected")
 
         layout.separator()
         layout.operator("camera.create_camera_from_view", text="Camera from View", icon='VIEW_CAMERA')

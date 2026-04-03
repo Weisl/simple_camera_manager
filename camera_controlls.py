@@ -511,6 +511,25 @@ def update_func(self, context):
     self.show_limits = not self.show_limits
 
 
+def dolly_zoom_distance_update_func(self, context):
+    self.show_limits = not self.show_limits
+    self.show_limits = not self.show_limits
+    if self.dolly_zoom_link_focus:
+        self.dof.focus_distance = self.dolly_zoom_target_distance
+
+
+def dolly_zoom_link_focus_update_func(self, context):
+    if self.dolly_zoom_link_focus:
+        self.dof.focus_distance = self.dolly_zoom_target_distance
+
+
+def show_dolly_gizmo_update_func(self, context):
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.type == 'VIEW_3D':
+                area.tag_redraw()
+
+
 class CAM_MANAGER_OT_reload_addon(bpy.types.Operator):
     """Reload all Simple Camera Manager scripts."""
     bl_idname = "cam_manager.reload_addon"
@@ -624,7 +643,19 @@ def register():
     cam.dolly_zoom_target_scale = bpy.props.FloatProperty(name='Target Scale', description='', default=2, min=0,
                                                           update=update_func)
     cam.dolly_zoom_target_distance = bpy.props.FloatProperty(name='Target Distance', description='', default=10, min=0,
-                                                             update=update_func)
+                                                             update=dolly_zoom_distance_update_func)
+    cam.dolly_zoom_link_focus = bpy.props.BoolProperty(
+        name='Link Focus Distance',
+        description='Keep the depth of field focus distance in sync with the dolly zoom target distance',
+        default=False,
+        update=dolly_zoom_link_focus_update_func,
+    )
+    cam.show_dolly_gizmo = bpy.props.BoolProperty(
+        name='Show Dolly Gizmo',
+        description='Show the dolly zoom gizmo for this camera',
+        default=False,
+        update=show_dolly_gizmo_update_func,
+    )
 
     from bpy.utils import register_class
 
@@ -655,3 +686,5 @@ def unregister():
     del cam.slot
     del cam.exposure
     del cam.world
+    del cam.dolly_zoom_link_focus
+    del cam.show_dolly_gizmo

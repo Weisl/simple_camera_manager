@@ -287,9 +287,6 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
         default=(1.0, 0.2, 0.1, 0.4),
     )
 
-    # Gizmos
-    show_dolly_gizmo: bpy.props.BoolProperty(name='Dolly Zoom', description='Show the dolly gizmo', default=False)
-
     def draw(self, context):
         """ simple preference UI to define custom inputs and user preferences"""
         layout = self.layout
@@ -318,14 +315,6 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             row.prop(self, "locked_camera_overlay_color")
             row = box.row()
             row.prop(self, "linked_camera_overlay_color")
-
-            box = layout.box()
-            box.label(text="Gizmos")
-            row = box.row()
-            row.label(text='Always show Gizmo')
-            row = box.row()
-            row.prop(self, "show_dolly_gizmo", expand=True)
-
 
 
 

@@ -177,10 +177,8 @@ class CameraFocusDistance(GizmoGroup):
     @classmethod
     def poll(cls, context):
         ob = context.object
-
         if ob and ob.type == 'CAMERA':
-            prefs = context.preferences.addons[__package__].preferences
-            return prefs.show_dolly_gizmo
+            return ob.data.show_dolly_gizmo
 
     def setup(self, context):
         camera = context.object

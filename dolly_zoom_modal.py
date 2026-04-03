@@ -210,8 +210,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             context.view_layer.objects.active = camera
 
             # initial state Gizmo
-            prefs = context.preferences.addons[__package__].preferences
-            self.initial_gizmo_state = prefs.show_dolly_gizmo
+            self.initial_gizmo_state = camera.data.show_dolly_gizmo
 
             # Camera Object Settings
             self.camera = camera
@@ -272,8 +271,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         scene = context.scene
 
         # Set Gizmo to be visible during the modal operation. Dirty!
-        prefs = context.preferences.addons[__package__].preferences
-        prefs.show_dolly_gizmo = True
+        camera.data.show_dolly_gizmo = True
 
         # Display keymap information
         context.area.header_text_set(
@@ -285,7 +283,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
             self.camera.location = self.initial_cam_settings['cam_location']
             self.camera.data.angle = self.initial_cam_settings['camera_fov']
             self.camera.data.dolly_zoom_target_distance = self.initial_cam_settings['distance']
-            prefs.show_dolly_gizmo = self.initial_gizmo_state
+            self.camera.data.show_dolly_gizmo = self.initial_gizmo_state
 
             # Remove Viewport Text
             context.area.header_text_set(None)
@@ -298,7 +296,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         # Apply operator
         elif event.type == 'LEFTMOUSE':
             # Remove Viewport Text
-            prefs.show_dolly_gizmo = self.initial_gizmo_state
+            self.camera.data.show_dolly_gizmo = self.initial_gizmo_state
             context.area.header_text_set(None)
             try:
                 bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')

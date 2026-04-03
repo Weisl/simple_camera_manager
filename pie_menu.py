@@ -3,9 +3,7 @@ from bpy.types import Menu
 
 
 RESOLUTION_PRESET_ITEMS = [
-    ('512x512', "Square (Low Res)  512x512", "512x512 (1:1)"),
     ('1080x1080', "Square (HD)  1080x1080", "1080x1080 (1:1)"),
-    ('4096x4096', "Square (4K)  4096x4096", "4096x4096 (1:1)"),
     ('1280x720', "HD (720p)  1280x720", "1280x720 (16:9)"),
     ('1920x1080', "Full HD (1080p)  1920x1080", "1920x1080 (16:9)"),
     ('2560x1440', "QHD (1440p)  2560x1440", "2560x1440 (16:9)"),
@@ -14,6 +12,10 @@ RESOLUTION_PRESET_ITEMS = [
     ('2560x1080', "Ultra-Wide HD  2560x1080", "2560x1080 (21:9)"),
     ('3440x1440', "Ultra-Wide QHD  3440x1440", "3440x1440 (21:9)"),
     ('5120x2160', "Ultra-Wide 4K  5120x2160", "5120x2160 (21:9)"),
+    ('512x512', "Square  512x512", "512x512 (1:1)"),
+    ('1024x1024', "Square  1024x1024", "1024x1024 (1:1)"),
+    ('2048x2048', "Square  2048x2048", "2048x2048 (1:1)"),
+    ('4096x4096', "Square  4096x4096", "4096x4096 (1:1)"),
     ('1080x1080_insta', "Instagram Square  1080x1080", "1080x1080 (1:1)"),
     ('1080x1350_insta', "Instagram Portrait  1080x1350", "1080x1350 (4:5)"),
     ('1080x608_insta', "Instagram Landscape  1080x608", "1080x608 (1.91:1)"),
@@ -45,8 +47,10 @@ FOCAL_LENGTH_PRESET_ITEMS = [
 
 RESOLUTION_PRESET_MAP = {
     '512x512': (512, 512),
-    '1080x1080': (1080, 1080),
+    '1024x1024': (1024, 1024),
+    '2048x2048': (2048, 2048),
     '4096x4096': (4096, 4096),
+    '1080x1080': (1080, 1080),
     '1280x720': (1280, 720),
     '1920x1080': (1920, 1080),
     '2560x1440': (2560, 1440),
@@ -161,6 +165,12 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
             icon='EYEDROPPER',
             text=""
         ).prop_data_path = "scene.camera.data.dof.focus_distance"
+
+        col.prop(cam, "dolly_zoom_link_focus", text="Link to Dolly Zoom Target")
+
+        ob = context.object
+        gizmo_cam = ob.data if (ob and ob.type == 'CAMERA') else cam
+        col.prop(gizmo_cam, "show_dolly_gizmo", text="Show Gizmo")
 
     def draw_lighting_settings(layout):
         layout.label(text="Camera Lighting:")
