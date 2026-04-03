@@ -236,8 +236,11 @@ class CameraFocusDistance(GizmoGroup):
 
         scale = calculate_target_width(self.cam.data.dolly_zoom_target_distance, self.cam.data.angle)
 
+        render = context.scene.render
+        aspect = (render.resolution_x * render.pixel_aspect_x) / (render.resolution_y * render.pixel_aspect_y)
+
         scale_matrix_x2 = mathutils.Matrix.Scale(scale, 4, (1.0, 0.0, 0.0))
-        scale_matrix_y2 = mathutils.Matrix.Scale(scale, 4, (0.0, 1.0, 0.0))
+        scale_matrix_y2 = mathutils.Matrix.Scale(scale / aspect, 4, (0.0, 1.0, 0.0))
         scale_matrix_z2 = mathutils.Matrix.Scale(1, 4, (0.0, 0.0, 1.0))
 
         scale_mat = scale_matrix_x2 @ scale_matrix_y2 @ scale_matrix_z2
