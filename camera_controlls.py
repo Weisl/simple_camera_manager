@@ -677,16 +677,23 @@ def unregister():
     for cls in reversed(classes):
         unregister_class(cls)
 
+    if load_post_handler in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(load_post_handler)
+
     scene = bpy.types.Scene
+    del scene.camera_list_index
     del scene.cam_manager_base_res_x
     del scene.cam_manager_base_res_y
 
     cam = bpy.types.Camera
 
+    del cam.resolution_overwrite
     del cam.resolution
     del cam.render_selected
     del cam.slot
     del cam.exposure
     del cam.world
+    del cam.dolly_zoom_target_scale
+    del cam.dolly_zoom_target_distance
     del cam.dolly_zoom_link_focus
     del cam.show_dolly_gizmo

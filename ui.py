@@ -93,8 +93,6 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
 
         from .version_check import update_available, latest_version_str
 
-        layout.label(text="asd")
-
         if update_available:
             row = layout.row(align=True)
             row.label(text=f"Update available: v{latest_version_str}", icon='WARNING_LARGE')
@@ -400,7 +398,8 @@ def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
-        unregister_class(cls)
+        if hasattr(cls, 'bl_rna'):
+            unregister_class(cls)
 
     scene = bpy.types.Scene
 

@@ -395,27 +395,21 @@ classes = (
 
 
 def register():
-    from bpy.utils import register_class, unregister_class  # unregister_class used below for popup resize
+    from bpy.utils import register_class
 
     for cls in classes:
         register_class(cls)
 
-    # Initialize correct property panel for the Simple Export Panel
-    update_panel_category(None, bpy.context)
-
     from .keymap import add_keymap
     add_keymap()
 
-    # Apply the saved popup width — ui.register() already registered the class,
-    # so just set the attribute directly and re-register to push it into RNA.
-    try:
-        from .ui import OBJECT_PT_camera_manager_popup
-        prefs = bpy.context.preferences.addons[__package__].preferences
-        unregister_class(OBJECT_PT_camera_manager_popup)
-        OBJECT_PT_camera_manager_popup.bl_ui_units_x = prefs.popup_width
-        register_class(OBJECT_PT_camera_manager_popup)
-    except Exception as e:
-        print(f"[CAM_MANAGER] Could not apply popup size: {e}")
+    # Defer panel category and popup width updates so they run after the full
+    # registration chain completes — avoids unregister/re-register during register.
+    bpy.app.timers.register(
+        lambda: update_panel_category(None, bpy.context), first_interval=0.0
+    )
+    update_popup_size(None, bpy.context)
+
 
 def unregister():
     from bpy.utils import unregister_class
