@@ -41,41 +41,39 @@ def filter_list(self, context):
         filtered_cameras.append(idx)
 
     # --- Sort ---
+    # Note: do NOT apply use_filter_sort_reverse here — Blender's UIList base
+    # class automatically reverses flt_neworder after filter_items() returns.
     scene = context.scene
-    reverse = self.use_filter_sort_reverse
 
     if self.sort_type == 'NAME':
-        filtered_cameras.sort(key=lambda i: objects[i].name.lower(), reverse=reverse)
+        filtered_cameras.sort(key=lambda i: objects[i].name.lower())
 
     elif self.sort_type == 'ACTIVE_FIRST':
         active = scene.camera
         filtered_cameras.sort(
             key=lambda i: (0 if objects[i] == active else 1, objects[i].name.lower()),
-            reverse=reverse,
         )
 
     elif self.sort_type == 'COLLECTION':
         def _col_key(i):
             cols = objects[i].users_collection
             return (cols[0].name.lower() if cols else '', objects[i].name.lower())
-        filtered_cameras.sort(key=_col_key, reverse=reverse)
+        filtered_cameras.sort(key=_col_key)
 
     elif self.sort_type == 'FOCAL_LENGTH':
-        filtered_cameras.sort(key=lambda i: objects[i].data.lens, reverse=reverse)
+        filtered_cameras.sort(key=lambda i: objects[i].data.lens)
 
     elif self.sort_type == 'RENDER_SLOT':
-        filtered_cameras.sort(key=lambda i: objects[i].data.slot, reverse=reverse)
+        filtered_cameras.sort(key=lambda i: objects[i].data.slot)
 
     elif self.sort_type == 'RESOLUTION':
         filtered_cameras.sort(
             key=lambda i: objects[i].data.resolution[0] * objects[i].data.resolution[1],
-            reverse=reverse,
         )
 
     elif self.sort_type == 'BG_IMAGE':
         filtered_cameras.sort(
             key=lambda i: (0 if objects[i].data.background_images else 1, objects[i].name.lower()),
-            reverse=reverse,
         )
 
     # Build flt_neworder[original_index] = new_display_position
