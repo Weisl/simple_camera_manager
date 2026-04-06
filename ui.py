@@ -88,8 +88,16 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-
         scene = context.scene
+
+
+        from .version_check import update_available, latest_version_str
+
+        layout.label(text="asd")
+
+        if update_available:
+            row = layout.row(align=True)
+            row.label(text=f"Update available: v{latest_version_str}", icon='WARNING_LARGE')
 
         row = layout.row()
         cam = scene.camera
@@ -383,6 +391,9 @@ def register():
 
     scene.output_use_cam_name = bpy.props.BoolProperty(name="Use Camera Name as File Name",
                                                        description="Use camera name as file name", default=True)
+
+    from .version_check import start_version_check
+    start_version_check()
 
 
 def unregister():
