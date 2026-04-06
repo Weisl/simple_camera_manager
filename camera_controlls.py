@@ -273,10 +273,10 @@ class CAM_MANAGER_OT_hide_unhide_camera(bpy.types.Operator):
 
 
 class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
-    """Set camera as scene camera and update the resolution accordingly. The camera is set as active object and selected."""
+    """Set a camera as the scene camera, apply its resolution and exposure overrides, and select it."""
     bl_idname = "cam_manager.change_scene_camera"
-    bl_label = "Set active Camera"
-    bl_description = "Set the active camera"
+    bl_label = "Set Active Camera"
+    bl_description = "Set the selected camera as the scene camera and apply its settings"
 
     camera_name: bpy.props.StringProperty()
     switch_to_cam: bpy.props.BoolProperty(default=False)
@@ -508,6 +508,7 @@ def render_slot_update_funce(self, context):
 
 
 def update_func(self, context):
+    """Force a viewport redraw by toggling show_limits, used as a generic property update callback."""
     self.show_limits = not self.show_limits
     self.show_limits = not self.show_limits
 

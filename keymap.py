@@ -16,6 +16,7 @@ keymaps_items_dict = {
 
 
 def get_keymap_string(item_id, item_type):
+    """Return a human-readable shortcut string (e.g. 'Ctrl + Shift + C') for the given operator, panel, or menu id."""
     # Get all keymaps
     keymaps = bpy.context.window_manager.keyconfigs.user.keymaps
 
@@ -57,6 +58,7 @@ def get_keymap_string(item_id, item_type):
 
 
 def add_key(context, idname, type, ctrl, shift, alt, operator, active):
+    """Register a new keymap item in the addon's Window keymap."""
     wm = context.window_manager
     addon_km = wm.keyconfigs.addon.keymaps.get('Window') # Using Window instead of 3D View to fix issue of keymap not working on Linux
     if not addon_km:
@@ -89,6 +91,7 @@ def remove_key(context, idname, properties_name):
 
 
 def add_keymap():
+    """Register all addon hotkeys from user preferences into Blender's keymap."""
     context = bpy.context
     prefs = context.preferences.addons[__package__].preferences
 
@@ -110,6 +113,7 @@ def add_key_to_keymap(idname, kmi, active=True):
 
 
 def remove_keymap():
+    """Remove all addon hotkeys from Blender's keymap."""
     wm = bpy.context.window_manager
     addon_keymaps = wm.keyconfigs.addon.keymaps.get('Window')
 
