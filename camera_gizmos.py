@@ -281,4 +281,5 @@ def unregister():
         _draw_handler = None
 
     for cls in reversed(classes):
-        unregister_class(cls)
+        if hasattr(cls, 'bl_rna'):
+            unregister_class(cls)

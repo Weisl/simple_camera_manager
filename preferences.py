@@ -47,8 +47,9 @@ def update_popup_size(self, context):
 
 def update_panel_category(self, context):
     """Update panel tab for simple export"""
+    from .ui import VIEW3D_PT_SimpleCameraManager as _panel_cls
     panels = [
-        VIEW3D_PT_SimpleCameraManager,
+        _panel_cls,
     ]
 
     for panel in panels:
@@ -415,4 +416,5 @@ def unregister():
     from bpy.utils import unregister_class
 
     for cls in reversed(classes):
-        unregister_class(cls)
+        if hasattr(cls, 'bl_rna'):
+            unregister_class(cls)
