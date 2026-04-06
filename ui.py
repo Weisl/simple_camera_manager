@@ -14,6 +14,7 @@ def get_addon_name():
 
 
 def draw_simple_camera_manager_header(layout):
+    """Draw the shared panel header with documentation, preferences, popup, and title buttons."""
     row = layout.row(align=True)
     # Open documentation
     row.operator("wm.url_open", text="", icon="HELP").url = "https://weisl.github.io/camera_manager_Overview/"
