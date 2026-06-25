@@ -134,13 +134,16 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
     row.prop(cam, "resolution", text="Resolution")
     row.operator_menu_enum("cam_manager.apply_resolution_preset", "preset", text="", icon='DOWNARROW_HLT')
 
-    # Lens
+    # Lens / Orthographic Scale
     col = layout.column(align=True)
-    row = col.row(align=True)
-    row.prop(cam, "lens")
-    row.operator_menu_enum("cam_manager.apply_focal_length_preset", "preset", text="", icon='DOWNARROW_HLT')
-    row = col.row(align=True)
-    row.prop(cam, 'angle')
+    if cam.type == 'ORTHO':
+        col.prop(cam, "ortho_scale")
+    else:
+        row = col.row(align=True)
+        row.prop(cam, "lens")
+        row.operator_menu_enum("cam_manager.apply_focal_length_preset", "preset", text="", icon='DOWNARROW_HLT')
+        row = col.row(align=True)
+        row.prop(cam, 'angle')
 
     col = layout.column(align=True)
     row = col.row(align=True)
