@@ -70,7 +70,7 @@ class CAMERA_OT_open_in_explorer(bpy.types.Operator):
 
     def execute(self, context):
         filepath = os.path.dirname(os.path.abspath(context.scene.render.filepath))
-        bpy.ops.file.external_operation(filepath=filepath, operation='FOLDER_OPEN')
+        bpy.ops.wm.path_open(filepath=filepath)
         return {'FINISHED'}
 
 
