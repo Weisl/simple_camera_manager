@@ -308,7 +308,9 @@ class CAM_MANAGER_PT_camera_properties(bpy.types.Panel):
     bl_region_type = 'WINDOW'
     bl_context = "data"
     bl_options = {'HIDE_HEADER'}
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_EEVEE', 'BLENDER_WORKBENCH'}
+    # 'BLENDER_EEVEE_NEXT' is the engine id used by Blender 4.2-4.5.x; it was
+    # renamed back to 'BLENDER_EEVEE' in 5.0 once legacy EEVEE was removed.
+    COMPAT_ENGINES = {'BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT', 'BLENDER_WORKBENCH'}
 
     @classmethod
     def poll(cls, context):
