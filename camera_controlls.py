@@ -91,6 +91,26 @@ def lock_camera(obj, lock):
     obj['lock'] = lock
 
 
+def _find_view3d_area_region(context):
+    """Return (area, region) for the first VIEW_3D window region on the current screen, or (None, None)."""
+    for area in context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for region in area.regions:
+                if region.type == 'WINDOW':
+                    return area, region
+    return None, None
+
+
+def _match_camera_lens_to_viewport(camera, view_area):
+    """
+    Correct camera.data.lens for the 32 mm viewport-FOV reference vs the camera's
+    actual sensor_width (default 36 mm), so the render frame matches the viewport
+    view exactly when the render aspect ratio equals the viewport aspect ratio.
+    """
+    view_lens = view_area.spaces.active.lens
+    camera.data.lens = view_lens * camera.data.sensor_width / 32.0
+
+
 class OBJECT_OT_create_camera_from_view(bpy.types.Operator):
     """Create a new camera matching the current viewport view"""
     bl_idname = "camera.create_camera_from_view"
@@ -98,19 +118,7 @@ class OBJECT_OT_create_camera_from_view(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        # Find the 3D view area and window region first
-        view_area = None
-        view_region = None
-        for area in context.screen.areas:
-            if area.type == 'VIEW_3D':
-                for region in area.regions:
-                    if region.type == 'WINDOW':
-                        view_area = area
-                        view_region = region
-                        break
-                if view_area:
-                    break
-
+        view_area, view_region = _find_view3d_area_region(context)
         if not view_area:
             self.report({'WARNING'}, "No 3D Viewport found.")
             return {'CANCELLED'}
@@ -132,16 +140,36 @@ class OBJECT_OT_create_camera_from_view(bpy.types.Operator):
         with context.temp_override(area=view_area, region=view_region, scene=context.scene):
             bpy.ops.view3d.camera_to_view()
 
-        # Blender's viewport FOV is computed with a 32 mm sensor reference,
-        # while a camera object uses its own sensor_width (default 36 mm).
-        # Copying the raw lens number gives the camera a wider FOV than the
-        # viewport; the ratio sensor_width/32 corrects for this so the render
-        # frame matches the viewport view exactly when the render aspect ratio
-        # equals the viewport aspect ratio.
-        view_lens = view_area.spaces.active.lens
-        camera.data.lens = view_lens * camera.data.sensor_width / 32.0
+        _match_camera_lens_to_viewport(camera, view_area)
 
         self.report({'INFO'}, f"Camera '{camera.name}' created from the viewport view.")
+        return {'FINISHED'}
+
+
+class CAM_MANAGER_OT_align_camera_to_view(bpy.types.Operator):
+    """Align the existing active scene camera to match the current viewport view"""
+    bl_idname = "camera.align_camera_to_view"
+    bl_label = "Align Camera to View"
+    bl_description = "Snap the active scene camera to match the current viewport view"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.camera is not None
+
+    def execute(self, context):
+        view_area, view_region = _find_view3d_area_region(context)
+        if not view_area:
+            self.report({'WARNING'}, "No 3D Viewport found.")
+            return {'CANCELLED'}
+
+        camera = context.scene.camera
+        with context.temp_override(area=view_area, region=view_region, scene=context.scene):
+            bpy.ops.view3d.camera_to_view()
+
+        _match_camera_lens_to_viewport(camera, view_area)
+
+        self.report({'INFO'}, f"Camera '{camera.name}' aligned to the viewport view.")
         return {'FINISHED'}
 
 
@@ -602,6 +630,7 @@ classes = (
     CAM_MANAGER_OT_all_cameras_to_collection,
     CAM_MANAGER_OT_select_active_cam,
     OBJECT_OT_create_camera_from_view,
+    CAM_MANAGER_OT_align_camera_to_view,
 )
 
 

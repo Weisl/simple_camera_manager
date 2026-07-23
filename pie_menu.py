@@ -237,7 +237,8 @@ class CAMERA_MT_pie_menu(Menu):
 
         view = bpy.context.space_data
         scene = context.scene
-        r3d = view.region_3d
+        region_3d = view.region_3d
+        in_camera_view = bool(region_3d) and region_3d.view_perspective == 'CAMERA'
 
         pie = layout.menu_pie()
         # operator_enum will just spread all available options
@@ -258,27 +259,30 @@ class CAMERA_MT_pie_menu(Menu):
         box = pie.split()
 
         if cam_obj:
-            b = box.box()
-            column = b.column()
-            self.draw_left_column(context, column, cam_obj)
-
-            b = box.box()
-            column = b.column()
-            self.draw_center_column(context, column, cam_obj)
-
-            b = box.box()
-            column = b.column()
-            self.draw_right_column(context, column, cam_obj)
+            column_order = (
+                (self.draw_right_column, self.draw_center_column, self.draw_left_column)
+                if in_camera_view else
+                (self.draw_left_column, self.draw_center_column, self.draw_right_column)
+            )
+            for draw_fn in column_order:
+                b = box.box()
+                draw_fn(context, b.column(), cam_obj)
         else:
             b = box.box()
             column = b.column()
             column.label(text="Please specify a scene camera", icon='ERROR')
 
         # North West
-        pie.separator()
+        if in_camera_view:
+            pie.operator("view3d.view_camera", text="Exit Camera View", icon='VIEW_CAMERA')
+        else:
+            pie.operator("view3d.view_camera", text="View Camera", icon='VIEW_CAMERA')
 
         # North East
-        pie.separator()
+        if in_camera_view:
+            pie.operator("camera.align_camera_to_view", text="Align Camera to View", icon='CAMERA_DATA')
+        else:
+            pie.operator("camera.create_camera_from_view", text="Camera from View", icon='OUTLINER_OB_CAMERA')
 
         # South West
         if cam_obj:
@@ -295,8 +299,6 @@ class CAMERA_MT_pie_menu(Menu):
 
         # South East
         pie.operator('cameras.select_active_cam')
-
-        # pie.operator("view3d.view_camera", text="Toggle Camera View", icon='VIEW_CAMERA')
 
     def draw_left_column(self, context, col, cam_obj):
         row = col.row()
