@@ -29,6 +29,7 @@ jobs:
             --exclude='.*' \
             --exclude='tests' \
             --exclude='venv' \
+            --exclude='CHANGELOG.md' \
             ${{ github.event.repository.name }}/ staging/simple_camera_manager/
 
       - name: Upload zip as artifact
