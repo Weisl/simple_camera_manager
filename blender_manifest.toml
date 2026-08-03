@@ -22,6 +22,7 @@ copyright = [
 ]
 
 [permissions]
+network = "Checks GitHub for a newer release"
 files = "Write Renders to disk"
 
 
