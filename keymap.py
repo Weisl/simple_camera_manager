@@ -136,7 +136,7 @@ def remove_keymap():
 
 class REMOVE_OT_hotkey(bpy.types.Operator):
     """Remove an assigned hotkey from the addon keymap."""
-    bl_idname = "cam.remove_hotkey"
+    bl_idname = "cam_manager.remove_hotkey"
     bl_label = "Remove Hotkey"
     bl_description = "Remove the assigned hotkey for this action"
     bl_options = {'REGISTER', 'INTERNAL'}
@@ -159,7 +159,7 @@ class REMOVE_OT_hotkey(bpy.types.Operator):
 
 class BUTTON_OT_change_key(bpy.types.Operator):
     """Modal operator that waits for a key press and assigns it to an addon hotkey."""
-    bl_idname = "cam.key_selection_button"
+    bl_idname = "cam_manager.key_selection_button"
     bl_label = "Press the key you want to assign to this action"
     bl_description = "Click then press a key to assign it as the hotkey for this action"
     bl_options = {'REGISTER', 'INTERNAL'}

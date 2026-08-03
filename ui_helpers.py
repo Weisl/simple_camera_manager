@@ -1,9 +1,9 @@
 import bpy
 
-class EXPORTER_OT_open_preferences(bpy.types.Operator):
+class CAM_MANAGER_OT_open_preferences(bpy.types.Operator):
     """Open the addon preferences and navigate to a specific tab."""
-    bl_idname = "simple_camera.open_preferences"
-    bl_label = "Open Addon Preferences"
+    bl_idname = "cam_manager.open_preferences"
+    bl_label = "Open Addon preferences"
     bl_description = "Open the Simple Camera Manager addon preferences"
 
     addon_name: bpy.props.StringProperty()
@@ -36,7 +36,7 @@ class EXPORTER_OT_open_preferences(bpy.types.Operator):
         return {'FINISHED'}
 
 classes = (
-    EXPORTER_OT_open_preferences,
+    CAM_MANAGER_OT_open_preferences,
 )
 
 

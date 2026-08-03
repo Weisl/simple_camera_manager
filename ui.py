@@ -21,7 +21,7 @@ def draw_simple_camera_manager_header(layout):
 
     # Open Preferences
     addon_name = get_addon_name()
-    op = row.operator("simple_camera.open_preferences", text="", icon='PREFERENCES')
+    op = row.operator("cam_manager.open_preferences", text="", icon='PREFERENCES')
     op.addon_name = addon_name
     op.prefs_tabs = 'GENERAL'
 

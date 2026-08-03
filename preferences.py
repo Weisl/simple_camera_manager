@@ -106,7 +106,7 @@ def update_key(self, context, property_prefix):
 
 
 # addon Preferences
-class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
+class CamManagerAddonPreferences(bpy.types.AddonPreferences):
     """Contains the blender addon preferences"""
     # this must match the addon name, use '__package__'
     # when defining this in a submodule of a python package.
@@ -259,9 +259,9 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
             if key_type != "NONE"
             else "Press a key"
         )
-        op = row.operator("cam.key_selection_button", text=text)
+        op = row.operator("cam_manager.key_selection_button", text=text)
         op.property_prefix = property_prefix
-        op = row.operator("cam.remove_hotkey", text="", icon="X")
+        op = row.operator("cam_manager.remove_hotkey", text="", icon="X")
         op.idname = keymaps_items_dict[title]["idname"]
         op.properties_name = keymaps_items_dict[title]["operator"]
         op.property_prefix = property_prefix
@@ -391,7 +391,7 @@ class CAM_MANAGER_OT_renaming_preferences(bpy.types.AddonPreferences):
 
 
 classes = (
-    CAM_MANAGER_OT_renaming_preferences,
+    CamManagerAddonPreferences,
 )
 
 
