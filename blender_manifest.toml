@@ -29,5 +29,12 @@ files = "Write Renders to disk"
 paths_exclude_pattern = [
     "__pycache__/",
     "/.git/",
+    "/.gitignore",
+    "/.gitattributes",
     "/*.zip",
+    "/tests/",
+    "/venv/",
+    "/.github/",
+    "/.claude/",
+    "/CHANGELOG.md",
 ]

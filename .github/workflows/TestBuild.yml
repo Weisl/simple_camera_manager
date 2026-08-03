@@ -11,30 +11,47 @@ jobs:
         with:
           path: ${{ github.event.repository.name }}
 
-      - name: Read version from blender_manifest.toml
-        id: version
+      - name: Cache Blender 4.2
+        id: cache-blender
+        uses: actions/cache@v4
+        with:
+          path: blender-download
+          key: blender-4.2-ubuntu-latest
+
+      - name: Download Blender 4.2
+        if: steps.cache-blender.outputs.cache-hit != 'true'
         run: |
-          VERSION=$(python3 -c "import tomllib; f=open('${{ github.event.repository.name }}/blender_manifest.toml','rb'); print(tomllib.load(f)['version'])")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          mkdir -p blender-download
+          pip install blender-downloader
+          blender-downloader 4.2 --extract --quiet --output-directory blender-download
+
+      - name: Locate Blender executable
+        id: blender
+        run: |
+          EXE=$(find blender-download -type f -iname blender | head -n 1)
+          if [ -z "$EXE" ]; then
+            echo "Could not find a Blender executable under blender-download/" >&2
+            exit 1
+          fi
+          chmod +x "$EXE"
+          echo "executable=$EXE" >> "$GITHUB_OUTPUT"
 
       - name: Set short SHA
         id: vars
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      - name: Prepare add-on folder
+      - name: Validate extension manifest
         run: |
-          mkdir -p staging/simple_camera_manager
-          rsync -a \
-            --exclude='.git' \
-            --exclude='.*' \
-            --exclude='tests' \
-            --exclude='venv' \
-            --exclude='CHANGELOG.md' \
-            ${{ github.event.repository.name }}/ staging/simple_camera_manager/
+          "${{ steps.blender.outputs.executable }}" --command extension validate ${{ github.event.repository.name }}
+
+      - name: Build extension zip
+        run: |
+          mkdir -p dist
+          "${{ steps.blender.outputs.executable }}" --command extension build --source-dir ${{ github.event.repository.name }} --output-dir dist
 
       - name: Upload zip as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: simple_camera_manager_${{ steps.version.outputs.version }}_${{ steps.vars.outputs.short_sha }}
-          path: staging/
+          name: ${{ github.event.repository.name }}_${{ steps.vars.outputs.short_sha }}
+          path: dist/
           retention-days: 7
