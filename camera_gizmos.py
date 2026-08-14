@@ -1,47 +1,92 @@
 import bpy
+import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
 from bpy.types import (
     GizmoGroup,
     Gizmo
 )
+from bpy_extras.view3d_utils import location_3d_to_region_2d
 from .dolly_zoom_modal import calculate_target_width
 
 import mathutils
 
 
 # ---------------------------------------------------------------------------
-# Passepartout colour overlay
+# Camera status indicator (locked / linked-to-view chips)
 # ---------------------------------------------------------------------------
 
 _draw_handler = None
 
-
-def _get_camera_frame_rect(region, scene):
-    """Return (x, y, width, height) of the camera frame in region pixel space, letterboxed to fit the viewport."""
-    render = scene.render
-    res_x = render.resolution_x * render.pixel_aspect_x
-    res_y = render.resolution_y * render.pixel_aspect_y
-    cam_aspect = res_x / res_y if res_y else 1.0
-
-    vp_w = region.width
-    vp_h = region.height
-    vp_aspect = vp_w / vp_h if vp_h else 1.0
-
-    if cam_aspect >= vp_aspect:
-        frame_w = vp_w
-        frame_h = vp_w / cam_aspect
-    else:
-        frame_h = vp_h
-        frame_w = vp_h * cam_aspect
-
-    x = (vp_w - frame_w) * 0.5
-    y = (vp_h - frame_h) * 0.5
-    return x, y, frame_w, frame_h
+_CHIP_BG_COLOR = (0.05, 0.05, 0.06, 0.75)
+_CHIP_TEXT_COLOR = (0.95, 0.95, 0.95, 1.0)
 
 
-def _draw_camera_passepartout_overlay():
-    """Draw a colour overlay outside the camera frame for locked or linked cameras."""
+def _get_camera_frame_rect(region, rv3d, scene, cam_ob):
+    """Return (x, y, width, height) of the camera's render frame as actually drawn on screen,
+    in region pixel space - accounts for the current view zoom/pan, not just a
+    viewport-filling letterbox, so it matches Blender's own passepartout box even when
+    navigating around within camera view."""
+    corners_local = cam_ob.data.view_frame(scene=scene)
+    mat = cam_ob.matrix_world
+    coords_2d = []
+    for corner in corners_local:
+        co2d = location_3d_to_region_2d(region, rv3d, mat @ corner)
+        if co2d is None:
+            return None
+        coords_2d.append(co2d)
+
+    xs = [co.x for co in coords_2d]
+    ys = [co.y for co in coords_2d]
+    x0, x1 = min(xs), max(xs)
+    y0, y1 = min(ys), max(ys)
+    return x0, y0, x1 - x0, y1 - y0
+
+
+def _draw_rect(x0, y0, x1, y1, color):
+    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+    batch = batch_for_shader(shader, 'TRI_FAN', {"pos": ((x0, y0), (x1, y0), (x1, y1), (x0, y1))})
+    shader.bind()
+    shader.uniform_float("color", color)
+    batch.draw(shader)
+
+
+def _draw_frame_border_outside(x0, y0, x1, y1, thickness, color):
+    """Draw a solid coloured border hugging the outside edge of the given rect, so it never
+    covers the rendered image inside the camera frame."""
+    _draw_rect(x0 - thickness, y1, x1 + thickness, y1 + thickness, color)  # top
+    _draw_rect(x0 - thickness, y0 - thickness, x1 + thickness, y0, color)  # bottom
+    _draw_rect(x0 - thickness, y0 - thickness, x0, y1 + thickness, color)  # left
+    _draw_rect(x1, y0 - thickness, x1 + thickness, y1 + thickness, color)  # right
+
+
+def _draw_status_chip(x0, y0, label, accent_color, ui_scale):
+    """Draw a small pill-shaped label with a coloured accent stripe, bottom-left corner at (x0, y0).
+    Returns the (width, height) of the drawn chip, so callers can stack multiple chips."""
+    font_id = 0
+    text_size = round(12 * ui_scale)
+    blf.size(font_id, text_size)
+    text_w, text_h = blf.dimensions(font_id, label)
+
+    stripe_w = round(3 * ui_scale)
+    pad_x = round(9 * ui_scale)
+    pad_y = round(6 * ui_scale)
+
+    box_w = stripe_w + pad_x * 2 + text_w
+    box_h = text_h + pad_y * 2
+
+    _draw_rect(x0, y0, x0 + box_w, y0 + box_h, _CHIP_BG_COLOR)
+    _draw_rect(x0, y0, x0 + stripe_w, y0 + box_h, accent_color)
+
+    blf.color(font_id, *_CHIP_TEXT_COLOR)
+    blf.position(font_id, x0 + stripe_w + pad_x, y0 + pad_y, 0)
+    blf.draw(font_id, label)
+
+    return box_w, box_h
+
+
+def _draw_camera_status_overlay():
+    """Draw small status chips in the bottom-left corner of the camera frame for locked or linked cameras."""
     context = bpy.context
     if not context or not context.scene:
         return
@@ -69,23 +114,38 @@ def _draw_camera_passepartout_overlay():
     except (KeyError, AttributeError):
         return
 
-    color = tuple(prefs.locked_camera_overlay_color) if is_locked else tuple(prefs.linked_camera_overlay_color)
+    entries = []
+    if is_locked:
+        entries.append(("Camera Locked", tuple(prefs.locked_camera_overlay_color)))
+    if is_linked:
+        entries.append(("Linked to View", tuple(prefs.linked_camera_overlay_color)))
 
     region = context.region
-    x, y, fw, fh = _get_camera_frame_rect(region, context.scene)
-    W, H = region.width, region.height
+    frame_rect = _get_camera_frame_rect(region, rv3d, context.scene, cam_ob)
+    if frame_rect is None:
+        return
+    x, y, fw, fh = frame_rect
+    ui_scale = context.preferences.system.ui_scale
+    margin = round(14 * ui_scale)
+    gap = round(6 * ui_scale)
 
-    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
     gpu.state.blend_set('ALPHA')
-    shader.uniform_float("color", color)
 
-    for quad in (
-        ((0, y + fh), (W, y + fh), (W, H),          (0, H)),           # top
-        ((0, 0),      (W, 0),      (W, y),           (0, y)),           # bottom
-        ((0, y),      (x, y),      (x, y + fh),      (0, y + fh)),      # left
-        ((x + fw, y), (W, y),      (W, y + fh),      (x + fw, y + fh)), # right
-    ):
-        batch_for_shader(shader, 'TRI_FAN', {"pos": quad}).draw(shader)
+    # Nested borders hugging the outside of the camera frame - one per active state, so
+    # both remain distinguishable when a camera is both locked and view-linked, and
+    # neither ever covers the rendered image inside the frame.
+    border_thickness = max(2, round(3 * ui_scale))
+    border_gap = round(2 * ui_scale)
+    bx0, by0, bx1, by1 = x, y, x + fw, y + fh
+    for i, (_label, accent_color) in enumerate(entries):
+        outset = i * (border_thickness + border_gap)
+        _draw_frame_border_outside(bx0 - outset, by0 - outset, bx1 + outset, by1 + outset,
+                                    border_thickness, accent_color)
+
+    cursor_y = y + margin
+    for label, accent_color in entries:
+        _, box_h = _draw_status_chip(x + margin, cursor_y, label, accent_color, ui_scale)
+        cursor_y += box_h + gap
 
     gpu.state.blend_set('NONE')
 
@@ -268,7 +328,7 @@ def register():
         register_class(cls)
 
     _draw_handler = bpy.types.SpaceView3D.draw_handler_add(
-        _draw_camera_passepartout_overlay, (), 'WINDOW', 'POST_PIXEL'
+        _draw_camera_status_overlay, (), 'WINDOW', 'POST_PIXEL'
     )
 
 

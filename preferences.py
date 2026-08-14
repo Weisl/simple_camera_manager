@@ -272,20 +272,20 @@ class CamManagerAddonPreferences(bpy.types.AddonPreferences):
 
     locked_camera_overlay_color: bpy.props.FloatVectorProperty(
         name="Locked Camera",
-        description="Passepartout tint colour when the active camera is locked",
+        description="Accent colour for the corner indicator shown when the active camera's transforms are locked",
         subtype='COLOR_GAMMA',
         size=4,
         min=0.0, max=1.0,
-        default=(0.1, 0.3, 1.0, 0.4),
+        default=(0.95, 0.55, 0.1, 1.0),
     )
 
     linked_camera_overlay_color: bpy.props.FloatVectorProperty(
         name="Viewport Linked Camera",
-        description="Passepartout tint colour when the viewport is locked to the camera",
+        description="Accent colour for the corner indicator shown when the viewport is locked to the camera",
         subtype='COLOR_GAMMA',
         size=4,
         min=0.0, max=1.0,
-        default=(1.0, 0.2, 0.1, 0.4),
+        default=(0.25, 0.6, 0.95, 1.0),
     )
 
     def draw(self, context):
@@ -312,7 +312,7 @@ class CamManagerAddonPreferences(bpy.types.AddonPreferences):
                 box.operator("cam_manager.reload_addon", icon='FILE_REFRESH')
 
             box = layout.box()
-            box.label(text="Camera Overlay Colours")
+            box.label(text="Camera Status Indicator Colours")
             row = box.row()
             row.prop(self, "locked_camera_overlay_color")
             row = box.row()
