@@ -95,11 +95,12 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         scene = context.scene
 
 
-        from .version_check import update_available, latest_version_str
+        from . import version_check
 
-        if update_available:
+        if version_check.banner_visible():
             row = layout.row(align=True)
-            row.label(text=f"Update available: v{latest_version_str}", icon='WARNING_LARGE')
+            row.label(text=f"Update available: v{version_check.latest_version_str}", icon='WARNING_LARGE')
+            row.operator("cam_manager.dismiss_update_banner", text="", icon='X')
 
         row = layout.row()
         cam = scene.camera

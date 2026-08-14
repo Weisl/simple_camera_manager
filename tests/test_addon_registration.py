@@ -44,6 +44,7 @@ _REPRESENTATIVE_CLASSES = (
     _addon.ui_helpers.CAM_MANAGER_OT_open_preferences,
     _addon.dolly_zoom_modal.CAM_MANAGER_OT_dolly_zoom,
     _addon.batch_render.CAM_MANAGER_OT_multi_camera_rendering_handlers,
+    _addon.version_check.CAM_MANAGER_OT_check_for_updates,
     _addon.ui.VIEW3D_PT_SimpleCameraManager,
     _addon.uilist.CAMERA_UL_cameras_popup,
     _addon.pie_menu.CAMERA_MT_pie_menu,

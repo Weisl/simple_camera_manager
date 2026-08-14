@@ -151,6 +151,9 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
     row = col.row(align=True)
     row.prop(cam, "clip_end")
 
+    row = layout.row(align=True)
+    row.prop(cam, "show_rotation_gizmo", text="Show Rotation Gizmo")
+
     def draw_focus_settings(layout):
         dof = cam.dof
         layout.label(text="Focus:")
@@ -403,6 +406,30 @@ class CAMERA_MT_pie_menu(Menu):
         row.prop(cam, "show_composition_center_diagonal")
         row = col.row()
         row.prop(cam, "show_composition_golden")
+        row = col.row()
+        row.prop(cam, "show_composition_golden_tria_a", text="Golden Triangle A")
+        row = col.row()
+        row.prop(cam, "show_composition_golden_tria_b", text="Golden Triangle B")
+        row = col.row()
+        row.prop(cam, "show_composition_harmony_tri_a", text="Harmony Triangle A")
+        row = col.row()
+        row.prop(cam, "show_composition_harmony_tri_b", text="Harmony Triangle B")
+
+        col.separator()
+        row = col.row()
+        row.prop(cam, "show_safe_areas")
+        row = col.row()
+        row.active = cam.show_safe_areas
+        row.prop(cam, "show_safe_center", text="Center-Cut")
+
+        if cam.show_safe_areas:
+            safe_data = context.scene.safe_areas
+            sub = col.column(align=True)
+            sub.prop(safe_data, "title", slider=True)
+            sub.prop(safe_data, "action", slider=True)
+            if cam.show_safe_center:
+                sub.prop(safe_data, "title_center", slider=True)
+                sub.prop(safe_data, "action_center", slider=True)
 
 
 classes = (

@@ -1,3 +1,5 @@
+import math
+
 import bpy
 import blf
 import gpu
@@ -148,6 +150,7 @@ def _draw_camera_status_overlay():
         cursor_y += box_h + gap
 
     gpu.state.blend_set('NONE')
+
 
 # # Coordinates (each one is a line).
 custom_shape_verts_02 = (
@@ -314,9 +317,211 @@ class CameraFocusDistance(GizmoGroup):
         self.distance_gizmo.matrix_basis = mat_out
 
 
+# TODO(#67): first working pass on the camera roll gizmo - the ring interaction
+# and visuals still need refinement (feel, sizing, discoverability) before this
+# is considered done.
+
+# Positioned exactly at the camera's own location, a roll ring would sit right
+# at the eye point - invisible while looking through that same camera, since
+# anything drawn at the viewpoint itself projects to zero size. Offset it
+# forward (local -Z, the camera's view direction) by a fixed amount in the
+# gizmo's own auto-scaled space so it stays visible both from outside the
+# camera and from within its own view.
+_ROLL_GIZMO_FORWARD_OFFSET = -1.2
+
+_ROLL_RING_SEGMENTS = 48
+_ROLL_RING_RADIUS = 1.0
+_roll_ring_verts = tuple(
+    (
+        _ROLL_RING_RADIUS * math.cos(2 * math.pi * i / _ROLL_RING_SEGMENTS),
+        _ROLL_RING_RADIUS * math.sin(2 * math.pi * i / _ROLL_RING_SEGMENTS),
+        0.0,
+    )
+    for i in range(_ROLL_RING_SEGMENTS + 1)  # +1 to close the loop
+)
+
+_ROLL_SNAP_STEP = math.radians(5.0)
+
+
+def _get_camera_roll(cam_ob):
+    """Return the camera's current roll relative to level (world Z up), in radians.
+
+    Raw rotation_euler.z is NOT this - for 'XYZ' Euler order it's the last-applied
+    rotation, so once the camera has any pitch/yaw, changing it directly rotates
+    around a fixed world axis rather than the camera's own current view axis
+    (verified: forward direction visibly changes). This instead measures the angle
+    between the camera's actual 'up' vector and a level reference, around its own
+    forward axis, so it stays meaningful regardless of pitch/yaw.
+    """
+    mat = cam_ob.matrix_world.to_3x3().normalized()
+    forward = mat @ mathutils.Vector((0, 0, -1))
+    up = mat @ mathutils.Vector((0, 1, 0))
+    world_up = mathutils.Vector((0, 0, 1))
+
+    reference_up = world_up - forward * world_up.dot(forward)
+    if reference_up.length < 1e-6:
+        # Looking straight up/down - roll relative to world-up is undefined.
+        return 0.0
+    reference_up.normalize()
+
+    cos_angle = max(-1.0, min(1.0, up.dot(reference_up)))
+    angle = math.acos(cos_angle)
+    if reference_up.cross(up).dot(forward) < 0:
+        angle = -angle
+    return angle
+
+
+def _apply_camera_roll_delta(cam_ob, init_quat, delta):
+    """Roll the camera by `delta` radians around its own current view axis, starting
+    from the orientation captured in `init_quat` - post-multiplying a local -Z
+    (forward-axis) delta is what keeps the forward direction fixed while only the
+    roll changes; touching rotation_euler.z directly does not (see _get_camera_roll)."""
+    roll_quat = mathutils.Quaternion((0, 0, -1), delta)
+    new_quat = init_quat @ roll_quat
+    cam_ob.rotation_euler = new_quat.to_euler(cam_ob.rotation_mode)
+
+
+class CameraRollWidget(Gizmo):
+    """Custom gizmo that draws a ring for rolling the camera around its own view axis.
+
+    Dragging tracks the mouse angle around the ring's on-screen center, so
+    turning the ring visually matches the drag - holding Shift snaps the
+    result to 5-degree increments and the current roll is shown in the
+    viewport header while dragging.
+
+    Reads/writes the camera directly via self.group.cam rather than through
+    Blender's generic target_get_value/target_set_handler property system -
+    that system polls the getter at times outside our control (redraws, hover
+    state, etc.), and a getter with the side effect of snapshotting "where the
+    drag started" breaks the moment it's called more than once per drag.
+    """
+
+    bl_idname = "Custom_Camera_Roll_Gizmo"
+
+    __slots__ = (
+        "custom_shape",
+        "pivot_2d",
+        "init_angle",
+        "init_quat",
+        "init_value",
+        "sign",
+    )
+
+    def _apply_forward_offset(self):
+        self.matrix_offset.col[3][2] = _ROLL_GIZMO_FORWARD_OFFSET
+
+    def draw(self, context):
+        self._apply_forward_offset()
+        self.draw_custom_shape(self.custom_shape)
+
+    def draw_select(self, context, select_id):
+        self._apply_forward_offset()
+        self.draw_custom_shape(self.custom_shape, select_id=select_id)
+
+    def setup(self):
+        if not hasattr(self, "custom_shape"):
+            self.custom_shape = self.new_custom_shape('LINE_STRIP', _roll_ring_verts)
+
+    def invoke(self, context, event):
+        cam = self.group.cam
+        self.init_quat = cam.rotation_euler.to_quaternion() if cam else mathutils.Quaternion()
+        self.init_value = _get_camera_roll(cam) if cam else 0.0
+
+        region = context.region
+        rv3d = context.region_data
+        origin_2d = location_3d_to_region_2d(region, rv3d, self.matrix_world.translation)
+        self.pivot_2d = origin_2d if origin_2d else (event.mouse_region_x, event.mouse_region_y)
+
+        self.init_angle = math.atan2(
+            event.mouse_region_y - self.pivot_2d[1],
+            event.mouse_region_x - self.pivot_2d[0],
+        )
+
+        # A screen-space CCW drag only matches a CCW roll around the view axis
+        # when you're looking at the ring's "front" face. From the other side
+        # (e.g. orbited around to view the camera from in front of the lens,
+        # since the ring sits forward of it) the same drag reads backwards
+        # unless this is flipped.
+        gaze = rv3d.view_rotation @ mathutils.Vector((0.0, 0.0, -1.0))
+        axis = self.init_quat @ mathutils.Vector((0.0, 0.0, -1.0))
+        self.sign = -1.0 if gaze.dot(axis) > 0 else 1.0
+
+        return {'RUNNING_MODAL'}
+
+    def exit(self, context, cancel):
+        context.area.header_text_set(None)
+        cam = self.group.cam
+        if cancel and cam:
+            cam.rotation_euler = self.init_quat.to_euler(cam.rotation_mode)
+
+    def modal(self, context, event, tweak):
+        cam = self.group.cam
+        if not cam:
+            return {'RUNNING_MODAL'}
+
+        current_angle = math.atan2(
+            event.mouse_region_y - self.pivot_2d[1],
+            event.mouse_region_x - self.pivot_2d[0],
+        )
+        delta = self.sign * (current_angle - self.init_angle)
+        value = self.init_value + delta
+
+        if 'PRECISE' in tweak:  # Shift held - snap to 5-degree steps
+            value = round(value / _ROLL_SNAP_STEP) * _ROLL_SNAP_STEP
+
+        _apply_camera_roll_delta(cam, self.init_quat, value - self.init_value)
+        context.area.header_text_set("Camera Roll: %.1f°" % math.degrees(value))
+        return {'RUNNING_MODAL'}
+
+
+class CameraRotationGizmo(GizmoGroup):
+    """Gizmo group that shows a ring for rolling the camera around its own view axis."""
+
+    bl_idname = "OBJECT_GGT_camera_rotation"
+    bl_label = "Camera Rotation Widget"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'WINDOW'
+    bl_options = {'3D', 'PERSISTENT'}
+
+    cam = None
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.object
+        if ob and ob.type == 'CAMERA':
+            return ob.data.show_rotation_gizmo
+
+    def setup(self, context):
+        camera = context.object
+        self.cam = camera
+
+        gizmo = self.gizmos.new(CameraRollWidget.bl_idname)
+        gizmo.use_draw_modal = True
+
+        gizmo.color = 0.8, 0.8, 0.8
+        gizmo.alpha = 0.5
+
+        gizmo.color_highlight = 1.0, 1.0, 1.0
+        gizmo.alpha_highlight = 1.0
+
+        gizmo.line_width = 3
+        gizmo.scale_basis = 1.0
+
+        gizmo.matrix_basis = camera.matrix_world.normalized()
+
+        self.roll_gizmo = gizmo
+
+    def refresh(self, context):
+        camera = context.object
+        self.cam = camera
+        self.roll_gizmo.matrix_basis = camera.matrix_world.normalized()
+
+
 classes = (
     CameraFocusDistance,
     MyCustomShapeWidget,
+    CameraRollWidget,
+    CameraRotationGizmo,
 )
 
 

@@ -1,6 +1,8 @@
 import bpy
 import os
 
+from bpy.app.handlers import persistent
+
 cam_collection_name = 'Cameras'
 
 
@@ -11,6 +13,27 @@ def get_next_free_slot():
     while slot in used_slots:
         slot += 1
     return slot
+
+
+@persistent
+def _cycle_render_slot_handler(scene, depsgraph):
+    """Advance to the next Render Result slot after every render, so repeated
+    F12 renders don't overwrite each other."""
+    render_result = bpy.data.images.get('Render Result')
+    if not render_result or not render_result.render_slots:
+        return
+    slots = render_result.render_slots
+    slots.active_index = (slots.active_index + 1) % len(slots)
+
+
+def set_auto_cycle_render_slot(enabled):
+    """Add or remove the post-render slot-cycling handler."""
+    handlers = bpy.app.handlers.render_complete
+    if enabled:
+        if _cycle_render_slot_handler not in handlers:
+            handlers.append(_cycle_render_slot_handler)
+    elif _cycle_render_slot_handler in handlers:
+        handlers.remove(_cycle_render_slot_handler)
 
 
 def make_collection(collection_name, parent_collection):
@@ -583,6 +606,13 @@ def show_dolly_gizmo_update_func(self, context):
                 area.tag_redraw()
 
 
+def show_rotation_gizmo_update_func(self, context):
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.type == 'VIEW_3D':
+                area.tag_redraw()
+
+
 class CAM_MANAGER_OT_reload_addon(bpy.types.Operator):
     """Reload all Simple Camera Manager scripts."""
     bl_idname = "cam_manager.reload_addon"
@@ -700,6 +730,12 @@ def register():
         default=False,
         update=show_dolly_gizmo_update_func,
     )
+    cam.show_rotation_gizmo = bpy.props.BoolProperty(
+        name='Show Rotation Gizmo',
+        description='Show a dial gizmo for rolling this camera around its own view axis',
+        default=False,
+        update=show_rotation_gizmo_update_func,
+    )
 
     from bpy.utils import register_class
 
@@ -710,7 +746,12 @@ def register():
     cam.world = bpy.props.PointerProperty(update=world_update_func, type=bpy.types.World,
                                           name="World Material")  # type=WorldMaterialProperty, name="World Material", description='World material assigned to the camera',
 
+    # Deferred so addon preferences are guaranteed available by the time this runs.
+    def _apply_initial_auto_cycle():
+        prefs = bpy.context.preferences.addons[__package__].preferences
+        set_auto_cycle_render_slot(prefs.auto_cycle_render_slot)
 
+    bpy.app.timers.register(_apply_initial_auto_cycle, first_interval=0.0)
 
 
 def unregister():
@@ -719,6 +760,8 @@ def unregister():
     for cls in reversed(classes):
         if hasattr(cls, 'bl_rna'):
             unregister_class(cls)
+
+    set_auto_cycle_render_slot(False)
 
     scene = bpy.types.Scene
     del scene.camera_list_index
@@ -737,3 +780,4 @@ def unregister():
     del cam.dolly_zoom_target_distance
     del cam.dolly_zoom_link_focus
     del cam.show_dolly_gizmo
+    del cam.show_rotation_gizmo

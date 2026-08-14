@@ -69,6 +69,11 @@ def update_panel_category(self, context):
     return
 
 
+def update_auto_cycle_render_slot(self, context):
+    from .camera_controlls import set_auto_cycle_render_slot
+    set_auto_cycle_render_slot(self.auto_cycle_render_slot)
+
+
 def update_key(self, context, property_prefix):
     """Update keymap for a given property prefix (e.g., 'next_cam', 'prev_cam')."""
     wm = context.window_manager
@@ -242,6 +247,13 @@ class CamManagerAddonPreferences(bpy.types.AddonPreferences):
         max=100,
         update=update_popup_size)
 
+    auto_cycle_render_slot: bpy.props.BoolProperty(
+        name="Auto-Cycle Render Slot",
+        description="After every render (F12 or via this addon), automatically advance to the "
+                     "next Render Result slot so repeated renders don't overwrite each other",
+        default=False,
+        update=update_auto_cycle_render_slot)
+
     def keymap_ui(self, layout, title, property_prefix):
         box = layout.box()
         split = box.split(align=True, factor=0.5)
@@ -300,6 +312,18 @@ class CamManagerAddonPreferences(bpy.types.AddonPreferences):
             box.label(text="UI")
             box.prop(self, 'enable_n_panel')
             box.prop(self, 'panel_category')
+
+            box = layout.box()
+            box.label(text="Updates")
+            row = box.row(align=True)
+            row.operator("cam_manager.check_for_updates", icon='FILE_REFRESH')
+            from . import version_check
+            if version_check.update_available:
+                box.label(text=f"Update available: v{version_check.latest_version_str}", icon='WARNING_LARGE')
+
+            box = layout.box()
+            box.label(text="Rendering")
+            box.prop(self, 'auto_cycle_render_slot')
 
             box = layout.box()
             box.label(text="Popup Window Size")

@@ -7,6 +7,7 @@ if "bpy" in locals():
     importlib.reload(dolly_zoom_modal)
     importlib.reload(camera_gizmos)
     importlib.reload(batch_render)
+    importlib.reload(version_check)
     importlib.reload(keymap)
     importlib.reload(preferences)
     importlib.reload(ui)
@@ -20,6 +21,7 @@ else:
     from . import dolly_zoom_modal
     from . import batch_render
     from . import camera_gizmos
+    from . import version_check
     from . import ui
     from . import uilist
     from . import preferences
@@ -32,6 +34,7 @@ files = [
     ui_helpers,
     dolly_zoom_modal,
     batch_render,
+    version_check,
     ui,
     uilist,
     pie_menu,
