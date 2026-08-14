@@ -20,9 +20,15 @@ class CAM_MANAGER_OT_open_preferences(bpy.types.Operator):
         prefs.prefs_tabs = self.prefs_tabs
 
         import addon_utils
-        mod = addon_utils.addons_fake_modules.get('simple_camera_manager')
+        # Ensure `addons_fake_modules` is populated before reading from it
+        # (mirrors Blender's own PREFERENCES_OT_addon_expand implementation).
+        # Keyed by the addon's actual runtime module name (e.g.
+        # "bl_ext.<repo>.simple_camera_manager" for an installed extension),
+        # same as the preferences lookup above — not the bare package id,
+        # which never matches once installed through the Extensions platform.
+        addon_utils.modules(refresh=False)
+        mod = addon_utils.addons_fake_modules.get(__package__)
 
-        # mod is None the first time the operation is called :/
         if mod:
             mod.bl_info['show_expanded'] = True
 
