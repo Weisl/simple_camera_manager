@@ -657,17 +657,7 @@ classes = (
 )
 
 
-def load_post_handler(dummy):
-    """Ensure all collections have the 'use_root_object' and 'root_object' properties set."""
-    for cam in bpy.data.cameras:
-        if not hasattr(cam, "render_selected"):
-            cam.root_object = False  # Ensure property exists
-
-
 def register():
-    # Register handler to ensure properties are set when loading an older .blend file
-    bpy.app.handlers.load_post.append(load_post_handler)
-
     scene = bpy.types.Scene
     scene.camera_list_index = bpy.props.IntProperty(name="Index for lis one", default=0)
     scene.cam_manager_base_res_x = bpy.props.IntProperty(name="Base Resolution X", default=1920, min=4)
@@ -729,9 +719,6 @@ def unregister():
     for cls in reversed(classes):
         if hasattr(cls, 'bl_rna'):
             unregister_class(cls)
-
-    if load_post_handler in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.remove(load_post_handler)
 
     scene = bpy.types.Scene
     del scene.camera_list_index

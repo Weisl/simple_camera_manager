@@ -106,12 +106,6 @@ def add_keymap():
         add_key(context, idname, type, ctrl, shift, alt, operator, active)
 
 
-def add_key_to_keymap(idname, kmi, active=True):
-    """Add a key to the appropriate keymap."""
-    kmi.properties.name = idname
-    kmi.active = active
-
-
 def remove_keymap():
     """Remove all addon hotkeys from Blender's keymap."""
     wm = bpy.context.window_manager

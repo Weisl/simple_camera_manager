@@ -72,11 +72,7 @@ def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, 
 
     font_size = 20
 
-    if bpy.app.version < (4, 00):
-        # legacy support
-        blf.size(font_id, 75, font_size)
-    else:
-        blf.size(font_id, font_size)
+    blf.size(font_id, font_size)
 
     # define color for input ignore
     if self.ignore_input:
