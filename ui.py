@@ -13,7 +13,7 @@ def get_addon_name():
     return "Simple Camera Manager"
 
 
-def draw_simple_camera_manager_header(layout):
+def draw_simple_camera_manager_header(context, layout):
     """Draw the shared panel header with documentation, preferences, popup, and title buttons."""
     row = layout.row(align=True)
     # Open documentation
@@ -27,6 +27,10 @@ def draw_simple_camera_manager_header(layout):
 
     # Open Camera Manager Popup
     row.operator("cam_manager.open_popup", text="", icon="WINDOW")
+
+    # Reload Addon — only shown to developers (Preferences > Interface > Developer Extras)
+    if context.preferences.view.show_developer_ui:
+        row.operator("cam_manager.reload_addon", text="", icon='FILE_REFRESH')
 
     # Display the combined label and keymap information
     row.label(text=f"Simple Camera Manager")
@@ -84,7 +88,7 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
 
     def draw_header(self, context):
         layout = self.layout
-        draw_simple_camera_manager_header(layout)
+        draw_simple_camera_manager_header(context, layout)
 
     def draw(self, context):
         layout = self.layout
@@ -164,9 +168,6 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         layout.label(text=f"Previous Cam ({operator1_keymap})")
         layout.label(text=f"Next Cam ({operator2_keymap})")
 
-        layout.separator()
-        layout.operator("cam_manager.reload_addon", text="Reload Addon", icon='FILE_REFRESH')
-
 
 class CAM_MANAGER_PT_scene_panel:
     """Properties Panel in the scene tab"""
@@ -183,7 +184,7 @@ class CAM_MANAGER_PT_scene_properties(CAM_MANAGER_PT_scene_panel, bpy.types.Pane
 
     def draw_header(self, context):
         layout = self.layout
-        draw_simple_camera_manager_header(layout)
+        draw_simple_camera_manager_header(context, layout)
 
     def draw(self, context):
         layout = self.layout

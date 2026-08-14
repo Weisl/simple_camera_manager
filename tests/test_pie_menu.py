@@ -34,7 +34,7 @@ class _MenuHarness:
         self.layout = layout
 
 
-for _name in ("draw", "draw_left_column", "draw_center_column", "draw_right_column"):
+for _name in ("draw", "draw_render_column", "draw_camera_column", "draw_display_column"):
     setattr(_MenuHarness, _name, getattr(_CAMERA_MT_pie_menu, _name))
 
 
@@ -70,81 +70,112 @@ def _build_menu(view_perspective, cam_obj):
         yield menu, mock_context, mock_pie
 
 
-class TestPieMenuNorthWest(unittest.TestCase):
-    """North-West slot: view3d.view_camera toggle, label depends on view mode."""
+def _header_operator_calls(pie):
+    """Operator calls made on the North column's header row.
 
-    def _nw_calls(self, view_perspective):
+    col = pie.column() is a Mock attribute access, so every call returns
+    the same `.return_value` object - col.row.return_value is therefore
+    the header row regardless of how many times draw() calls .row() on it.
+    """
+    return pie.column.return_value.row.return_value.operator.call_args_list
+
+
+class TestPieMenuNorthBoxHeader(unittest.TestCase):
+    """View-camera / align-camera actions live in the North column's header.
+
+    They used to be their own North West / North East pie slots, but those
+    slots directly border the big North column and were stealing its
+    clicks, so they moved into the header instead (see North West/East
+    tests below for the now-empty slots)."""
+
+    def _header_calls(self, view_perspective):
         with _build_menu(view_perspective, cam_obj=None) as (menu, context, pie):
             menu.draw(context)
-            return [c for c in pie.operator.call_args_list if c.args[0] == "view3d.view_camera"]
+            return _header_operator_calls(pie)
 
     def test_shows_view_camera_when_not_in_camera_view(self):
-        calls = self._nw_calls('PERSP')
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(calls[0].kwargs.get("text"), "View Camera")
-
-    def test_shows_exit_camera_view_when_in_camera_view(self):
-        calls = self._nw_calls('CAMERA')
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(calls[0].kwargs.get("text"), "Exit Camera View")
-
-
-class TestPieMenuNorthEast(unittest.TestCase):
-    """North-East slot: create-camera-from-view outside camera view, align-to-view inside it."""
-
-    def _ne_idnames(self, view_perspective):
-        with _build_menu(view_perspective, cam_obj=None) as (menu, context, pie):
-            menu.draw(context)
-            return [c.args[0] for c in pie.operator.call_args_list]
-
-    def test_shows_create_camera_from_view_when_not_in_camera_view(self):
-        idnames = self._ne_idnames('PERSP')
+        calls = self._header_calls('PERSP')
+        idnames = [c.args[0] for c in calls]
+        self.assertIn("view3d.view_camera", idnames)
         self.assertIn("camera.create_camera_from_view", idnames)
         self.assertNotIn("camera.align_camera_to_view", idnames)
+        view_call = next(c for c in calls if c.args[0] == "view3d.view_camera")
+        self.assertEqual(view_call.kwargs.get("text"), "View Camera")
 
-    def test_shows_align_camera_to_view_when_in_camera_view(self):
-        idnames = self._ne_idnames('CAMERA')
+    def test_shows_exit_camera_view_when_in_camera_view(self):
+        calls = self._header_calls('CAMERA')
+        idnames = [c.args[0] for c in calls]
+        self.assertIn("view3d.view_camera", idnames)
         self.assertIn("camera.align_camera_to_view", idnames)
         self.assertNotIn("camera.create_camera_from_view", idnames)
+        view_call = next(c for c in calls if c.args[0] == "view3d.view_camera")
+        self.assertEqual(view_call.kwargs.get("text"), "Exit Camera View")
+
+
+class TestPieMenuNorthWestEastEmpty(unittest.TestCase):
+    """North West/East pie slots are blank (pie.separator()) so they no
+    longer border the North box with a competing clickable item."""
+
+    def test_north_west_and_east_have_no_operators(self):
+        with _build_menu('PERSP', cam_obj=None) as (menu, context, pie):
+            menu.draw(context)
+            idnames = [c.args[0] for c in pie.operator.call_args_list]
+
+        self.assertNotIn("view3d.view_camera", idnames)
+        self.assertNotIn("camera.align_camera_to_view", idnames)
+        self.assertNotIn("camera.create_camera_from_view", idnames)
+
+    def test_north_west_and_east_are_separators(self):
+        # With no scene camera, South West is also a separator, so the
+        # pie draws exactly 3 separators: North West, North East, South West.
+        with _build_menu('PERSP', cam_obj=None) as (menu, context, pie):
+            menu.draw(context)
+
+        self.assertEqual(pie.separator.call_count, 3)
 
 
 class TestPieMenuNorthColumnOrder(unittest.TestCase):
-    """North box column order swaps depending on view mode."""
+    """North box draws all three panels as side-by-side boxes inside a
+    single split, in an order that swaps depending on view mode (this is
+    purely visual - North West/East being empty is what keeps the whole
+    box reliably clickable, see TestPieMenuNorthWestEastEmpty)."""
 
     def _column_order(self, view_perspective):
         cam_obj = MagicMock()
         order = []
         with _build_menu(view_perspective, cam_obj=cam_obj) as (menu, context, pie), \
-             patch.object(_MenuHarness, "draw_left_column",
-                          lambda self, context, col, cam_obj: order.append("left")), \
-             patch.object(_MenuHarness, "draw_center_column",
-                          lambda self, context, col, cam_obj: order.append("center")), \
-             patch.object(_MenuHarness, "draw_right_column",
-                          lambda self, context, col, cam_obj: order.append("right")):
+             patch.object(_MenuHarness, "draw_render_column",
+                          lambda self, context, col, cam_obj: order.append("render")), \
+             patch.object(_MenuHarness, "draw_camera_column",
+                          lambda self, context, col, cam_obj: order.append("camera")), \
+             patch.object(_MenuHarness, "draw_display_column",
+                          lambda self, context, col, cam_obj: order.append("display")):
             menu.draw(context)
 
         return order
 
     def test_order_outside_camera_view(self):
-        self.assertEqual(self._column_order('PERSP'), ["left", "center", "right"])
+        self.assertEqual(self._column_order('PERSP'), ["render", "camera", "display"])
 
     def test_order_inside_camera_view(self):
-        self.assertEqual(self._column_order('CAMERA'), ["right", "center", "left"])
+        self.assertEqual(self._column_order('CAMERA'), ["display", "camera", "render"])
 
 
 class TestPieMenuNoSceneCamera(unittest.TestCase):
-    """With no active scene camera, the North box shows an error label while NW/NE stay mode-aware."""
+    """With no active scene camera, the North box shows an error label
+    while its header buttons stay mode-aware."""
 
-    def test_no_camera_not_in_camera_view(self):
+    def test_no_camera_shows_error_label(self):
         with _build_menu('PERSP', cam_obj=None) as (menu, context, pie):
             menu.draw(context)
-            idnames = [c.args[0] for c in pie.operator.call_args_list]
-        self.assertIn("camera.create_camera_from_view", idnames)
+            label_calls = pie.column.return_value.label.call_args_list
 
-    def test_no_camera_in_camera_view(self):
+        self.assertTrue(any(c.kwargs.get("text") == "Please specify a scene camera" for c in label_calls))
+
+    def test_no_camera_header_still_mode_aware(self):
         with _build_menu('CAMERA', cam_obj=None) as (menu, context, pie):
             menu.draw(context)
-            idnames = [c.args[0] for c in pie.operator.call_args_list]
+            idnames = [c.args[0] for c in _header_operator_calls(pie)]
         self.assertIn("camera.align_camera_to_view", idnames)
 
 

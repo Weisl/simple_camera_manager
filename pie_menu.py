@@ -255,34 +255,42 @@ class CAMERA_MT_pie_menu(Menu):
         # South lock camrea to view
         pie.prop(view, "lock_camera")
 
-        # North
-        box = pie.split()
+        # North — everything below lives inside a single top-level column
+        # (not a box, to avoid an enclosing backdrop rectangle), so this is
+        # one pie item as far as hit-testing is concerned. North West/East
+        # directly border it and used to hold their own pie items, which
+        # competed with this column for clicks; they're left empty now
+        # (below) and their actions moved into this column's header instead.
+        col = pie.column()
+
+        header = col.row(align=True)
+        if in_camera_view:
+            header.operator("view3d.view_camera", text="Exit Camera View", icon='VIEW_CAMERA')
+            header.operator("camera.align_camera_to_view", text="Align Camera to View", icon='CAMERA_DATA')
+        else:
+            header.operator("view3d.view_camera", text="View Camera", icon='VIEW_CAMERA')
+            header.operator("camera.create_camera_from_view", text="Camera from View", icon='OUTLINER_OB_CAMERA')
+
+        col.separator()
 
         if cam_obj:
+            split = col.split()
             column_order = (
-                (self.draw_right_column, self.draw_center_column, self.draw_left_column)
+                (self.draw_display_column, self.draw_camera_column, self.draw_render_column)
                 if in_camera_view else
-                (self.draw_left_column, self.draw_center_column, self.draw_right_column)
+                (self.draw_render_column, self.draw_camera_column, self.draw_display_column)
             )
             for draw_fn in column_order:
-                b = box.box()
+                b = split.box()
                 draw_fn(context, b.column(), cam_obj)
         else:
-            b = box.box()
-            column = b.column()
-            column.label(text="Please specify a scene camera", icon='ERROR')
+            col.label(text="Please specify a scene camera", icon='ERROR')
 
-        # North West
-        if in_camera_view:
-            pie.operator("view3d.view_camera", text="Exit Camera View", icon='VIEW_CAMERA')
-        else:
-            pie.operator("view3d.view_camera", text="View Camera", icon='VIEW_CAMERA')
+        # North West — left empty, see North box header above.
+        pie.separator()
 
-        # North East
-        if in_camera_view:
-            pie.operator("camera.align_camera_to_view", text="Align Camera to View", icon='CAMERA_DATA')
-        else:
-            pie.operator("camera.create_camera_from_view", text="Camera from View", icon='OUTLINER_OB_CAMERA')
+        # North East — left empty, see North box header above.
+        pie.separator()
 
         # South West
         if cam_obj:
@@ -300,7 +308,7 @@ class CAMERA_MT_pie_menu(Menu):
         # South East
         pie.operator('cameras.select_active_cam')
 
-    def draw_left_column(self, context, col, cam_obj):
+    def draw_render_column(self, context, col, cam_obj):
         row = col.row()
         row.scale_y = 1.5
 
@@ -350,13 +358,13 @@ class CAMERA_MT_pie_menu(Menu):
             row = col.row(align=True)
             row.label(text="Camera has no Background Images", icon='INFO')
 
-    def draw_center_column(self, context, layout, cam_obj):
+    def draw_camera_column(self, context, layout, cam_obj):
         row = layout.row(align=True)
         row.label(text='Camera Settings')
 
         draw_camera_settings(context, layout, cam_obj, use_subpanel=False)
 
-    def draw_right_column(self, context, col, cam_obj):
+    def draw_display_column(self, context, col, cam_obj):
         # col.scale_x = 2
 
         row = col.row()

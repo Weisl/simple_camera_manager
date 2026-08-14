@@ -111,6 +111,29 @@ def _match_camera_lens_to_viewport(camera, view_area):
     camera.data.lens = view_lens * camera.data.sensor_width / 32.0
 
 
+def _camera_to_view(view_area):
+    """Snap the viewport's camera to the current view, even while already
+    looking through it.
+
+    view3d.camera_to_view()'s poll rejects the call outright when
+    region_3d.view_perspective is already 'CAMERA' - the operator only
+    makes sense, per its own poll, when the view and the camera aren't
+    already the same thing. Flipping to 'PERSP' and back doesn't change
+    view_matrix (confirmed empirically: no navigation happens in between),
+    so it's a safe way to get the operator to run without moving the view
+    the user sees.
+    """
+    rv3d = view_area.spaces.active.region_3d
+    was_camera_view = rv3d.view_perspective == 'CAMERA'
+    if was_camera_view:
+        rv3d.view_perspective = 'PERSP'
+    try:
+        bpy.ops.view3d.camera_to_view()
+    finally:
+        if was_camera_view:
+            rv3d.view_perspective = 'CAMERA'
+
+
 class OBJECT_OT_create_camera_from_view(bpy.types.Operator):
     """Create a new camera matching the current viewport view"""
     bl_idname = "camera.create_camera_from_view"
@@ -138,7 +161,7 @@ class OBJECT_OT_create_camera_from_view(bpy.types.Operator):
 
         # Align the camera to the current viewport view
         with context.temp_override(area=view_area, region=view_region, scene=context.scene):
-            bpy.ops.view3d.camera_to_view()
+            _camera_to_view(view_area)
 
         _match_camera_lens_to_viewport(camera, view_area)
 
@@ -165,7 +188,7 @@ class CAM_MANAGER_OT_align_camera_to_view(bpy.types.Operator):
 
         camera = context.scene.camera
         with context.temp_override(area=view_area, region=view_region, scene=context.scene):
-            bpy.ops.view3d.camera_to_view()
+            _camera_to_view(view_area)
 
         _match_camera_lens_to_viewport(camera, view_area)
 

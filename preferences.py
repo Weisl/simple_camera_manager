@@ -307,8 +307,9 @@ class CamManagerAddonPreferences(bpy.types.AddonPreferences):
             # updater draw function
             # could also pass in col as third arg
 
-            box = layout.box()
-            box.operator("cam_manager.reload_addon", icon='FILE_REFRESH')
+            if context.preferences.view.show_developer_ui:
+                box = layout.box()
+                box.operator("cam_manager.reload_addon", icon='FILE_REFRESH')
 
             box = layout.box()
             box.label(text="Camera Overlay Colours")
