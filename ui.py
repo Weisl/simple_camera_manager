@@ -126,7 +126,6 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
         row.operator("cam_manager.multi_camera_rendering_handlers", text="Batch Render ", icon="RENDER_ANIMATION")
         row = layout.row()
         row.prop(context.scene.render, 'filepath', text='Folder')
-        # col.operator("cam_manager.multi_camera_rendering_modal", text="Batch Render (Background)", icon="FILE_SCRIPT")
 
         # Get the keymap for the panel
         panel_keymap = get_keymap_string("OBJECT_PT_camera_manager_popup", "PANEL")
