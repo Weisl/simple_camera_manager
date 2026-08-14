@@ -11,7 +11,7 @@ are added as a new section above the previous one — existing entries are
 never overwritten, so this file (like the docs page) accumulates the full
 release history over time.
 
-## Simple Camera Manager v1.7.1 (Unreleased)
+## Simple Camera Manager v1.7.1
 
 This release fixes two Blender 5.0+ compatibility issues found during a
 compatibility audit, and adds a new operator to align an existing camera to
