@@ -38,7 +38,6 @@ class CAM_MANAGER_OT_open_preferences(bpy.types.Operator):
                     if area.type == 'USER_PREFERENCES':
                         area.tag_redraw()
 
-        bpy.ops.preferences.addon_expand(module=self.addon_name)
         return {'FINISHED'}
 
 classes = (
