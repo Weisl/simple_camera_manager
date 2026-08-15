@@ -356,12 +356,19 @@ def _get_camera_roll(cam_ob):
     mat = cam_ob.matrix_world.to_3x3().normalized()
     forward = mat @ mathutils.Vector((0, 0, -1))
     up = mat @ mathutils.Vector((0, 1, 0))
-    world_up = mathutils.Vector((0, 0, 1))
 
+    # World Z can't serve as the level reference when looking straight up/down
+    # (forward parallel to it - the projection collapses to zero, which used to
+    # make this silently report 0.0 regardless of the camera's actual roll,
+    # e.g. rotation_euler = (0, 0, 0.2°) points straight down world -Z, so the
+    # roll was invisible to callers and re-emerged as a jump once you rolled
+    # away from that orientation). World X is never parallel to world Z, so it
+    # always works as a fallback reference for exactly that case.
+    world_up = mathutils.Vector((0, 0, 1))
     reference_up = world_up - forward * world_up.dot(forward)
-    if reference_up.length < 1e-6:
-        # Looking straight up/down - roll relative to world-up is undefined.
-        return 0.0
+    if reference_up.length < 1e-4:
+        world_x = mathutils.Vector((1, 0, 0))
+        reference_up = world_x - forward * world_x.dot(forward)
     reference_up.normalize()
 
     cos_angle = max(-1.0, min(1.0, up.dot(reference_up)))
@@ -466,7 +473,10 @@ class CameraRollWidget(Gizmo):
         delta = self.sign * (current_angle - self.init_angle)
         value = self.init_value + delta
 
-        if 'PRECISE' in tweak:  # Shift held - snap to 5-degree steps
+        # Read the live modifier state directly rather than the gizmo tweak
+        # system's 'PRECISE' flag - that only fires on a Shift press *during*
+        # the active drag, so Shift held before the click never registers.
+        if event.shift:
             value = round(value / _ROLL_SNAP_STEP) * _ROLL_SNAP_STEP
 
         _apply_camera_roll_delta(cam, self.init_quat, value - self.init_value)

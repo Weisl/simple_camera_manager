@@ -18,11 +18,16 @@ from unittest.mock import MagicMock, patch
 
 _ADDON_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _ADDON_SOURCE = os.path.dirname(_ADDON_ROOT)
+_ADDON_NAME = os.path.basename(_ADDON_ROOT)
 
 if _ADDON_SOURCE not in sys.path:
     sys.path.insert(0, _ADDON_SOURCE)
 
+import addon_utils  # noqa: E402
+import bpy  # noqa: E402
 import simple_camera_manager.pie_menu as pie_menu  # noqa: E402
+
+addon_utils.enable(_ADDON_NAME, default_set=True)
 
 _CAMERA_MT_pie_menu = pie_menu.CAMERA_MT_pie_menu
 
@@ -177,6 +182,51 @@ class TestPieMenuNoSceneCamera(unittest.TestCase):
             menu.draw(context)
             idnames = [c.args[0] for c in _header_operator_calls(pie)]
         self.assertIn("camera.align_camera_to_view", idnames)
+
+
+class TestApplyBuiltinCameraPreset(unittest.TestCase):
+    """Real-Blender tests (not the mock harness above) - applying a preset
+    sets real properties on a real camera, which a MagicMock can't verify."""
+
+    def setUp(self):
+        self.camera_data = bpy.data.cameras.new('BuiltinPresetTestCam')
+        self.camera_obj = bpy.data.objects.new('BuiltinPresetTestCam', self.camera_data)
+        bpy.context.scene.collection.objects.link(self.camera_obj)
+        self._orig_scene_camera = bpy.context.scene.camera
+        bpy.context.scene.camera = self.camera_obj
+
+    def tearDown(self):
+        bpy.context.scene.camera = self._orig_scene_camera
+        bpy.data.objects.remove(self.camera_obj, do_unlink=True)
+        bpy.data.cameras.remove(self.camera_data)
+
+    def test_every_builtin_preset_applies_without_error(self):
+        for name in pie_menu.BUILTIN_CAMERA_PRESETS:
+            result = bpy.ops.cam_manager.apply_builtin_camera_preset(preset=name)
+            self.assertEqual(result, {'FINISHED'}, f"preset {name!r} failed to apply")
+
+    def test_full_frame_50mm_sets_expected_values(self):
+        bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm f/1.8')
+        cam = self.camera_data
+        self.assertEqual(cam.lens, 50.0)
+        self.assertEqual(cam.sensor_width, 36.0)
+        self.assertEqual(cam.sensor_height, 24.0)
+        self.assertEqual(cam.sensor_fit, 'HORIZONTAL')
+        self.assertTrue(cam.dof.use_dof)
+        self.assertAlmostEqual(cam.dof.aperture_fstop, 1.8, places=5)
+        self.assertEqual(cam.dof.focus_distance, 1.5)
+
+    def test_studio_orthographic_switches_camera_type(self):
+        bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Studio Orthographic')
+        cam = self.camera_data
+        self.assertEqual(cam.type, 'ORTHO')
+        self.assertEqual(cam.ortho_scale, 5.0)
+        self.assertFalse(cam.dof.use_dof)
+
+    def test_no_scene_camera_reports_warning_not_crash(self):
+        bpy.context.scene.camera = None
+        result = bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm f/1.8')
+        self.assertEqual(result, {'CANCELLED'})
 
 
 if __name__ == "__main__":

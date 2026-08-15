@@ -1,6 +1,8 @@
 import bpy
 from bpy.types import Menu
 
+from .camera_presets import CAM_MANAGER_MT_camera_presets
+
 
 RESOLUTION_PRESET_ITEMS = [
     ('1080x1080', "Square (HD)  1080x1080", "1080x1080 (1:1)"),
@@ -115,6 +117,95 @@ class CAM_MANAGER_OT_apply_focal_length_preset(bpy.types.Operator):
         return {'FINISHED'}
 
 
+BUILTIN_CAMERA_PRESETS = {
+    # Sensor sizes match Blender's own bundled camera presets
+    # (scripts/presets/camera/*.py) so these agree with the "Sensor Format"
+    # dropdown next to this one, rather than introducing a second,
+    # possibly-inconsistent set of numbers for the same real-world formats.
+    'Full Frame 50mm f/1.8': {
+        'lens': 50.0,
+        'sensor_width': 36.0,
+        'sensor_height': 24.0,
+        'sensor_fit': 'HORIZONTAL',
+        'clip_start': 0.1,
+        'clip_end': 100.0,
+        'dof': {'use_dof': True, 'aperture_fstop': 1.8, 'focus_distance': 1.5},
+    },
+    'Full Frame 85mm Portrait f/1.4': {
+        'lens': 85.0,
+        'sensor_width': 36.0,
+        'sensor_height': 24.0,
+        'sensor_fit': 'HORIZONTAL',
+        'clip_start': 0.3,
+        'clip_end': 100.0,
+        'dof': {'use_dof': True, 'aperture_fstop': 1.4, 'focus_distance': 1.2},
+    },
+    'APS-C 90mm Macro f/2.8': {
+        'lens': 90.0,
+        'sensor_width': 22.3,
+        'sensor_height': 14.9,
+        'sensor_fit': 'HORIZONTAL',
+        'clip_start': 0.01,
+        'clip_end': 10.0,
+        'dof': {'use_dof': True, 'aperture_fstop': 2.8, 'focus_distance': 0.3},
+    },
+    'MFT 25mm Establishing f/5.6': {
+        'lens': 25.0,
+        'sensor_width': 17.3,
+        'sensor_height': 13.0,
+        'sensor_fit': 'HORIZONTAL',
+        'clip_start': 0.1,
+        'clip_end': 1000.0,
+        'dof': {'use_dof': False},
+    },
+    'Medium Format 80mm Studio f/4': {
+        'lens': 80.0,
+        'sensor_width': 44.0,
+        'sensor_height': 33.0,
+        'sensor_fit': 'HORIZONTAL',
+        'clip_start': 0.3,
+        'clip_end': 100.0,
+        'dof': {'use_dof': True, 'aperture_fstop': 4.0, 'focus_distance': 1.5},
+    },
+    'Studio Orthographic': {
+        'type': 'ORTHO',
+        'ortho_scale': 5.0,
+        'dof': {'use_dof': False},
+    },
+}
+
+BUILTIN_CAMERA_PRESET_ITEMS = [(name, name, "") for name in BUILTIN_CAMERA_PRESETS]
+
+
+class CAM_MANAGER_OT_apply_builtin_camera_preset(bpy.types.Operator):
+    """Apply one of Simple Camera Manager's built-in camera presets"""
+    bl_idname = "cam_manager.apply_builtin_camera_preset"
+    bl_label = "Built-in Camera Preset"
+    bl_description = "Apply one of Simple Camera Manager's built-in camera presets"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    preset: bpy.props.EnumProperty(
+        name="Preset",
+        items=BUILTIN_CAMERA_PRESET_ITEMS,
+    )
+
+    def execute(self, context):
+        cam_obj = context.scene.camera
+        if cam_obj is None:
+            self.report({'WARNING'}, "No active scene camera")
+            return {'CANCELLED'}
+
+        cam = cam_obj.data
+        for key, value in BUILTIN_CAMERA_PRESETS[self.preset].items():
+            if key == 'dof':
+                for dof_key, dof_value in value.items():
+                    setattr(cam.dof, dof_key, dof_value)
+            else:
+                setattr(cam, key, value)
+
+        return {'FINISHED'}
+
+
 # spawn an edit mode selection pie (run while object is in edit mode to get a valid output)
 
 def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
@@ -123,6 +214,20 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
         return
 
     cam = cam_obj.data
+
+    # Presets
+    row = layout.row(align=True)
+    row.menu("CAM_MANAGER_MT_camera_presets", text=CAM_MANAGER_MT_camera_presets.bl_label)
+    row.operator("cam_manager.camera_preset_add", text="", icon='ADD')
+    op = row.operator("cam_manager.camera_preset_add", text="", icon='REMOVE')
+    op.remove_active = True
+
+    row = layout.row(align=True)
+    row.operator_menu_enum("cam_manager.apply_builtin_camera_preset", "preset", text="Built-in Presets")
+    # Blender's own native sensor-format presets (Full Frame, APS-C, MFT,
+    # Hasselblad, Arri, RED, phone sensors, ~30 in total) - reused as-is
+    # rather than duplicating that database, sets sensor_width/height/fit only.
+    row.menu("CAMERA_MT_presets", text="Sensor Format")
 
     # Resolution
     row = layout.row(align=True)
@@ -435,6 +540,7 @@ class CAMERA_MT_pie_menu(Menu):
 classes = (
     CAM_MANAGER_OT_apply_resolution_preset,
     CAM_MANAGER_OT_apply_focal_length_preset,
+    CAM_MANAGER_OT_apply_builtin_camera_preset,
     CAMERA_MT_pie_menu,
 )
 
