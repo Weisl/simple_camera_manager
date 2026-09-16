@@ -346,6 +346,43 @@ class CAM_MANAGER_OT_hide_unhide_camera(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class CAM_MANAGER_OT_unhide_camera(bpy.types.Operator):
+    """Make a camera visible again: un-hide the object and only the collections that contain it"""
+    bl_idname = "cam_manager.unhide_camera"
+    bl_label = "Show Camera"
+    bl_description = "Make the camera visible in the viewport (un-hides the camera and its containing collections only)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    camera_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        obj = bpy.data.objects.get(self.camera_name)
+        if not obj:
+            self.report({'WARNING'}, 'Camera not found')
+            return {'CANCELLED'}
+
+        target_collections = set(obj.users_collection)
+
+        def unhide_layer_collection(layer_collection):
+            contains_target = layer_collection.collection in target_collections
+            for child in layer_collection.children:
+                if unhide_layer_collection(child):
+                    contains_target = True
+            if contains_target:
+                layer_collection.exclude = False
+                layer_collection.hide_viewport = False
+                layer_collection.collection.hide_viewport = False
+            return contains_target
+
+        unhide_layer_collection(context.view_layer.layer_collection)
+
+        obj.hide_viewport = False
+        if obj.name in context.view_layer.objects:
+            obj.hide_set(False)
+
+        return {'FINISHED'}
+
+
 class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
     """Set a camera as the scene camera, apply its resolution and exposure overrides, and select it."""
     bl_idname = "cam_manager.change_scene_camera"
@@ -680,6 +717,7 @@ classes = (
     CAM_MANAGER_OT_cycle_cameras_backward,
     CAM_MANAGER_OT_lock_cameras,
     CAM_MANAGER_OT_hide_unhide_camera,
+    CAM_MANAGER_OT_unhide_camera,
     CAM_MANAGER_OT_all_cameras_to_collection,
     CAM_MANAGER_OT_select_active_cam,
     OBJECT_OT_create_camera_from_view,

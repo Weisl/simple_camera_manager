@@ -298,6 +298,8 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
         if not cam_obj.visible_get():
             row = layout.row(align=True)
             row.label(text="Camera is hidden", icon='ERROR')
+            op = row.operator("cam_manager.unhide_camera", text="Show", icon='HIDE_OFF')
+            op.camera_name = cam_obj.name
 
         if len(cam.background_images) > 0:
             for img in cam.background_images:
@@ -450,6 +452,8 @@ class CAMERA_MT_pie_menu(Menu):
         if not cam_obj.visible_get():
             row = col.row(align=True)
             row.label(text="Camera is hidden", icon='ERROR')
+            op = row.operator("cam_manager.unhide_camera", text="Show", icon='HIDE_OFF')
+            op.camera_name = cam_obj.name
 
         if len(cam.background_images) > 0:
             for img in cam.background_images:
