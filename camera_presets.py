@@ -205,10 +205,52 @@ class CAM_MANAGER_MT_camera_presets(Menu):
         Menu.draw_preset(self, context)
 
 
+class CAM_MANAGER_OT_apply_sensor_preset(Operator):
+    """Apply one of Blender's sensor format presets to the active scene camera"""
+    bl_idname = "cam_manager.apply_sensor_preset"
+    bl_label = "Apply Sensor Format"
+    bl_description = "Set the sensor size of the active scene camera to this format"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    filepath: bpy.props.StringProperty(subtype='FILE_PATH', options={'SKIP_SAVE'})
+
+    def execute(self, context):
+        cam_obj = context.scene.camera
+        if cam_obj is None:
+            self.report({'WARNING'}, "No active scene camera")
+            return {'CANCELLED'}
+
+        # Blender's native sensor presets (scripts/presets/camera/*.py) write
+        # to bpy.context.camera, which is only set in the Properties Editor's
+        # Camera Data tab. Pointing it at the scene camera lets the same
+        # files work from the 3D viewport N-panel and the pie menu.
+        try:
+            with context.temp_override(camera=cam_obj.data):
+                bpy.utils.execfile(self.filepath)
+        except Exception as ex:
+            self.report({'ERROR'}, f"Failed to apply sensor format: {ex!r}")
+            return {'CANCELLED'}
+
+        return {'FINISHED'}
+
+
+class CAM_MANAGER_MT_sensor_presets(Menu):
+    """Blender's own sensor format presets (Full Frame, APS-C, MFT, Arri, RED,
+    phone sensors, ...), reused as-is rather than duplicating that database.
+    Sets sensor_width/height/fit only."""
+    bl_label = "Sensor Format"
+    preset_subdir = "camera"
+    preset_operator = "cam_manager.apply_sensor_preset"
+    preset_extensions = {".py"}
+    draw = Menu.draw_preset
+
+
 classes = (
     CAM_MANAGER_OT_camera_preset_add,
     CAM_MANAGER_OT_apply_builtin_camera_preset,
     CAM_MANAGER_MT_camera_presets,
+    CAM_MANAGER_OT_apply_sensor_preset,
+    CAM_MANAGER_MT_sensor_presets,
 )
 
 
