@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-14]
-        blender-version: ["4.2", "4.3", "4.4", "4.5", "5.0", "5.1", "5.2"]
+        blender-version: ["4.2", "4.3", "4.4", "4.5", "5.0", "5.1", "5.2", "5.3"]
         exclude:
           # blender-downloader (pip, latest 1.0.5) can't resolve macOS builds
           # for 5.0+: Blender dropped macOS x64 dmgs from 5.0 onward and
@@ -27,6 +27,8 @@ jobs:
             blender-version: "5.1"
           - os: macos-14
             blender-version: "5.2"
+          - os: macos-14
+            blender-version: "5.3"
     steps:
       - uses: actions/checkout@v3
         with:
