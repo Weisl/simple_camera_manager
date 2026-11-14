@@ -129,18 +129,39 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
 
     cam = cam_obj.data
 
-    # Presets
-    row = layout.row(align=True)
+    # Lens: the lens presets and every field they set (camera type, focal
+    # length or ortho scale, sensor), so applying a preset never changes
+    # anything that isn't shown right here.
+    box = layout.box()
+    box.label(text="Lens")
+    row = box.row(align=True)
     row.menu("CAM_MANAGER_MT_camera_presets", text=CAM_MANAGER_MT_camera_presets.bl_label)
     row.operator("cam_manager.camera_preset_add", text="", icon='ADD')
     op = row.operator("cam_manager.camera_preset_add", text="", icon='REMOVE')
     op.remove_active = True
 
-    row = layout.row(align=True)
-    row.operator_menu_enum("cam_manager.apply_builtin_camera_preset", "preset", text="Built-in Presets")
-    # Blender's own native sensor-format presets, applied to the scene camera
+    box.prop(cam, "type", text="Type")
+
+    col = box.column(align=True)
+    if cam.type == 'ORTHO':
+        col.prop(cam, "ortho_scale")
+    else:
+        row = col.row(align=True)
+        row.prop(cam, "lens")
+        row.operator_menu_enum("cam_manager.apply_focal_length_preset", "preset", text="", icon='DOWNARROW_HLT')
+        col.prop(cam, 'angle')
+
+    # Blender's own sensor-format presets, applied to the scene camera
     # (see CAM_MANAGER_MT_sensor_presets in camera_presets.py).
+    col = box.column(align=True)
+    row = col.row(align=True)
     row.menu("CAM_MANAGER_MT_sensor_presets", text="Sensor Format")
+    row.prop(cam, "sensor_fit", text="")
+    if cam.sensor_fit == 'AUTO':
+        col.prop(cam, "sensor_width", text="Sensor Size")
+    else:
+        col.prop(cam, "sensor_width", text="Sensor Width")
+        col.prop(cam, "sensor_height", text="Sensor Height")
 
     # Resolution
     row = layout.row(align=True)
@@ -151,17 +172,6 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
     row.enabled = cam.resolution_overwrite
     row.prop(cam, "resolution", text="Resolution")
     row.operator_menu_enum("cam_manager.apply_resolution_preset", "preset", text="", icon='DOWNARROW_HLT')
-
-    # Lens / Orthographic Scale
-    col = layout.column(align=True)
-    if cam.type == 'ORTHO':
-        col.prop(cam, "ortho_scale")
-    else:
-        row = col.row(align=True)
-        row.prop(cam, "lens")
-        row.operator_menu_enum("cam_manager.apply_focal_length_preset", "preset", text="", icon='DOWNARROW_HLT')
-        row = col.row(align=True)
-        row.prop(cam, 'angle')
 
     col = layout.column(align=True)
     row = col.row(align=True)

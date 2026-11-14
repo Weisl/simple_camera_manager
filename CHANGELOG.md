@@ -20,20 +20,25 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
 ### Features & Improvements
 
 - [#161](https://github.com/Weisl/simple_camera_manager/issues/161): Added
-  **Camera Presets**. A single dropdown offers built-in looks (Full Frame,
-  APS-C, Micro Four Thirds, Medium Format, Super 35, 1-inch, orthographic)
-  and your own saved presets. Use **+** / **−** to save or remove the active
-  camera's settings.
-- Added a **Sensor Format** dropdown that applies Blender's built-in sensor
-  sizes (Full Frame, APS-C, MFT, Arri, RED, Blackmagic, phone sensors, …) to
-  the scene camera from the 3D Viewport sidebar and the pie menu.
+  **Lens Presets** in a new **Lens** box. A preset sets the camera type,
+  focal length (or orthographic scale) and sensor size, all shown in the
+  same box. Choose from built-in lenses (Full Frame, APS-C, Micro Four
+  Thirds, Medium Format, Super 35, 1-inch, orthographic) or your own: use
+  **+** / **−** to save or remove the active camera's lens.
+- Added a **Sensor Format** dropdown to the Lens box that applies Blender's
+  built-in sensor sizes (Full Frame, APS-C, MFT, Arri, RED, Blackmagic,
+  phone sensors, …) to the scene camera from the 3D Viewport sidebar and the
+  pie menu.
 - [#66](https://github.com/Weisl/simple_camera_manager/issues/66): Added a
   **camera roll gizmo**. Drag the ring to roll the camera around its view
   axis; hold Shift to snap in 5° steps.
-- [#64](https://github.com/Weisl/simple_camera_manager/issues/64): Added an
-  option to **automatically cycle Render Result slots** after each render, so
-  repeated renders no longer overwrite each other (off by default, enable it
-  in the add-on preferences).
+- [#64](https://github.com/Weisl/simple_camera_manager/issues/64): Added
+  **Render to New Slot** (off by default, enable it in the add-on
+  preferences). Every render goes into a Render Result slot that doesn't
+  hold a render yet, picked before the render starts, so you see the new
+  render and earlier ones are kept, also when rendering the same camera
+  again. A slot is added when all are used. Works for F12, the camera
+  list's Render button and Batch Render.
 - [#157](https://github.com/Weisl/simple_camera_manager/issues/157): The
   update checker now shows a dismissible banner when a newer release is
   available, and a **Check for Updates** button in the add-on preferences
@@ -44,6 +49,13 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
 - [#165](https://github.com/Weisl/simple_camera_manager/issues/165): Added a
   **Show** button next to the "Camera is hidden" warning. It unhides the
   camera and only the collections containing it.
+- [#171](https://github.com/Weisl/simple_camera_manager/issues/171):
+  **Dolly Zoom** now works like the modal tools in Simple Collider. Nothing
+  changes until you press a key: **F** focal length, **V** field of view,
+  **D** target distance, **W** target width; press the key again to stop.
+  Changing the focal length or field of view moves the camera so the target
+  keeps its size in the frame. While no key is active you can drag the
+  target gizmo. The viewport overlay got the same look as Simple Collider's.
 - Added Blender 5.3 to the tested versions.
 
 ### Bug Fixes
@@ -51,6 +63,10 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
 - [#158](https://github.com/Weisl/simple_camera_manager/issues/158): Fixed
   the add-on's **Open Preferences** button not expanding the add-on's
   preferences when it is installed through the Extensions platform.
+- [#170](https://github.com/Weisl/simple_camera_manager/issues/170): Fixed
+  the Preferences window closing as soon as the add-on is enabled or the
+  popup width is changed. Separate render and file browser windows were
+  closed as well.
 
 ## Simple Camera Manager v1.7.1
 

@@ -2,6 +2,8 @@ import math
 
 import blf
 import bpy
+import gpu
+from gpu_extras.batch import batch_for_shader
 from mathutils import Vector
 
 
@@ -13,7 +15,6 @@ def calculate_target_width(distance, fov):
 
 def generate_target_location(camera, distance):
     """Return the world-space position directly in front of the camera at the given distance."""
-    # Create the transformation matrix to move 1 unit along x
     vec = Vector((0.0, 0.0, -distance))
 
     inv = camera.matrix_world.copy()
@@ -37,7 +38,7 @@ def set_cam_values(cam_dic, camera, distance):
 
     # Initial Camera Lens Settings
     cam_dic['camera_fov'] = camera.data.angle
-    cam_dic['camera_focal_length'] = camera.data.angle
+    cam_dic['camera_focal_length'] = camera.data.lens
 
     # Intitial Distance
     target_location = generate_target_location(camera, distance)
@@ -46,6 +47,7 @@ def set_cam_values(cam_dic, camera, distance):
     cam_dic['target_location'] = target_location
 
     cam_dic['target_width'] = camera.data.dolly_zoom_target_scale
+    cam_dic['forward'] = (camera.matrix_world.to_3x3() @ Vector((0.0, 0.0, -1.0))).normalized()
 
     return cam_dic
 
@@ -55,349 +57,387 @@ def distance_vec(point1: Vector, point2: Vector):
     return (point2 - point1).length
 
 
-def draw_title_text(self, font_id, i, vertical_px_offset, left_margin, name, color):
-    """Draw UI title text in the 3D Viewport """
-    blf.size(font_id, 20)
+# ---------------------------------------------------------------------------
+# Viewport overlay
+#
+# Same look as the modal operators of Simple Collider (its
+# collider_shapes/add_bounding_primitive.py draw_viewport_overlay()), so the
+# add-ons read as one family: a dark backdrop with a green top edge and thin
+# frame, rows of "label  (key)  value", the active row highlighted in green,
+# and every row greyed out while Alt is held or the view is being navigated.
+# Simple Collider exposes these colors as preferences; here they are fixed to
+# its defaults.
+# ---------------------------------------------------------------------------
 
-    blf.color(font_id, color[0], color[1], color[2], color[3])
-    blf.position(font_id, left_margin, i * vertical_px_offset, 0)
-    blf.draw(font_id, name)
+_COLOR_DEFAULT = (0.910, 0.914, 0.933, 1.0)
+_COLOR_TITLE = (0.133, 0.773, 0.369, 1.0)
+_COLOR_HIGHLIGHT = (0.133, 0.773, 0.369, 1.0)
+_COLOR_MUTED = (0.604, 0.616, 0.651, 0.7)
+_COLOR_BACKDROP = (0.141, 0.149, 0.176, 0.85)
+_COLOR_FRAME = (0.204, 0.212, 0.243, 1.0)
+_COLOR_ACCENT = (0.133, 0.773, 0.369, 1.0)
+_FONT_SIZE_PREF = 36  # Simple Collider's default "Font Size" preference
 
 
-def draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, name, value, initial_value=None,
-                       highlighting=False):
-    """Draw UI operator parameters as text in the 3D Viewport """
-    text = '{name:}:'.format(name=name)
-    text2 = '{value:.2f}'.format(value=value)
+def _font_size(context):
+    # system.ui_scale follows the monitor DPI, view.ui_scale is the user's
+    # Resolution Scale; Blender's own UI scales with both.
+    return int(_FONT_SIZE_PREF * context.preferences.system.ui_scale
+               * context.preferences.view.ui_scale / 3.6)
 
-    font_size = 20
+
+def _draw_rect(left, right, top, bottom, color):
+    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+    batch = batch_for_shader(shader, 'TRIS', {"pos": ((left, bottom), (right, bottom), (left, top), (right, top))},
+                             indices=((0, 1, 2), (2, 1, 3)))
+    gpu.state.blend_set('ALPHA')
+    shader.bind()
+    shader.uniform_float("color", color)
+    batch.draw(shader)
+    gpu.state.blend_set('NONE')
+
+
+def _draw_row(font_id, font_size, y, left, item, muted):
+    if muted and item['type'] != 'title':
+        label_color = _COLOR_MUTED
+    elif item.get('highlight'):
+        label_color = _COLOR_HIGHLIGHT
+    elif item['type'] == 'title':
+        label_color = _COLOR_TITLE
+    else:
+        label_color = _COLOR_DEFAULT
 
     blf.size(font_id, font_size)
+    blf.color(font_id, *label_color)
+    blf.position(font_id, left, y, 0)
+    blf.draw(font_id, item['label'])
 
-    # define color for input ignore
-    if self.ignore_input:
-        c1 = c2 = [0.5, 0.5, 0.5, 0.5]
+    if item.get('key'):
+        # key hints are a secondary cue, dimmed so the label stays primary
+        key_color = (*label_color[:3], label_color[3] * 0.5)
+        blf.color(font_id, *key_color)
+        blf.position(font_id, left + 220 / 20 * font_size, y, 0)
+        blf.draw(font_id, item['key'])
 
-    # define color for highlited value
-    elif highlighting:
-        c1 = c2 = [0.0, 1.0, 1.0, 1.0]
-
-    # define default values
-    else:
-        c1 = [1.0, 1.0, 1.0, 1.0]
-        c2 = [1.0, 1.0, 0.5, 1.0]
-
-    blf.color(font_id, c1[0], c1[1], c1[2], c1[3])
-    blf.position(font_id, left_margin, i * vertical_px_offset, 0)
-    blf.draw(font_id, text)
-
-    blf.color(font_id, c2[0], c2[1], c2[2], c2[3])
-    blf.position(font_id, left_margin + 190, i * vertical_px_offset, 0)
-    blf.draw(font_id, text2)
-
-    # optional original value
-    if initial_value:
-        text3 = '{initial_value:.2f}'.format(initial_value=initial_value)
-        blf.color(font_id, c1[0], c1[1], c1[2], c1[3])
-        blf.position(font_id, left_margin + 350, i * vertical_px_offset, 0)
-        blf.draw(font_id, text3)
-
-    i += 1
-
-    return i
+    if item.get('value'):
+        blf.color(font_id, *label_color)
+        blf.position(font_id, left + 290 / 20 * font_size, y, 0)
+        blf.draw(font_id, item['value'])
 
 
-def draw_callback_px(self, context):
-    """Draw 3d viewport text for the dolly zoom modal operator"""
-    scene = context.scene
+def draw_callback_px(self, _context):
+    """Draw the dolly zoom overlay in the 3D Viewport."""
+    context = bpy.context
+    try:
+        # The operator may have been freed without removing this handler
+        # (e.g. the add-on was reloaded while the modal was running).
+        self.as_pointer()
+    except ReferenceError:
+        return
 
-    font_id = 0  # XXX, need to find out how best to get this.
-    vertical_px_offset = 30
-    left_margin = bpy.context.area.width / 2 - 200
-    i = 1
+    camera = self.camera
+    cam = camera.data
+    initial = self.initial_cam_settings
 
-    x = math.degrees(self.current_camera_fov)
-    y = math.degrees(self.initial_cam_settings['camera_fov'])
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'FOV', x, initial_value=y)
+    # Rows are listed bottom to top.
+    items = [
+        {'label': "Target Gizmo", 'key': '(Drag)', 'type': 'default',
+         'value': "Visible" if cam.show_dolly_gizmo else "Hidden"},
+    ]
+    info_row_count = len(items)
 
-    x = self.current_focal_length
-    y = self.initial_cam_settings['camera_focal_length']
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Focal Length', x, initial_value=y)
+    items += [
+        {'label': "Target Width", 'key': '(W)', 'type': 'modal', 'highlight': self.mode == 'WIDTH',
+         'value': "{:.3f}".format(cam.dolly_zoom_target_scale)},
+        {'label': "Target Distance", 'key': '(D)', 'type': 'modal', 'highlight': self.mode == 'DISTANCE',
+         'value': "{:.3f}".format(cam.dolly_zoom_target_distance)},
+        {'label': "Field of View", 'key': '(V)', 'type': 'modal', 'highlight': self.mode == 'FOV',
+         'value': "{:.1f}°  ({:.1f}°)".format(math.degrees(cam.angle), math.degrees(initial['camera_fov']))},
+        {'label': "Focal Length", 'key': '(F)', 'type': 'modal', 'highlight': self.mode == 'FOCAL',
+         'value': "{:.1f} mm  ({:.1f} mm)".format(cam.lens, initial['camera_focal_length'])},
+    ]
 
-    x = self.camera.data.dolly_zoom_target_distance
-    y = self.initial_cam_settings['distance']
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Distance (D)', x, initial_value=y,
-                           highlighting=self.set_distance)
+    items.append({'label': "Dolly Zoom", 'type': 'title'})
+    title_row = len(items)
 
-    x = self.camera.data.dolly_zoom_target_scale
-    y = self.initial_cam_settings['target_width']
-    i = draw_vierport_text(self, font_id, i, vertical_px_offset, left_margin, 'Width (F)', x, initial_value=y,
-                           highlighting=self.set_width)
+    if self.navigation:
+        items.append({'label': "VIEWPORT NAVIGATION", 'type': 'title', 'highlight': True})
+    elif self.ignore_input:
+        items.append({'label': "IGNORE INPUT (ALT)", 'type': 'title', 'highlight': True})
+    elif self.mode is None:
+        items.append({'label': "PRESS F, V, D OR W TO ADJUST", 'type': 'title'})
 
-    if self.ignore_input:
-        color = (0.0, 1.0, 1.0, 1.0)
-    else:
-        color = (1.0, 1.0, 1.0, 1.0)
+    font_id = 0
+    font_size = _font_size(context)
+    row_height = font_size * 1.5
+    row_padding = font_size * 0.5
+    center = context.area.width / 2
+    text_left = center - 190 / 20 * font_size
 
-    draw_title_text(self, font_id, i, vertical_px_offset, left_margin, 'IGNORE INPUT (ALT)', color)
+    box_left = center - 240 / 20 * font_size
+    box_right = center + 260 / 20 * font_size
+    box_top = font_size * len(items) * 1.75 + row_padding * 2
+    box_bottom = 10
+
+    _draw_rect(box_left, box_right, box_top, box_bottom, _COLOR_BACKDROP)
+    accent_px = 3
+    _draw_rect(box_left, box_right, box_top, box_top - accent_px, _COLOR_ACCENT)
+    _draw_rect(box_left, box_right, box_bottom + 1, box_bottom, _COLOR_FRAME)
+    _draw_rect(box_left, box_left + 1, box_top - accent_px, box_bottom, _COLOR_FRAME)
+    _draw_rect(box_right - 1, box_right, box_top - accent_px, box_bottom, _COLOR_FRAME)
+
+    def draw_rule(row):
+        y = row_padding + (row + 0.5) * row_height
+        _draw_rect(box_left, box_right, y + 0.5, y - 0.5, _COLOR_FRAME)
+
+    draw_rule(title_row - 1)
+    draw_rule(info_row_count)
+
+    muted = self.ignore_input or self.navigation
+    for i, item in enumerate(items):
+        _draw_row(font_id, font_size, row_padding + (i + 1) * row_height, text_left, item, muted)
+
+
+_NAVIGATION_EVENTS = {
+    'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE', 'TRACKPADPAN', 'TRACKPADZOOM',
+    'NDOF_MOTION', 'NDOF_BUTTON_FIT',
+}
+
+_MODE_KEYS = {'F': 'FOCAL', 'V': 'FOV', 'D': 'DISTANCE', 'W': 'WIDTH'}
+
+# Modes that change the lens and move the camera to keep the target's size.
+_DOLLY_MODES = {'FOCAL', 'FOV'}
+
+_MIN_FOV = math.radians(1.0)
+_MAX_FOV = math.radians(170.0)
+_MIN_LENS = 1.0
+
+_HEADER_TEXT = ("Dolly Zoom: F Focal Length, V Field of View, D Target Distance, W Target Width, "
+                "drag the gizmo to move the target, Shift/Ctrl Slower/Faster, Alt Ignore Mouse, "
+                "LMB/Enter Confirm, RMB/Esc Cancel")
 
 
 class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
-    """Modal operator that keeps the subject size constant in the frame while changing focal length."""
+    """Modal operator that keeps the subject size constant in the frame while changing focal length.
+
+    Nothing changes until a value is activated with its key (F, V, D or W),
+    the same way Simple Collider's modal operators work. Changing the focal
+    length (F) or field of view (V) moves the camera along its view axis so
+    the target keeps its size in the frame. While no value is
+    active, mouse movement passes through to the viewport, so the dolly zoom
+    target gizmo can be hovered and dragged."""
 
     bl_idname = "cam_manager.modal_camera_dolly_zoom"
     bl_label = "Dolly Zoom"
     bl_description = "Change focal length while keeping the target at the same size in the camera view"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def force_redraw(self):
-        bpy.context.object.data.show_limits = not self.show_limits
-        bpy.context.object.data.show_limits = self.show_limits
+    @staticmethod
+    def _redraw(context):
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D':
+                area.tag_redraw()
 
-    def update_camera(self, cam_offset=0, use_cam_offset=False):
+    def _update_width(self):
+        """Target width changed: keep the camera where it is and set the
+        field of view so the target frame fills the same part of the view."""
+        cam = self.camera.data
+        distance = max(cam.dolly_zoom_target_distance, 0.01)
+        cam.angle = min(max(2 * math.atan(cam.dolly_zoom_target_scale / distance), _MIN_FOV), _MAX_FOV)
 
-        camera = self.camera
+    def _dolly_to_angle(self, angle):
+        """Set the field of view and move the camera along its view axis so
+        the target keeps its size in the frame (the dolly zoom effect)."""
+        ref = self.ref_cam_settings
+        cam = self.camera.data
+        angle = min(max(angle, _MIN_FOV), _MAX_FOV)
+        distance = ref['target_width'] / math.tan(angle / 2)
+        self.camera.location = ref['cam_location'] - ref['forward'] * (distance - ref['distance'])
+        cam.angle = angle
+        cam.dolly_zoom_target_distance = distance
 
-        if use_cam_offset:
-            if cam_offset > -self.ref_cam_settings['distance']:
-                cam_move = cam_offset
-                distance = cam_move + self.ref_cam_settings['distance']
+    def _capture_reference(self, event):
+        """Start the next drag from the camera's current state and the current mouse position.
 
-            else:  # Camera goes past the target
-                cam_move = abs(cam_offset) - self.ref_cam_settings['distance'] - self.ref_cam_settings['distance']
-                distance = cam_move + self.ref_cam_settings['distance']
+        Called whenever the active value, a modifier key or Alt changes, and
+        so also picks up any change made by dragging the gizmo in between."""
+        cam = self.camera.data
+        if self.mode in _DOLLY_MODES:
+            # The dolly keeps the frame at the target distance constant, so
+            # take its width from the current lens (the gizmo may have moved
+            # the target since the last time).
+            cam.dolly_zoom_target_scale = calculate_target_width(cam.dolly_zoom_target_distance, cam.angle)
+        self.ref_cam_settings = set_cam_values(self.ref_cam_settings, self.camera, cam.dolly_zoom_target_distance)
+        self.mouse_initial_x = event.mouse_x
 
-            # move camera
-            # vec aligned to local axis in Blender 2.8+
-            vec = Vector((0.0, 0.0, cam_move))
-            vec_rot = vec @ self.ref_cam_settings['inverted_matrix']
-            camera.location = self.ref_cam_settings['cam_location'] + vec_rot
+    def _set_mode(self, mode, event, context):
+        if mode in _DOLLY_MODES and self.camera.data.type == 'ORTHO':
+            # An orthographic camera has no focal length or field of view.
+            return
+        self.mode = None if self.mode == mode else mode
+        self._capture_reference(event)
+        # A key press alone doesn't repaint the viewport, so the highlight
+        # wouldn't update until the next mouse move without this.
+        self._redraw(context)
 
-        else:
-            # Calculate Distance from camera to target
-            cam_vector = Vector(self.camera.matrix_world.to_translation())
-            target_pos = Vector(self.ref_cam_settings['target_location'])
-            distance = distance_vec(cam_vector, target_pos)
+    def _finish(self, context):
+        self.camera.data.show_dolly_gizmo = self.initial_gizmo_state
+        context.area.header_text_set(None)
+        handle = getattr(self, '_handle', None)
+        if handle is not None:
+            try:
+                bpy.types.SpaceView3D.draw_handler_remove(handle, 'WINDOW')
+            except ValueError:
+                pass
+            self._handle = None
+        self._redraw(context)
 
-        camera.data.dolly_zoom_target_distance = distance
+    def _init_state(self, camera, event):
+        """Record the starting camera state. Nothing is changed until a value
+        is activated with F, V, D or W."""
+        self.camera = camera
+        cam = camera.data
 
-        # Dolly Zoom computation
-        if distance != 0:
-            field_of_view = 2 * math.atan(self.camera.data.dolly_zoom_target_scale / distance)
-        else:
-            field_of_view = 2 * math.atan(self.camera.data.dolly_zoom_target_scale / 0.01)
+        self.initial_gizmo_state = cam.show_dolly_gizmo
+        self.initial_target_scale = cam.dolly_zoom_target_scale
+        self.initial_lens = cam.lens
+        cam.show_dolly_gizmo = True
 
-        # Set camera field of view and
-        camera.data.angle = field_of_view
-        self.current_camera_fov = field_of_view
-        self.current_focal_length = camera.data.lens
+        self.mode = None
+        self.ignore_input = False
+        self.navigation = False
+        self.mouse_initial_x = event.mouse_x
+
+        cam.dolly_zoom_target_scale = calculate_target_width(cam.dolly_zoom_target_distance, cam.angle)
+
+        self.initial_cam_settings = set_cam_values({}, camera, cam.dolly_zoom_target_distance)
+        self.ref_cam_settings = self.initial_cam_settings.copy()
 
     @classmethod
     def poll(cls, context):
-        if context.scene.camera:
-            return True
-        else:
-            return False
+        return context.scene.camera is not None
 
     def invoke(self, context, event):
-        bpy.ops.object.select_all(action='DESELECT')
-
-        if context.scene.camera:
-            camera = context.scene.camera
-            camera.select_set(True)
-            context.view_layer.objects.active = camera
-
-            # initial state Gizmo
-            self.initial_gizmo_state = camera.data.show_dolly_gizmo
-
-            # Camera Object Settings
-            self.camera = camera
-            self.show_limits = bpy.context.object.data.show_limits
-
-            # setting used when changing the distance with the modal operator
-            self.tmp_distance = False
-
-            # Camera lens settings
-            self.current_camera_fov = camera.data.angle
-            self.current_focal_length = camera.data.lens
-
-            #####  UI  #######
-            # Mouse
-            self.mouse_initial_x = event.mouse_x
-
-            # check if alt is pressed
-            self.ignore_input = False
-
-            # Operator modes
-            self.set_width = False
-            self.set_distance = False
-
-            # Target
-            width = calculate_target_width(camera.data.dolly_zoom_target_distance, camera.data.angle)
-            camera.data.dolly_zoom_target_scale = width
-
-            # Camera Reference Values
-            cam_settings = {}
-            cam_settings = set_cam_values(cam_settings, camera, self.camera.data.dolly_zoom_target_distance)
-
-            # Camera Settings
-            self.initial_cam_settings = cam_settings
-            self.ref_cam_settings = cam_settings.copy()
-
-            # update camera
-            self.update_camera()
-
-            # the arguments we pass to the callback
-
-            args = (self, context)
-            # Add the region OpenGL drawing callback
-            # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-            self._handle = bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
-
-            context.window_manager.modal_handler_add(self)
-            return {'RUNNING_MODAL'}
-
-        else:
-
+        camera = context.scene.camera
+        if camera is None:
             self.report({'WARNING'}, "No scene camera assigned")
             return {'CANCELLED'}
+        if context.area is None or context.area.type != 'VIEW_3D':
+            self.report({'WARNING'}, "Dolly Zoom needs to be started from a 3D Viewport")
+            return {'CANCELLED'}
+
+        # The gizmos only show for the active camera object.
+        bpy.ops.object.select_all(action='DESELECT')
+        camera.select_set(True)
+        context.view_layer.objects.active = camera
+
+        self._init_state(camera, event)
+
+        self._handle = bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, (self, context), 'WINDOW',
+                                                              'POST_PIXEL')
+        context.area.header_text_set(_HEADER_TEXT)
+        context.window_manager.modal_handler_add(self)
+        self._redraw(context)
+        return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
         """Calculate the FOV from the changed location to the target object """
+        from .camera_gizmos import any_interactive_gizmo_highlighted
 
         camera = self.camera
-        scene = context.scene
 
-        # Set Gizmo to be visible during the modal operation. Dirty!
-        camera.data.show_dolly_gizmo = True
+        # Dragging a gizmo clears the header text when it ends.
+        context.area.header_text_set(_HEADER_TEXT)
 
-        # Display keymap information
-        context.area.header_text_set(
-            "Dolly Zoom: Left Mouse: Confirm, Right Mouse/ESC: Cancel, F: Toggle Width, D: Toggle Distance, Shift/Ctrl: Adjust Sensitivity")
+        # Viewport navigation: let it through and stop the active value, like
+        # Simple Collider, so navigating doesn't fight with an active drag.
+        if event.type in _NAVIGATION_EVENTS:
+            self.mode = None
+            self.navigation = True
+            self._redraw(context)
+            return {'PASS_THROUGH'}
 
-        # Cancel Operator
-        if event.type in {'RIGHTMOUSE', 'ESC'}:
-            # reset camera position and fov. resetting the fov will also reset the focal length
-            self.camera.location = self.initial_cam_settings['cam_location']
-            self.camera.data.angle = self.initial_cam_settings['camera_fov']
-            self.camera.data.dolly_zoom_target_distance = self.initial_cam_settings['distance']
-            self.camera.data.show_dolly_gizmo = self.initial_gizmo_state
+        if event.type == 'MOUSEMOVE' and self.navigation:
+            self.navigation = False
+            self._redraw(context)
 
-            # Remove Viewport Text
-            context.area.header_text_set(None)
-            try:
-                bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
-            except ValueError:
-                pass
+        # Cancel
+        if event.type in {'RIGHTMOUSE', 'ESC'} and event.value == 'PRESS':
+            init = self.initial_cam_settings
+            camera.location = init['cam_location']
+            camera.data.lens = self.initial_lens
+            camera.data.dolly_zoom_target_distance = init['distance']
+            camera.data.dolly_zoom_target_scale = self.initial_target_scale
+            self._finish(context)
             return {'CANCELLED'}
 
-        # Apply operator
-        elif event.type == 'LEFTMOUSE':
-            # Remove Viewport Text
-            self.camera.data.show_dolly_gizmo = self.initial_gizmo_state
-            context.area.header_text_set(None)
-            try:
-                bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
-            except ValueError:
-                pass
+        # Confirm, unless the click is meant for a gizmo under the mouse.
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            if self.mode is None and any_interactive_gizmo_highlighted():
+                return {'PASS_THROUGH'}
+            self._finish(context)
             return {'FINISHED'}
 
-        elif event.alt:
-            # update reference camera settings to current camera settings
-            self.ignore_input = True
-            self.force_redraw()
-            return {'RUNNING_MODAL'}
+        if event.type in {'RET', 'NUMPAD_ENTER'} and event.value == 'PRESS':
+            self._finish(context)
+            return {'FINISHED'}
 
-        elif event.type == 'F' and event.value == 'RELEASE':
-            self.set_width = not self.set_width
-            self.set_distance = False
-            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
-                                                   self.camera.data.dolly_zoom_target_distance)
-
-        elif event.type == 'D' and event.value == 'RELEASE':
-            self.set_distance = not self.set_distance
-            self.set_width = False
-            if self.set_distance:
-                self.tmp_distance = self.ref_cam_settings['distance']
-            else:
-                self.tmp_distance = False
-            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
-                                                   self.camera.data.dolly_zoom_target_distance)
-
-        # Set ref values when switching mode to avoid jumping of field of view.
-        elif event.type in ['LEFT_SHIFT', 'LEFT_CTRL'] and event.value in ['PRESS', 'RELEASE']:
-            # update reference camera settings to current camera settings
-            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
-                                                   self.camera.data.dolly_zoom_target_distance)
-            self.tmp_distance = self.ref_cam_settings['distance']
-            # update ref mouse position to current
-            self.mouse_initial_x = event.mouse_x
-            # Alt is not pressed anymore after release
-            self.ignore_input = False
-            return {'RUNNING_MODAL'}
-
-        # Ignore Mouse Movement. The Operator will behave as starting it newly
-        elif event.type == 'LEFT_ALT' and event.value == 'RELEASE':
-            # update reference camera settings to current camera settings
-            self.ref_cam_settings = set_cam_values(self.ref_cam_settings, camera,
-                                                   self.camera.data.dolly_zoom_target_distance)
-            self.tmp_distance = self.ref_cam_settings['distance']
-            # update ref mouse position to current
-            self.mouse_initial_x = event.mouse_x
-            # Alt is not pressed anymore after release
-            self.ignore_input = False
-            return {'RUNNING_MODAL'}
-
-        elif event.type == 'MOUSEMOVE':
-            self.ignore_input = False
-            # calculate mouse movement and offset camera
-            delta = int(self.mouse_initial_x - event.mouse_x)
-            # Ignore if Alt is pressed
-            if event.alt:
+        # Hold Alt to move the mouse without changing anything.
+        if event.alt:
+            if not self.ignore_input:
                 self.ignore_input = True
-                return {'RUNNING_MODAL'}
+                self._redraw(context)
+            return {'RUNNING_MODAL'}
 
-            elif self.set_width:
-                # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
-                factor = 0.005
-                if event.ctrl:
-                    factor = 0.015
-                elif event.shift:
-                    factor = 0.001
-                # calculate width offset
-                offset = delta * factor
-                width = abs(self.ref_cam_settings['target_width'] + offset)
-                # set operator variables and camera property
-                self.camera.data.dolly_zoom_target_scale = width
-                # update camera
-                self.update_camera()
+        if event.type == 'LEFT_ALT' and event.value == 'RELEASE':
+            self.ignore_input = False
+            self._capture_reference(event)
+            self._redraw(context)
+            return {'RUNNING_MODAL'}
 
-            elif self.set_distance:
-                factor = 0.05
-                if event.ctrl:
-                    factor = 0.15
-                elif event.shift:
-                    factor = 0.005
-                # calculate width offset
-                offset = delta * factor
-                distance = abs(self.tmp_distance + offset)
-                self.camera.data.dolly_zoom_target_distance = distance
-                self.ref_cam_settings['distance'] = distance
-                # Target
-                width = calculate_target_width(camera.data.dolly_zoom_target_distance, camera.data.angle)
-                camera.data.dolly_zoom_target_scale = width
-                # update camera
+        # Changing the sensitivity restarts the drag from here to avoid a jump.
+        if event.type in {'LEFT_SHIFT', 'RIGHT_SHIFT', 'LEFT_CTRL', 'RIGHT_CTRL'} \
+                and event.value in {'PRESS', 'RELEASE'}:
+            self._capture_reference(event)
+            return {'RUNNING_MODAL'}
 
-            else:
-                # Mouse Sensitivity and Sensitivity Modifiers (Shift, Ctrl)
-                factor = 0.05
-                if event.ctrl:
-                    factor = 0.15
-                elif event.shift:
-                    factor = 0.005
-                cam_offset = delta * factor
-                self.update_camera(cam_offset=cam_offset, use_cam_offset=True)
+        if event.type in _MODE_KEYS and event.value == 'RELEASE':
+            self._set_mode(_MODE_KEYS[event.type], event, context)
+            return {'RUNNING_MODAL'}
 
+        if event.type == 'MOUSEMOVE':
+            self.ignore_input = False
+            if self.mode is None:
+                # Let the viewport see the mouse so gizmos highlight on hover.
+                return {'PASS_THROUGH'}
+
+            # Dragging to the right increases the active value.
+            drag = event.mouse_x - self.mouse_initial_x
+            ref = self.ref_cam_settings
+
+            def step(normal, fine, coarse):
+                return coarse if event.ctrl else fine if event.shift else normal
+
+            if self.mode == 'FOCAL':
+                camera.data.lens = max(ref['camera_focal_length'] + drag * step(0.1, 0.01, 0.5), _MIN_LENS)
+                self._dolly_to_angle(camera.data.angle)
+
+            elif self.mode == 'FOV':
+                self._dolly_to_angle(ref['camera_fov'] + math.radians(drag * step(0.1, 0.01, 0.5)))
+
+            elif self.mode == 'WIDTH':
+                camera.data.dolly_zoom_target_scale = abs(ref['target_width'] + drag * step(0.005, 0.001, 0.015))
+                self._update_width()
+
+            elif self.mode == 'DISTANCE':
+                distance = abs(ref['distance'] + drag * step(0.05, 0.005, 0.15))
+                camera.data.dolly_zoom_target_distance = distance
+                camera.data.dolly_zoom_target_scale = calculate_target_width(distance, camera.data.angle)
+
+            self._redraw(context)
+            return {'RUNNING_MODAL'}
+
+        # Block other hotkeys (G, R, S, ...) while the operator runs.
         return {'RUNNING_MODAL'}
 
 

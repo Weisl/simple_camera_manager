@@ -206,26 +206,35 @@ class TestApplyBuiltinCameraPreset(unittest.TestCase):
             self.assertEqual(result, {'FINISHED'}, f"preset {name!r} failed to apply")
 
     def test_full_frame_50mm_sets_expected_values(self):
-        bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm Standard f/1.8')
+        bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm Standard')
         cam = self.camera_data
+        self.assertEqual(cam.type, 'PERSP')
         self.assertEqual(cam.lens, 50.0)
         self.assertEqual(cam.sensor_width, 36.0)
         self.assertEqual(cam.sensor_height, 24.0)
         self.assertEqual(cam.sensor_fit, 'HORIZONTAL')
+
+    def test_preset_leaves_clipping_and_focus_alone(self):
+        cam = self.camera_data
+        cam.clip_start = 0.02
+        cam.clip_end = 50.0
+        cam.dof.use_dof = True
+        cam.dof.aperture_fstop = 4.0
+        bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 85mm Portrait')
+        self.assertAlmostEqual(cam.clip_start, 0.02, places=5)
+        self.assertEqual(cam.clip_end, 50.0)
         self.assertTrue(cam.dof.use_dof)
-        self.assertAlmostEqual(cam.dof.aperture_fstop, 1.8, places=5)
-        self.assertEqual(cam.dof.focus_distance, 1.5)
+        self.assertAlmostEqual(cam.dof.aperture_fstop, 4.0, places=5)
 
     def test_studio_orthographic_switches_camera_type(self):
         bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Studio Orthographic')
         cam = self.camera_data
         self.assertEqual(cam.type, 'ORTHO')
         self.assertEqual(cam.ortho_scale, 5.0)
-        self.assertFalse(cam.dof.use_dof)
 
     def test_no_scene_camera_reports_warning_not_crash(self):
         bpy.context.scene.camera = None
-        result = bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm Standard f/1.8')
+        result = bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm Standard')
         self.assertEqual(result, {'CANCELLED'})
 
 

@@ -28,13 +28,11 @@ def update_popup_size(self, context):
         from .ui import OBJECT_PT_camera_manager_popup
         prefs = bpy.context.preferences.addons[__package__].preferences
 
-        # Close the popup if it is open — it lives as a temporary window.
-        # Must happen before unregister_class while the popup holds a reference.
-        for window in list(bpy.context.window_manager.windows):
-            if window.screen.is_temporary:
-                with bpy.context.temp_override(window=window):
-                    bpy.ops.wm.window_close()
-
+        # Don't close any windows here. The popup is drawn inside the current
+        # window (wm.call_panel), not as a window of its own, and can't be open
+        # while the preferences are being edited. Closing "temporary" windows
+        # closed the Preferences window itself, along with any render or file
+        # browser windows.
         try:
             bpy.utils.unregister_class(OBJECT_PT_camera_manager_popup)
             OBJECT_PT_camera_manager_popup.bl_ui_units_x = prefs.popup_width
@@ -248,9 +246,10 @@ class CamManagerAddonPreferences(bpy.types.AddonPreferences):
         update=update_popup_size)
 
     auto_cycle_render_slot: bpy.props.BoolProperty(
-        name="Auto-Cycle Render Slot",
-        description="After every render (F12 or via this addon), automatically advance to the "
-                     "next Render Result slot so repeated renders don't overwrite each other",
+        name="Render to New Slot",
+        description="Every render (F12 or via this addon) goes into a Render Result slot that "
+                    "doesn't hold a render yet, adding a slot when all are used, so earlier "
+                    "renders are kept. F12 is taken over by this addon while this is on",
         default=False,
         update=update_auto_cycle_render_slot)
 

@@ -15,25 +15,117 @@ def get_next_free_slot():
     return slot
 
 
-@persistent
-def _cycle_render_slot_handler(scene, depsgraph):
-    """Advance to the next Render Result slot after every render, so repeated
-    F12 renders don't overwrite each other."""
+# Auto-cycle render slots (issue #64)
+#
+# Every render should go into a Render Result slot that doesn't hold a
+# render yet, so the new render is shown while it renders and earlier ones
+# are kept. A render always goes into the slot that is active when it
+# starts; changing the slot from a render_init/render_pre handler is too
+# late (it only changes which slot is shown). So the slot is picked *before*
+# the render starts:
+#   - F12 is mapped to CAM_MANAGER_OT_render_to_new_slot while the option
+#     is on (add-on keymap items take priority over Blender's own F12),
+#   - the add-on's own render buttons call ensure_free_render_slot_active().
+#
+# Blender's Python API can't tell whether a slot holds a render, so slots
+# are recorded when a render starts (render_init, for every render path).
+# Render slots aren't saved with the .blend file, so the record is cleared
+# whenever a file is loaded.
+_rendered_slots = set()
+_auto_cycle_keymap_items = []
+
+
+def _render_result_slots():
     render_result = bpy.data.images.get('Render Result')
     if not render_result or not render_result.render_slots:
+        return None
+    return render_result.render_slots
+
+
+def next_free_render_slot(slots, after_index):
+    """Index of the first slot after `after_index` (wrapping around) that
+    hasn't been rendered into; adds a new slot if every slot is used."""
+    count = len(slots)
+    for step in range(1, count + 1):
+        index = (after_index + step) % count
+        if index not in _rendered_slots:
+            return index
+    slots.new()
+    return len(slots) - 1
+
+
+def ensure_free_render_slot_active():
+    """Make the next render go into a slot that doesn't hold a render yet."""
+    slots = _render_result_slots()
+    if slots is not None and slots.active_index in _rendered_slots:
+        slots.active_index = next_free_render_slot(slots, slots.active_index)
+
+
+@persistent
+def _record_render_slot(scene, depsgraph=None):
+    """The render that is starting goes into the active slot."""
+    slots = _render_result_slots()
+    # Before the very first render the Render Result image doesn't exist
+    # yet; that render goes into the first slot.
+    _rendered_slots.add(slots.active_index if slots is not None else 0)
+
+
+@persistent
+def _forget_rendered_slots(*_args):
+    _rendered_slots.clear()
+
+
+def is_auto_cycle_render_slot_enabled():
+    return _record_render_slot in bpy.app.handlers.render_init
+
+
+def _set_f12_override(enabled):
+    keyconfig = bpy.context.window_manager.keyconfigs.addon
+    if keyconfig is None:  # background mode has no key configurations
         return
-    slots = render_result.render_slots
-    slots.active_index = (slots.active_index + 1) % len(slots)
+    if enabled and not _auto_cycle_keymap_items:
+        keymap = keyconfig.keymaps.get('Screen') or keyconfig.keymaps.new(name='Screen')
+        kmi = keymap.keymap_items.new(CAM_MANAGER_OT_render_to_new_slot.bl_idname, type='F12', value='PRESS')
+        _auto_cycle_keymap_items.append((keymap, kmi))
+    elif not enabled:
+        for keymap, kmi in _auto_cycle_keymap_items:
+            try:
+                keymap.keymap_items.remove(kmi)
+            except (ReferenceError, RuntimeError):
+                pass
+        _auto_cycle_keymap_items.clear()
 
 
 def set_auto_cycle_render_slot(enabled):
-    """Add or remove the post-render slot-cycling handler."""
-    handlers = bpy.app.handlers.render_complete
-    if enabled:
-        if _cycle_render_slot_handler not in handlers:
-            handlers.append(_cycle_render_slot_handler)
-    elif _cycle_render_slot_handler in handlers:
-        handlers.remove(_cycle_render_slot_handler)
+    """Turn rendering into a new slot on or off."""
+    pairs = (
+        (bpy.app.handlers.render_init, _record_render_slot),
+        (bpy.app.handlers.load_post, _forget_rendered_slots),
+    )
+    for handlers, func in pairs:
+        if enabled and func not in handlers:
+            handlers.append(func)
+        elif not enabled and func in handlers:
+            handlers.remove(func)
+    _set_f12_override(enabled)
+    if not enabled:
+        _forget_rendered_slots()
+
+
+class CAM_MANAGER_OT_render_to_new_slot(bpy.types.Operator):
+    """Render the current frame into a Render Result slot that doesn't hold a render yet"""
+    bl_idname = "cam_manager.render_to_new_slot"
+    bl_label = "Render Image (New Slot)"
+    bl_description = ("Render the current frame into a render slot that doesn't hold a render yet, "
+                      "so earlier renders are kept")
+
+    def execute(self, context):
+        ensure_free_render_slot_active()
+        return bpy.ops.render.render(use_viewport=True)
+
+    def invoke(self, context, event):
+        ensure_free_render_slot_active()
+        return bpy.ops.render.render('INVOKE_DEFAULT', use_viewport=True)
 
 
 def make_collection(collection_name, parent_collection):
@@ -447,9 +539,13 @@ class CAM_MANAGER_OT_switch_camera(bpy.types.Operator):
 
             scene.camera_list_index = idx
 
-            if camera.data.slot <= len(bpy.data.images['Render Result'].render_slots):
+            if is_auto_cycle_render_slot_enabled():
+                # Auto-cycle decides the slot: never go back to one that
+                # already holds a render (issue #64).
+                ensure_free_render_slot_active()
+            elif _render_result_slots() is not None and camera.data.slot <= len(_render_result_slots()):
                 # subtract by one to make 1 the first slot 'Slot1' and not user input 0
-                bpy.data.images['Render Result'].render_slots.active_index = camera.data.slot - 1
+                _render_result_slots().active_index = camera.data.slot - 1
 
             if scene.output_use_cam_name:
                 old_path = bpy.context.scene.render.filepath
@@ -600,7 +696,10 @@ def render_slot_update_funce(self, context):
     """
 
     new_slot = False
-    render_result = bpy.data.images['Render Result']
+    render_result = bpy.data.images.get('Render Result')
+    if render_result is None:
+        # Nothing rendered yet; the slot is applied when this camera renders.
+        return
 
     # Create new slot if the input is higher than the current number of render slots
     if self.slot > len(bpy.data.images['Render Result'].render_slots):
@@ -707,6 +806,7 @@ class CAM_MANAGER_OT_reload_addon(bpy.types.Operator):
 
 
 classes = (
+    CAM_MANAGER_OT_render_to_new_slot,
     CAM_MANAGER_OT_reload_addon,
     CAM_MANAGER_OT_camera_to_collection,
     CAM_MANAGER_OT_create_collection,
