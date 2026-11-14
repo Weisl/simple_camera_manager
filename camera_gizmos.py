@@ -321,13 +321,13 @@ class CameraFocusDistance(GizmoGroup):
 # and visuals still need refinement (feel, sizing, discoverability) before this
 # is considered done.
 
-# Positioned exactly at the camera's own location, a roll ring would sit right
-# at the eye point - invisible while looking through that same camera, since
-# anything drawn at the viewpoint itself projects to zero size. Offset it
-# forward (local -Z, the camera's view direction) by a fixed amount in the
-# gizmo's own auto-scaled space so it stays visible both from outside the
-# camera and from within its own view.
-_ROLL_GIZMO_FORWARD_OFFSET = -1.2
+# The ring is placed in world units in front of the camera, not in Blender's
+# auto-scaled gizmo space: auto-scaling sizes a gizmo by its distance from the
+# viewpoint, and in camera view the viewpoint *is* the camera, so an
+# auto-scaled ring (and any offset inside that space) shrinks to nothing and
+# can't be seen or grabbed. See _roll_ring_offset_matrix().
+_ROLL_RING_FRAME_FILL = 0.75  # ring radius as a fraction of the frame's shorter half-side
+_ROLL_RING_MIN_CLIP_FACTOR = 1.5  # keep the ring this far beyond clip_start
 
 _ROLL_RING_SEGMENTS = 48
 _ROLL_RING_RADIUS = 1.0
@@ -378,6 +378,37 @@ def _get_camera_roll(cam_ob):
     return angle
 
 
+def _roll_ring_offset_matrix(cam_ob, scene):
+    """Matrix (in the camera's normalized local space) that centers the unit
+    roll ring on the camera frame and scales it to fit inside the frame.
+
+    The ring sits at the depth of the camera's drawn frame (cam.view_frame),
+    or just beyond clip_start if that is further, so it is visible both from
+    outside the camera and while looking through it. For a perspective camera
+    the frame is scaled to that depth, so the ring always fills the same part
+    of the camera view regardless of focal length or sensor size.
+    """
+    cam = cam_ob.data
+    corners = cam.view_frame(scene=scene)
+    center = sum(corners, mathutils.Vector()) / 4.0
+    half_w = max(abs(c.x - center.x) for c in corners)
+    half_h = max(abs(c.y - center.y) for c in corners)
+    frame_depth = abs(center.z)
+
+    depth = max(frame_depth, cam.clip_start * _ROLL_RING_MIN_CLIP_FACTOR)
+    if cam.clip_end > cam.clip_start:
+        depth = min(depth, (cam.clip_start + cam.clip_end) / 2.0)
+
+    if cam.type == 'ORTHO' or frame_depth < 1e-6:
+        factor = 1.0
+    else:
+        factor = depth / frame_depth
+
+    radius = _ROLL_RING_FRAME_FILL * min(half_w, half_h) * factor
+    location = mathutils.Vector((center.x * factor, center.y * factor, -depth))
+    return mathutils.Matrix.Translation(location) @ mathutils.Matrix.Scale(radius, 4)
+
+
 def _apply_camera_roll_delta(cam_ob, init_quat, delta):
     """Roll the camera by `delta` radians around its own current view axis, starting
     from the orientation captured in `init_quat` - post-multiplying a local -Z
@@ -414,15 +445,10 @@ class CameraRollWidget(Gizmo):
         "sign",
     )
 
-    def _apply_forward_offset(self):
-        self.matrix_offset.col[3][2] = _ROLL_GIZMO_FORWARD_OFFSET
-
     def draw(self, context):
-        self._apply_forward_offset()
         self.draw_custom_shape(self.custom_shape)
 
     def draw_select(self, context, select_id):
-        self._apply_forward_offset()
         self.draw_custom_shape(self.custom_shape, select_id=select_id)
 
     def setup(self):
@@ -515,16 +541,26 @@ class CameraRotationGizmo(GizmoGroup):
         gizmo.alpha_highlight = 1.0
 
         gizmo.line_width = 3
-        gizmo.scale_basis = 1.0
-
-        gizmo.matrix_basis = camera.matrix_world.normalized()
+        # Sized in world units by _roll_ring_offset_matrix(), not by the
+        # view-distance auto-scaling, which collapses it in camera view.
+        gizmo.use_draw_scale = False
 
         self.roll_gizmo = gizmo
+        self._update_matrix(context)
 
-    def refresh(self, context):
+    def _update_matrix(self, context):
         camera = context.object
         self.cam = camera
         self.roll_gizmo.matrix_basis = camera.matrix_world.normalized()
+        self.roll_gizmo.matrix_offset = _roll_ring_offset_matrix(camera, context.scene)
+
+    def refresh(self, context):
+        self._update_matrix(context)
+
+    def draw_prepare(self, context):
+        # Lens, sensor, clipping or render resolution can change without a
+        # refresh; recomputing per redraw keeps the ring inside the frame.
+        self._update_matrix(context)
 
 
 classes = (
