@@ -51,7 +51,17 @@ jobs:
         run: |
           mkdir -p blender-download
           pip install blender-downloader
-          blender-downloader ${{ matrix.blender-version }} --extract --quiet --output-directory blender-download
+          # download.blender.org intermittently answers 403 Forbidden when many CI
+          # jobs hit it at once, so retry with an increasing wait before failing.
+          for attempt in 1 2 3 4 5; do
+            if blender-downloader ${{ matrix.blender-version }} --extract --quiet --output-directory blender-download; then
+              exit 0
+            fi
+            echo "Download attempt $attempt failed, retrying in $((attempt * 30))s" >&2
+            rm -rf blender-download/*
+            sleep $((attempt * 30))
+          done
+          exit 1
 
       - name: Locate Blender executable
         id: blender
