@@ -165,6 +165,32 @@ custom_shape_verts_02 = (
 )
 
 
+# Gizmos the dolly zoom modal operator lets the user drag while it is running.
+# A modal operator sees mouse events before any gizmo does, so it has to know
+# when the mouse is over one of these to pass the click through instead of
+# treating it as "confirm". Entries become invalid when Blender frees the
+# gizmo; those are pruned on access.
+_interactive_gizmos = []
+
+
+def _track_interactive_gizmo(gizmo):
+    _interactive_gizmos.append(gizmo)
+
+
+def any_interactive_gizmo_highlighted():
+    """True if the mouse is over one of this add-on's draggable gizmos."""
+    alive = []
+    highlighted = False
+    for gizmo in _interactive_gizmos:
+        try:
+            highlighted = highlighted or gizmo.is_highlight
+        except ReferenceError:
+            continue
+        alive.append(gizmo)
+    _interactive_gizmos[:] = alive
+    return highlighted
+
+
 class MyCustomShapeWidget(Gizmo):
     """Custom gizmo widget that draws the dolly zoom target frame and handles drag interaction."""
 
@@ -288,6 +314,7 @@ class CameraFocusDistance(GizmoGroup):
         gizmo.matrix_basis = camera.matrix_world.normalized()
 
         self.distance_gizmo = gizmo
+        _track_interactive_gizmo(gizmo)
 
     def refresh(self, context):
         camera = context.object
@@ -546,6 +573,7 @@ class CameraRotationGizmo(GizmoGroup):
         gizmo.use_draw_scale = False
 
         self.roll_gizmo = gizmo
+        _track_interactive_gizmo(gizmo)
         self._update_matrix(context)
 
     def _update_matrix(self, context):
