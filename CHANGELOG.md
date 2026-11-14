@@ -32,10 +32,13 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
 - [#66](https://github.com/Weisl/simple_camera_manager/issues/66): Added a
   **camera roll gizmo**. Drag the ring to roll the camera around its view
   axis; hold Shift to snap in 5° steps.
-- [#64](https://github.com/Weisl/simple_camera_manager/issues/64): Added an
-  option to **automatically cycle Render Result slots** after each render, so
-  repeated renders no longer overwrite each other (off by default, enable it
-  in the add-on preferences).
+- [#64](https://github.com/Weisl/simple_camera_manager/issues/64): Added
+  **Render to New Slot** (off by default, enable it in the add-on
+  preferences). Every render goes into a Render Result slot that doesn't
+  hold a render yet, picked before the render starts, so you see the new
+  render and earlier ones are kept, also when rendering the same camera
+  again. A slot is added when all are used. Works for F12, the camera
+  list's Render button and Batch Render.
 - [#157](https://github.com/Weisl/simple_camera_manager/issues/157): The
   update checker now shows a dismissible banner when a newer release is
   available, and a **Check for Updates** button in the add-on preferences

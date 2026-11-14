@@ -246,9 +246,10 @@ class CamManagerAddonPreferences(bpy.types.AddonPreferences):
         update=update_popup_size)
 
     auto_cycle_render_slot: bpy.props.BoolProperty(
-        name="Auto-Cycle Render Slot",
-        description="After every render (F12 or via this addon), automatically advance to the "
-                     "next Render Result slot so repeated renders don't overwrite each other",
+        name="Render to New Slot",
+        description="Every render (F12 or via this addon) goes into a Render Result slot that "
+                    "doesn't hold a render yet, adding a slot when all are used, so earlier "
+                    "renders are kept. F12 is taken over by this addon while this is on",
         default=False,
         update=update_auto_cycle_render_slot)
 
