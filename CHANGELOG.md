@@ -38,8 +38,9 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
   update checker now shows a dismissible banner when a newer release is
   available, and a **Check for Updates** button in the add-on preferences
   checks on demand.
-- The pie menu now shows all of Blender's camera composition guides,
-  including the golden and harmony triangles and safe areas.
+- [#167](https://github.com/Weisl/simple_camera_manager/issues/167): The pie
+  menu now shows all of Blender's camera composition guides, including the
+  golden and harmony triangles and safe areas.
 - [#165](https://github.com/Weisl/simple_camera_manager/issues/165): Added a
   **Show** button next to the "Camera is hidden" warning. It unhides the
   camera and only the collections containing it.
