@@ -34,6 +34,9 @@ _PRESET_SUBDIR = "simple_camera_manager/camera"
 
 
 class TestCameraPresetRoundTrip(unittest.TestCase):
+    """A saved lens preset restores camera type, focal length / ortho scale
+    and sensor, and leaves every other camera setting alone."""
+
     def setUp(self):
         self.camera_data = bpy.data.cameras.new('PresetTestCam')
         self.camera_obj = bpy.data.objects.new('PresetTestCam', self.camera_data)
@@ -41,19 +44,13 @@ class TestCameraPresetRoundTrip(unittest.TestCase):
         self._orig_scene_camera = bpy.context.scene.camera
         bpy.context.scene.camera = self.camera_obj
 
-        self.world_a = bpy.data.worlds.new('PresetTestWorldA')
-        self.world_b = bpy.data.worlds.new('PresetTestWorldB')
-
         cam = self.camera_data
         cam.type = 'PERSP'
         cam.lens = 85.0
-        cam.clip_start = 0.5
-        cam.clip_end = 500.0
-        cam.exposure = 1.5
-        cam.dof.use_dof = True
-        cam.dof.focus_distance = 3.0
-        cam.show_rotation_gizmo = True
-        cam.world = self.world_a
+        cam.ortho_scale = 7.0
+        cam.sensor_fit = 'VERTICAL'
+        cam.sensor_width = 44.0
+        cam.sensor_height = 33.0
 
         self._preset_filepath = None
 
@@ -76,12 +73,6 @@ class TestCameraPresetRoundTrip(unittest.TestCase):
         bpy.context.scene.camera = self._orig_scene_camera
         bpy.data.objects.remove(self.camera_obj, do_unlink=True)
         bpy.data.cameras.remove(self.camera_data)
-        for world in (self.world_a, self.world_b):
-            try:
-                if world.users == 0:
-                    bpy.data.worlds.remove(world)
-            except ReferenceError:
-                pass  # already removed by the test itself
 
     def _save_preset(self):
         result = bpy.ops.cam_manager.camera_preset_add(name=_PRESET_NAME)
@@ -91,55 +82,56 @@ class TestCameraPresetRoundTrip(unittest.TestCase):
         self._preset_filepath = bpy.utils.preset_find(filename, _PRESET_SUBDIR, ext=".py")
         self.assertIsNotNone(self._preset_filepath, "preset file was not written to disk")
 
-    def test_save_then_apply_restores_values(self):
-        self._save_preset()
-
-        cam = self.camera_data
-        cam.lens = 24.0
-        cam.clip_start = 0.01
-        cam.clip_end = 10.0
-        cam.exposure = 0.0
-        cam.dof.use_dof = False
-        cam.dof.focus_distance = 1.0
-        cam.show_rotation_gizmo = False
-        cam.world = self.world_b
-
+    def _apply_preset(self):
         result = bpy.ops.script.execute_preset(
             filepath=self._preset_filepath, menu_idname="CAM_MANAGER_MT_camera_presets")
         self.assertEqual(result, {'FINISHED'})
 
+    def test_saves_exactly_the_lens_fields(self):
+        self.assertEqual(
+            _addon.camera_presets.CAM_MANAGER_OT_camera_preset_add.preset_values,
+            [f"cam.{f}" for f in _addon.camera_presets.LENS_PRESET_FIELDS],
+        )
+
+    def test_save_then_apply_restores_lens_values(self):
+        self._save_preset()
+
+        cam = self.camera_data
+        cam.type = 'ORTHO'
+        cam.lens = 24.0
+        cam.ortho_scale = 2.0
+        cam.sensor_fit = 'AUTO'
+        cam.sensor_width = 36.0
+        cam.sensor_height = 24.0
+
+        self._apply_preset()
+
+        self.assertEqual(cam.type, 'PERSP')
         self.assertEqual(cam.lens, 85.0)
-        self.assertEqual(cam.clip_start, 0.5)
-        self.assertEqual(cam.clip_end, 500.0)
+        self.assertEqual(cam.ortho_scale, 7.0)
+        self.assertEqual(cam.sensor_fit, 'VERTICAL')
+        self.assertEqual(cam.sensor_width, 44.0)
+        self.assertEqual(cam.sensor_height, 33.0)
+
+    def test_apply_leaves_other_settings_alone(self):
+        self._save_preset()
+
+        cam = self.camera_data
+        cam.clip_start = 0.01
+        cam.clip_end = 10.0
+        cam.exposure = 1.5
+        cam.dof.use_dof = True
+        cam.dof.focus_distance = 3.0
+        cam.resolution_overwrite = True
+
+        self._apply_preset()
+
+        self.assertAlmostEqual(cam.clip_start, 0.01, places=5)
+        self.assertEqual(cam.clip_end, 10.0)
         self.assertEqual(cam.exposure, 1.5)
         self.assertTrue(cam.dof.use_dof)
         self.assertEqual(cam.dof.focus_distance, 3.0)
-        self.assertTrue(cam.show_rotation_gizmo)
-        self.assertEqual(cam.world, self.world_a)
-
-    def test_apply_still_applies_earlier_fields_when_world_is_missing(self):
-        self._save_preset()
-
-        # Simulate applying this preset in a file that never had this World -
-        # cam.world is captured by name and re-resolved via bpy.data.worlds[...]
-        # on apply, so removing it here reproduces that case.
-        bpy.data.worlds.remove(self.world_a)
-
-        cam = self.camera_data
-        cam.lens = 24.0
-        cam.exposure = 0.0
-
-        # ExecutePreset.execute() itself completes and reports an ERROR
-        # rather than returning CANCELLED - but calling it via bpy.ops still
-        # raises RuntimeError to the caller once any ERROR-level report was
-        # made, *after* execute() (and every field before "cam.world" in
-        # preset_values) has already run.
-        with self.assertRaises(RuntimeError):
-            bpy.ops.script.execute_preset(
-                filepath=self._preset_filepath, menu_idname="CAM_MANAGER_MT_camera_presets")
-
-        self.assertEqual(cam.lens, 85.0)
-        self.assertEqual(cam.exposure, 1.5)
+        self.assertTrue(cam.resolution_overwrite)
 
 
 class TestSensorFormatPresets(unittest.TestCase):
@@ -189,6 +181,44 @@ class TestSensorFormatPresets(unittest.TestCase):
         bpy.context.scene.camera = None
         result = bpy.ops.cam_manager.apply_sensor_preset(filepath=self._preset_files()[0])
         self.assertEqual(result, {'CANCELLED'})
+
+
+class TestBuiltinCameraPresets(unittest.TestCase):
+    """Built-in presets must fully define the camera type, so switching from
+    the orthographic preset to a perspective one turns the camera back to
+    perspective."""
+
+    def setUp(self):
+        self.camera_data = bpy.data.cameras.new('BuiltinPresetTestCam')
+        self.camera_obj = bpy.data.objects.new('BuiltinPresetTestCam', self.camera_data)
+        bpy.context.scene.collection.objects.link(self.camera_obj)
+        self._orig_scene_camera = bpy.context.scene.camera
+        bpy.context.scene.camera = self.camera_obj
+
+    def tearDown(self):
+        bpy.context.scene.camera = self._orig_scene_camera
+        bpy.data.objects.remove(self.camera_obj, do_unlink=True)
+        bpy.data.cameras.remove(self.camera_data)
+
+    def test_every_preset_sets_camera_type(self):
+        for name, values in _addon.camera_presets.BUILTIN_CAMERA_PRESETS.items():
+            self.assertIn('type', values, f"'{name}' does not set the camera type")
+
+    def test_perspective_preset_after_orthographic_restores_perspective(self):
+        for name, values in _addon.camera_presets.BUILTIN_CAMERA_PRESETS.items():
+            if values.get('type', 'PERSP') != 'PERSP':
+                continue
+            bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Studio Orthographic')
+            self.assertEqual(self.camera_data.type, 'ORTHO')
+            result = bpy.ops.cam_manager.apply_builtin_camera_preset(preset=name)
+            self.assertEqual(result, {'FINISHED'}, f"'{name}' failed")
+            self.assertEqual(self.camera_data.type, 'PERSP',
+                             f"'{name}' left the camera orthographic")
+
+    def test_builtin_presets_only_set_lens_fields(self):
+        allowed = set(_addon.camera_presets.LENS_PRESET_FIELDS)
+        for name, values in _addon.camera_presets.BUILTIN_CAMERA_PRESETS.items():
+            self.assertLessEqual(set(values), allowed, f"'{name}' sets fields outside the Lens box")
 
 
 if __name__ == "__main__":
