@@ -206,7 +206,7 @@ class TestApplyBuiltinCameraPreset(unittest.TestCase):
             self.assertEqual(result, {'FINISHED'}, f"preset {name!r} failed to apply")
 
     def test_full_frame_50mm_sets_expected_values(self):
-        bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm f/1.8')
+        bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm Standard f/1.8')
         cam = self.camera_data
         self.assertEqual(cam.lens, 50.0)
         self.assertEqual(cam.sensor_width, 36.0)
@@ -225,7 +225,7 @@ class TestApplyBuiltinCameraPreset(unittest.TestCase):
 
     def test_no_scene_camera_reports_warning_not_crash(self):
         bpy.context.scene.camera = None
-        result = bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm f/1.8')
+        result = bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm Standard f/1.8')
         self.assertEqual(result, {'CANCELLED'})
 
 

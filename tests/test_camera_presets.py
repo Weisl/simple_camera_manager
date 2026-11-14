@@ -142,6 +142,55 @@ class TestCameraPresetRoundTrip(unittest.TestCase):
         self.assertEqual(cam.exposure, 1.5)
 
 
+class TestSensorFormatPresets(unittest.TestCase):
+    """The "Sensor Format" dropdown reuses Blender's native camera presets,
+    which write to bpy.context.camera - only set in the Properties Editor.
+    They must still apply to the scene camera from the N-panel/pie menu."""
+
+    def setUp(self):
+        self.camera_data = bpy.data.cameras.new('SensorPresetTestCam')
+        self.camera_obj = bpy.data.objects.new('SensorPresetTestCam', self.camera_data)
+        bpy.context.scene.collection.objects.link(self.camera_obj)
+        self._orig_scene_camera = bpy.context.scene.camera
+        bpy.context.scene.camera = self.camera_obj
+
+    def tearDown(self):
+        bpy.context.scene.camera = self._orig_scene_camera
+        bpy.data.objects.remove(self.camera_obj, do_unlink=True)
+        bpy.data.cameras.remove(self.camera_data)
+
+    def _preset_files(self):
+        files = []
+        for path in bpy.utils.preset_paths(_addon.camera_presets.CAM_MANAGER_MT_sensor_presets.preset_subdir):
+            files += [os.path.join(path, f) for f in sorted(os.listdir(path)) if f.endswith('.py')]
+        return files
+
+    def test_menu_is_registered(self):
+        self.assertTrue(_addon.camera_presets.CAM_MANAGER_MT_sensor_presets.is_registered)
+
+    def test_native_presets_are_found(self):
+        self.assertTrue(self._preset_files(), "no native Blender camera presets found")
+
+    def test_every_native_preset_applies_to_scene_camera(self):
+        for filepath in self._preset_files():
+            self.camera_data.sensor_fit = 'AUTO'
+            result = bpy.ops.cam_manager.apply_sensor_preset(filepath=filepath)
+            self.assertEqual(result, {'FINISHED'}, f"{os.path.basename(filepath)} failed")
+            self.assertNotEqual(self.camera_data.sensor_fit, 'AUTO',
+                                f"{os.path.basename(filepath)} did not reach the scene camera")
+
+    def test_aps_c_sets_expected_sensor_size(self):
+        aps_c = next(f for f in self._preset_files() if os.path.basename(f) == 'APS-C.py')
+        bpy.ops.cam_manager.apply_sensor_preset(filepath=aps_c)
+        self.assertAlmostEqual(self.camera_data.sensor_width, 23.6, places=3)
+        self.assertAlmostEqual(self.camera_data.sensor_height, 15.6, places=3)
+
+    def test_no_scene_camera_cancels(self):
+        bpy.context.scene.camera = None
+        result = bpy.ops.cam_manager.apply_sensor_preset(filepath=self._preset_files()[0])
+        self.assertEqual(result, {'CANCELLED'})
+
+
 if __name__ == "__main__":
     try:
         idx = sys.argv.index('--')
