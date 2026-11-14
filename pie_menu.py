@@ -130,7 +130,7 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
     cam = cam_obj.data
 
     # Lens: the lens presets and every field they set (camera type, focal
-    # length or ortho scale, sensor), so applying a preset never changes
+    # length or ortho scale, sensor, resolution), so applying a preset never changes
     # anything that isn't shown right here.
     box = layout.box()
     box.label(text="Lens")
@@ -163,9 +163,9 @@ def draw_camera_settings(context, layout, cam_obj, use_subpanel=False):
         col.prop(cam, "sensor_width", text="Sensor Width")
         col.prop(cam, "sensor_height", text="Sensor Height")
 
-    # Resolution
-    row = layout.row(align=True)
-    col = layout.column(align=True)
+    # Resolution (also set by the lens presets)
+    row = box.row(align=True)
+    col = box.column(align=True)
     row.prop(cam, "resolution_overwrite")
 
     row = col.row(align=True)

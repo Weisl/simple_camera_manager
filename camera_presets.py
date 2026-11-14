@@ -8,9 +8,14 @@ from bl_operators.presets import AddPresetBase
 #
 # Every lens preset, built-in or saved, sets exactly the same fields, all of
 # which are visible in the Lens box (see LENS_PRESET_FIELDS):
-#   camera type, focal length (or ortho scale), sensor fit, width and height.
-# Clipping, depth of field, resolution and lighting are deliberately left
-# alone so a preset never changes settings the user can't see next to it.
+#   camera type, focal length (or ortho scale), sensor fit, width and height,
+#   and the camera resolution (turning Resolution Overwrite on).
+# Clipping, depth of field and lighting are deliberately left alone so a
+# preset never changes settings the user can't see next to it.
+#
+# Built-in presets render at 1920 px wide in the sensor's aspect ratio
+# (3:2 or 4:3), so the image shows the whole sensor; the orthographic preset
+# uses 1920 x 1080.
 #
 # Physical sensor sizes match real-world formats (and Blender's own bundled
 # camera presets under scripts/presets/camera/*.py):
@@ -20,32 +25,43 @@ from bl_operators.presets import AddPresetBase
 #   Medium Format      44.0 x 33.0 mm  (Hasselblad X / Fujifilm GFX)
 #   Super 35 (cinema)  24.89 x 18.66 mm (ARRI/RED-class digital cinema gauge)
 #   1-inch (compact)   13.2 x 8.8 mm   (Sony RX100-class / drone / vlog cameras)
-LENS_PRESET_FIELDS = ('type', 'lens', 'ortho_scale', 'sensor_fit', 'sensor_width', 'sensor_height')
+#
+# resolution_overwrite comes before resolution: setting the resolution also
+# updates the scene's render resolution when this is the scene camera.
+LENS_PRESET_FIELDS = ('type', 'lens', 'ortho_scale', 'sensor_fit', 'sensor_width', 'sensor_height',
+                      'resolution_overwrite', 'resolution')
+
+_RES_3_2 = (1920, 1280)
+_RES_4_3 = (1920, 1440)
 
 
-def _perspective(lens, sensor_width, sensor_height):
+def _perspective(lens, sensor_width, sensor_height, resolution):
     return {
         'type': 'PERSP',
         'lens': lens,
         'sensor_fit': 'HORIZONTAL',
         'sensor_width': sensor_width,
         'sensor_height': sensor_height,
+        'resolution_overwrite': True,
+        'resolution': resolution,
     }
 
 
 BUILTIN_CAMERA_PRESETS = {
-    'Full Frame 24mm Wide': _perspective(24.0, 36.0, 24.0),
-    'Full Frame 50mm Standard': _perspective(50.0, 36.0, 24.0),
-    'Full Frame 85mm Portrait': _perspective(85.0, 36.0, 24.0),
-    'APS-C 90mm Macro': _perspective(90.0, 22.3, 14.9),
-    'APS-C 135mm Telephoto': _perspective(135.0, 22.3, 14.9),
-    'Micro Four Thirds 12mm Wide': _perspective(12.0, 17.3, 13.0),
-    'Medium Format 80mm Standard': _perspective(80.0, 44.0, 33.0),
-    'Super 35 32mm Cinema': _perspective(32.0, 24.89, 18.66),
-    'Compact 1-inch 9mm Vlog': _perspective(9.0, 13.2, 8.8),
+    'Full Frame 24mm Wide': _perspective(24.0, 36.0, 24.0, _RES_3_2),
+    'Full Frame 50mm Standard': _perspective(50.0, 36.0, 24.0, _RES_3_2),
+    'Full Frame 85mm Portrait': _perspective(85.0, 36.0, 24.0, _RES_3_2),
+    'APS-C 90mm Macro': _perspective(90.0, 22.3, 14.9, _RES_3_2),
+    'APS-C 135mm Telephoto': _perspective(135.0, 22.3, 14.9, _RES_3_2),
+    'Micro Four Thirds 12mm Wide': _perspective(12.0, 17.3, 13.0, _RES_4_3),
+    'Medium Format 80mm Standard': _perspective(80.0, 44.0, 33.0, _RES_4_3),
+    'Super 35 32mm Cinema': _perspective(32.0, 24.89, 18.66, _RES_4_3),
+    'Compact 1-inch 9mm Vlog': _perspective(9.0, 13.2, 8.8, _RES_3_2),
     'Studio Orthographic': {
         'type': 'ORTHO',
         'ortho_scale': 5.0,
+        'resolution_overwrite': True,
+        'resolution': (1920, 1080),
     },
 }
 
@@ -56,7 +72,7 @@ class CAM_MANAGER_OT_apply_builtin_camera_preset(Operator):
     """Apply one of Simple Camera Manager's built-in lens presets"""
     bl_idname = "cam_manager.apply_builtin_camera_preset"
     bl_label = "Built-in Lens Preset"
-    bl_description = "Set the camera type, focal length and sensor size of the active scene camera"
+    bl_description = "Set the camera type, focal length, sensor size and resolution of the active scene camera"
     bl_options = {'REGISTER', 'UNDO'}
 
     preset: bpy.props.EnumProperty(
@@ -78,7 +94,7 @@ class CAM_MANAGER_OT_apply_builtin_camera_preset(Operator):
 
 
 class CAM_MANAGER_OT_camera_preset_add(AddPresetBase, Operator):
-    """Save or remove a lens preset (camera type, focal length and sensor size)"""
+    """Save or remove a lens preset (camera type, focal length, sensor size and resolution)"""
     bl_idname = "cam_manager.camera_preset_add"
     bl_label = "Add Lens Preset"
     preset_menu = "CAM_MANAGER_MT_camera_presets"

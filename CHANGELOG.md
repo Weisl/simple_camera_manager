@@ -21,9 +21,10 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
 
 - [#161](https://github.com/Weisl/simple_camera_manager/issues/161): Added
   **Lens Presets** in a new **Lens** box. A preset sets the camera type,
-  focal length (or orthographic scale) and sensor size, all shown in the
-  same box. Choose from built-in lenses (Full Frame, APS-C, Micro Four
-  Thirds, Medium Format, Super 35, 1-inch, orthographic) or your own: use
+  focal length (or orthographic scale), sensor size and resolution, all
+  shown in the same box. Choose from built-in lenses (Full Frame, APS-C,
+  Micro Four Thirds, Medium Format, Super 35, 1-inch, orthographic), which
+  render at 1920 px wide in the sensor's aspect ratio, or your own: use
   **+** / **−** to save or remove the active camera's lens.
 - Added a **Sensor Format** dropdown to the Lens box that applies Blender's
   built-in sensor sizes (Full Frame, APS-C, MFT, Arri, RED, Blackmagic,
