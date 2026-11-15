@@ -11,6 +11,7 @@ from bpy.types import (
 from bpy_extras.view3d_utils import location_3d_to_region_2d
 from . import dolly_zoom_modal
 from .dolly_zoom_modal import calculate_target_width
+from .focus_distance_modal import format_length
 
 import mathutils
 
@@ -267,7 +268,7 @@ class MyCustomShapeWidget(Gizmo):
         # Set value as a Tuple, it doesn't work otherwise
         self.target_set_value("offset", (value,))
 
-        context.area.header_text_set("My Gizmo: %.4f" % value)
+        context.area.header_text_set("Target Distance: %s" % format_length(context.scene, value))
         return {'RUNNING_MODAL'}
 
 
