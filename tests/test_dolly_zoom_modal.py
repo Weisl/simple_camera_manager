@@ -74,6 +74,7 @@ class TestDollyZoomModal(unittest.TestCase):
         self.start_location = self.camera_obj.location.copy()
 
     def tearDown(self):
+        dolly._running.discard(id(self.op))
         bpy.data.objects.remove(self.camera_obj, do_unlink=True)
         bpy.data.cameras.remove(self.camera_data)
 
@@ -202,6 +203,18 @@ class TestDollyZoomModal(unittest.TestCase):
         self.assertAlmostEqual(self.camera_data.dolly_zoom_target_distance, 10.0, places=4)
         self.assertAlmostEqual(self.camera_data.dolly_zoom_target_scale, 1.23, places=4)
         self.assertFalse(self.camera_data.show_dolly_gizmo)
+
+    def test_escape_restores_roll_made_with_the_gizmo(self):
+        start_rotation = self.camera_obj.rotation_euler.copy()
+        self.camera_obj.rotation_euler.y += math.radians(20)  # as the roll gizmo would
+        self._send('ESC', 'PRESS')
+        for got, expected in zip(self.camera_obj.rotation_euler, start_rotation):
+            self.assertAlmostEqual(got, expected, places=5)
+
+    def test_is_running_while_active_only(self):
+        self.assertTrue(dolly.is_running())
+        self._send('RET', 'PRESS')
+        self.assertFalse(dolly.is_running())
 
     def test_navigation_passes_through_and_stops_the_active_value(self):
         self._send('F', 'RELEASE')

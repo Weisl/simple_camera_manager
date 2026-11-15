@@ -32,7 +32,8 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
   pie menu.
 - [#66](https://github.com/Weisl/simple_camera_manager/issues/66): Added a
   **camera roll gizmo**. Drag the ring to roll the camera around its view
-  axis; hold Shift to snap in 5° steps.
+  axis; hold Ctrl to snap in 5° steps. Rolls can be undone with Ctrl+Z,
+  as can drags of the Dolly Zoom target gizmo.
 - [#64](https://github.com/Weisl/simple_camera_manager/issues/64): Added
   **Render to New Slot** (off by default, enable it in the add-on
   preferences). Every render goes into a Render Result slot that doesn't

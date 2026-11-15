@@ -26,6 +26,15 @@ def generate_target_location(camera, distance):
     return target_location
 
 
+# Running Dolly Zoom operators. While one runs, the gizmos don't push their
+# own undo steps: the operator's single undo step covers the whole session.
+_running = set()
+
+
+def is_running():
+    return bool(_running)
+
+
 def set_cam_values(cam_dic, camera, distance):
     """Store current camera settings in a dictionary """
     # Initial Camera Position and Location Matrix
@@ -281,6 +290,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         self._redraw(context)
 
     def _finish(self, context):
+        _running.discard(id(self))
         self.camera.data.show_dolly_gizmo = self.initial_gizmo_state
         context.area.header_text_set(None)
         handle = getattr(self, '_handle', None)
@@ -301,7 +311,10 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         self.initial_gizmo_state = cam.show_dolly_gizmo
         self.initial_target_scale = cam.dolly_zoom_target_scale
         self.initial_lens = cam.lens
+        # The roll gizmo can be used while the operator runs.
+        self.initial_rotation = camera.rotation_euler.copy()
         cam.show_dolly_gizmo = True
+        _running.add(id(self))
 
         self.mode = None
         self.ignore_input = False
@@ -365,6 +378,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         if event.type in {'RIGHTMOUSE', 'ESC'} and event.value == 'PRESS':
             init = self.initial_cam_settings
             camera.location = init['cam_location']
+            camera.rotation_euler = self.initial_rotation
             camera.data.lens = self.initial_lens
             camera.data.dolly_zoom_target_distance = init['distance']
             camera.data.dolly_zoom_target_scale = self.initial_target_scale
