@@ -13,9 +13,11 @@ release history over time.
 
 ## Simple Camera Manager v1.8.0
 
-This release adds camera presets, a camera roll gizmo, automatic render slot
-cycling, and a reworked update checker. It is tested on Blender 4.2 through
-5.3.
+This release adds full Blender 5.3 support, lens presets, a camera roll
+gizmo, a Focus Distance tool, a camera popover for the scene camera, and
+automatic render slot cycling. Dolly Zoom and the Alt+C pie menu were
+reworked, and Batch Render can now be stopped with Esc. It is tested on
+Blender 4.2 through 5.3.
 
 ### Features & Improvements
 
@@ -67,17 +69,18 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
   the **Alt+C pie menu**. A pie menu closes after any click, so it
   now only holds one-click actions: **Previous / Next Camera**, **View
   Camera**, **New Camera from View** (or **Align Camera to View** in camera
-  view), **Dolly Zoom**, and a small box with lens preset, focal length,
-  resolution and composition guide menus, Passepartout, Lock to View, Lock
-  Camera and Select. **Camera Settings…** opens the new camera popover.
+  view), **Dolly Zoom**, **Focus Distance**, and a small box with lens
+  preset, focal length, resolution and composition guide menus,
+  Passepartout, Lock to View, Lock Camera, Select and a Background Images
+  toggle. **Camera Settings…** opens the new camera popover.
 - [#176](https://github.com/Weisl/simple_camera_manager/issues/176): Added a
   **camera popover** for the scene camera. It stays open while you
   change settings and has Camera, Background Image, Viewport Display and
   Render sections. The Background Image section shows each image's
   visibility, opacity, front/back and framing, with a checkbox to show or
   hide all of them. Open the popover from the camera button in the 3D
-  Viewport header (can be turned off in the add-on preferences) or from the
-  pie menu, which also has a one-click Background Images toggle.
+  Viewport header (can be turned off in the add-on preferences) or from
+  **Camera Settings…** in the pie menu.
 - [#177](https://github.com/Weisl/simple_camera_manager/issues/177): Added
   **Focus Distance**, a modal tool that works like Dolly Zoom. **D**
   drags the focus distance, **A** the f-stop, and **E** focuses on the surface
@@ -86,7 +89,6 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
   off), and dashed frames mark the near and far limits of the sharp range
   (**R** toggles them). Start it from the pie menu, the camera popover or the
   sidebar.
-- Added Blender 5.3 to the tested versions.
 
 ### Bug Fixes
 
