@@ -87,21 +87,12 @@ def filter_list(self, context):
     return flt_flags, flt_neworder
 
 
-class CAMERA_UL_cameras_popup(bpy.types.UIList):
-    """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
-    # The draw_item function is called for each item of the collection that is visible in the list.
-    #   data is the RNA object containing the collection,
-    #   item is the current drawn item of the collection,
-    #   icon is the "computed" icon for the item (as an integer, because some objects like materials or textures
-    #   have custom icons ID, which are not available as enum items).
-    #   active_data is the RNA object containing the active property for the collection (i.e. integer pointing to the
-    #   active item of the collection).
-    #   active_propname is the name of the active property (use 'getattr(active_data, active_propname)').
-    #   index is index of the current item in the collection.
-    #   flt_flag is the result of the filtering process for this item.
-    #   Note: as index and flt_flag are optional arguments, you do not have to use/declare them here if you don't
-    #         need them.
+class CameraListFilterMixin:
+    """Filter and sort options shared by every camera list (issue #160).
 
+    Only ``draw_item`` differs between the lists, so a new list only needs
+    this mixin plus its own ``draw_item``.
+    """
     # Constants (flags)
     # Be careful not to shadow FILTER_ITEM!
     CAMERA_FILTER = 1 << 0
@@ -146,6 +137,22 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
     def filter_items(self, context, data, propname):
         flt_flags, flt_neworder = filter_list(self, context)
         return flt_flags, flt_neworder
+
+
+class CAMERA_UL_cameras_popup(CameraListFilterMixin, bpy.types.UIList):
+    """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
+    # The draw_item function is called for each item of the collection that is visible in the list.
+    #   data is the RNA object containing the collection,
+    #   item is the current drawn item of the collection,
+    #   icon is the "computed" icon for the item (as an integer, because some objects like materials or textures
+    #   have custom icons ID, which are not available as enum items).
+    #   active_data is the RNA object containing the active property for the collection (i.e. integer pointing to the
+    #   active item of the collection).
+    #   active_propname is the name of the active property (use 'getattr(active_data, active_propname)').
+    #   index is index of the current item in the collection.
+    #   flt_flag is the result of the filtering process for this item.
+    #   Note: as index and flt_flag are optional arguments, you do not have to use/declare them here if you don't
+    #         need them.
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
 
@@ -240,50 +247,9 @@ class CAMERA_UL_cameras_popup(bpy.types.UIList):
             layout.label(text=obj.name)
 
 
-class CAMERA_UL_cameras_scene(bpy.types.UIList):
+class CAMERA_UL_cameras_scene(CameraListFilterMixin, bpy.types.UIList):
     """UI list showing all cameras with associated resolution. The resolution can be changed directly from this list"""
-    CAMERA_FILTER = 1 << 0
 
-    use_filter_name_reverse: bpy.props.BoolProperty(
-        name="Invert Name Filter",
-        default=False,
-        options=set(),
-        description="Invert the name filter",
-    )
-    use_filter_visible_only: bpy.props.BoolProperty(
-        name="Visible Only",
-        default=False,
-        options=set(),
-        description="Show only cameras that are visible in the viewport",
-    )
-    use_filter_render_selected: bpy.props.BoolProperty(
-        name="Render Selected Only",
-        default=False,
-        options=set(),
-        description="Show only cameras marked for batch rendering",
-    )
-    sort_type: bpy.props.EnumProperty(
-        name="Sort By",
-        default='NAME',
-        items=SORT_ITEMS,
-    )
-
-    def draw_filter(self, context, layout):
-        row = layout.row(align=True)
-        row.prop(self, "filter_name", text="")
-        row.prop(self, "use_filter_name_reverse", text="", icon='ARROW_LEFTRIGHT')
-
-        row = layout.row(align=True)
-        row.prop(self, "use_filter_visible_only",    text="Visible", toggle=True, icon='HIDE_OFF')
-        row.prop(self, "use_filter_render_selected", text="Render",  toggle=True, icon='RENDER_STILL')
-
-        row = layout.row(align=True)
-        row.prop(self, "sort_type", text="")
-        row.prop(self, "use_filter_sort_reverse", text="", icon='SORT_DESC')
-
-    def filter_items(self, context, data, propname):
-        flt_flags, flt_neworder = filter_list(self, context)
-        return flt_flags, flt_neworder
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
 

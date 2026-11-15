@@ -100,6 +100,10 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
   the Preferences window closing as soon as the add-on is enabled or the
   popup width is changed. Separate render and file browser windows were
   closed as well.
+- [#159](https://github.com/Weisl/simple_camera_manager/issues/159): Pressing
+  **Esc** during a **Batch Render** now stops the whole batch and restores the
+  scene camera and output path. Before, the batch stayed half-running, and
+  the next normal render continued it with the next camera.
 
 ## Simple Camera Manager v1.7.1
 

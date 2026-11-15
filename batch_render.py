@@ -1,124 +1,181 @@
+"""Batch render: render every camera marked with ``render_selected`` one
+after another.
+
+Each camera is rendered with Blender's own render job. The add-on listens
+for ``render_complete`` to start the next camera and for ``render_cancel``
+to stop the whole batch when you press Esc (issue #159). Both handlers
+are only installed while a batch runs.
+
+Render handlers run on the render thread, so they only schedule work;
+switching cameras and starting the next render happens in a timer on the
+main thread.
+"""
+
 import bpy
+from bpy.app.handlers import persistent
 
-class CAM_MANAGER_BaseOperator:
-    # Class variables to store the state of the operator
-    _cameras = []  # List of cameras to render
-    _original_camera = None  # Original camera to restore after rendering
-    _original_output_path = None  # Original output path to restore after rendering
-    _current_index = 0  # Index of the current camera being rendered
-    _rendering = False  # Flag to indicate if rendering is in progress
+# Seconds to wait after a render before touching the scene again, so the
+# finished render job has fully ended.
+_NEXT_RENDER_DELAY = 1.0
 
-    def set_camera_settings(self, context, camera):
-        """Set the active camera to the specified camera."""
-        print(f"Setting camera settings for: {camera.name}")
-        bpy.ops.cam_manager.change_scene_camera(camera_name=camera.name, switch_to_cam=True)
 
-    def cleanup(self, context, aborted=False):
-        """Restore the original camera and output path, and remove handlers."""
-        scene = context.scene
-        print("Cleanup called")
+class _BatchState:
+    """The batch that is currently rendering, if any."""
 
-        # Restore the original camera and output path
-        if self._original_camera:
-            bpy.ops.cam_manager.change_scene_camera(camera_name=self._original_camera.name, switch_to_cam=True)
-        if self._original_output_path:
-            scene.render.filepath = self._original_output_path
+    def __init__(self):
+        self.reset()
 
-        # Remove the render complete handler to avoid memory leaks or crashes
-        if self.render_complete_handler in bpy.app.handlers.render_complete:
-            bpy.app.handlers.render_complete.remove(self.render_complete_handler)
+    def reset(self):
+        self.active = False
+        self.camera_names = []
+        self.index = 0
+        self.original_camera_name = None
+        self.original_filepath = None
 
-        # Report the status of the rendering process
-        if aborted:
-            self.report({'INFO'}, "Rendering aborted")
-        else:
-            self.report({'INFO'}, f"Rendering completed. {self._current_index} cameras rendered.")
 
-    def initialize(self, context):
-        """Initialize the operator by setting up the cameras and original settings."""
-        scene = context.scene
-        self._original_camera = scene.camera
-        self._original_output_path = scene.render.filepath
-        self._cameras = [obj for obj in bpy.data.objects if
-                         obj.type == 'CAMERA' and getattr(obj.data, "render_selected", False)]
+_state = _BatchState()
 
-        if not self._cameras:
-            self.report({'ERROR'}, "No cameras selected for rendering")
-            return False
 
-        print(f"Cameras to render: {[cam.name for cam in self._cameras]}")
-        self.report({'INFO'}, f"Cameras to render: {[cam.name for cam in self._cameras]}")
+def is_batch_rendering():
+    return _state.active
 
-        return True
 
-class CAM_MANAGER_OT_multi_camera_rendering_handlers(CAM_MANAGER_BaseOperator, bpy.types.Operator):
-    """Render all selected cameras using handlers"""
+def _defer(func, delay=_NEXT_RENDER_DELAY):
+    """Run ``func`` on the main thread after ``delay`` seconds."""
+    bpy.app.timers.register(func, first_interval=delay)
+
+
+def _start_render():
+    bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
+
+
+def _set_scene_camera(camera_name):
+    bpy.ops.cam_manager.change_scene_camera(camera_name=camera_name, switch_to_cam=True)
+
+
+def _render_current_camera():
+    """Switch to the current camera and start its render. Timer callback."""
+    if not _state.active:
+        return None
+
+    scene = bpy.context.scene
+    while _state.index < len(_state.camera_names):
+        name = _state.camera_names[_state.index]
+        if scene.objects.get(name) is not None:
+            break
+        print(f"Batch render: skipping '{name}', it is no longer in the scene")
+        _state.index += 1
+    else:
+        _finish()
+        return None
+
+    name = _state.camera_names[_state.index]
+    print(f"Batch render: camera {_state.index + 1}/{len(_state.camera_names)}: {name}")
+    try:
+        # The output path may have been changed per camera (Use Camera Name),
+        # so every camera starts from the path the batch started with.
+        scene.render.filepath = _state.original_filepath
+        _set_scene_camera(name)
+        _start_render()
+    except Exception as error:  # noqa: BLE001 - always clean up the batch
+        print(f"Batch render: rendering '{name}' failed: {error}")
+        _finish(aborted=True)
+    return None
+
+
+def _finish(aborted=False):
+    """Restore the scene camera and output path and stop listening for renders."""
+    rendered = _state.index
+    total = len(_state.camera_names)
+    original_camera_name = _state.original_camera_name
+    original_filepath = _state.original_filepath
+    _state.reset()
+    _remove_handlers()
+
+    scene = bpy.context.scene
+    if original_camera_name and scene.objects.get(original_camera_name) is not None:
+        _set_scene_camera(original_camera_name)
+    if original_filepath is not None:
+        scene.render.filepath = original_filepath
+
+    if aborted:
+        print(f"Batch render cancelled after {rendered} of {total} cameras")
+    else:
+        print(f"Batch render finished: {rendered} cameras rendered")
+    return None
+
+
+def _on_render_complete(scene, depsgraph=None):
+    if not _state.active:
+        return
+    _state.index += 1
+    _defer(_render_current_camera)
+
+
+def _on_render_cancel(scene, depsgraph=None):
+    if not _state.active:
+        return
+    _defer(lambda: _finish(aborted=True), delay=0.0)
+
+
+_HANDLERS = (
+    (bpy.app.handlers.render_complete, _on_render_complete),
+    (bpy.app.handlers.render_cancel, _on_render_cancel),
+)
+
+
+def _add_handlers():
+    for handlers, func in _HANDLERS:
+        if func not in handlers:
+            handlers.append(func)
+
+
+def _remove_handlers():
+    for handlers, func in _HANDLERS:
+        while func in handlers:
+            handlers.remove(func)
+
+
+@persistent
+def _forget_batch_on_load(*_args):
+    """A new file has other cameras; drop a batch that was still running."""
+    _state.reset()
+    _remove_handlers()
+
+
+class CAM_MANAGER_OT_multi_camera_rendering_handlers(bpy.types.Operator):
+    """Render all cameras marked for rendering, one after another. Press Esc during a render to stop the batch"""
     bl_idname = "cam_manager.multi_camera_rendering_handlers"
-    bl_label = "Render All Selected Cameras (Handlers)"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def render_complete_handler(self, scene, depsgraph):
-        """Handler called when a render is complete."""
-        print(f"Render complete for camera: {self._cameras[self._current_index].name}")
-        self.report({'INFO'}, f"Render complete for camera: {self._cameras[self._current_index].name}")
-        self._rendering = False
-        self._current_index += 1
-
-        if self._current_index < len(self._cameras):
-            # Add a delay before starting the next render to ensure the previous render is fully completed
-            bpy.app.timers.register(self.start_next_render, first_interval=1.0)
-        else:
-            # Add a delay before final cleanup to ensure the last render is fully completed
-            bpy.app.timers.register(lambda: self.final_cleanup(bpy.context), first_interval=2.0)
-
-    def start_next_render(self):
-        """Start the next render after a delay."""
-        if self._current_index < len(self._cameras):
-            # Set camera settings for the next render
-            camera = self._cameras[self._current_index]
-            self.set_camera_settings(bpy.context, camera)
-            print(f"Setting camera: {camera.name}")
-            self.report({'INFO'}, f"Setting camera: {camera.name}")
-            # Trigger the next render
-            self._rendering = True
-            bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
-
-    def final_cleanup(self, context):
-        """Perform final cleanup after all renders are complete."""
-        self.cleanup(context)
-        # Ensure the handler is removed after the last render to avoid memory leaks or crashes
-        if self.render_complete_handler in bpy.app.handlers.render_complete:
-            bpy.app.handlers.render_complete.remove(self.render_complete_handler)
+    bl_label = "Batch Render Selected Cameras"
 
     def execute(self, context):
-        """Execute the operator and start the rendering process."""
-        if not self.initialize(context):
+        if _state.active:
+            self.report({'WARNING'}, "A batch render is already running")
             return {'CANCELLED'}
 
-        # Register the render complete handler
-        bpy.app.handlers.render_complete.append(self.render_complete_handler)
-
-        try:
-            # Set camera settings for the first render
-            if self._cameras:
-                first_camera = self._cameras[0]
-                self.set_camera_settings(context, first_camera)
-
-            # Start the first render
-            print(f"Starting first render for camera: {first_camera.name}")
-            self.report({'INFO'}, f"Starting first render for camera: {first_camera.name}")
-            self._rendering = True
-            bpy.ops.render.render('INVOKE_DEFAULT', write_still=True, use_viewport=False)
-        except Exception as e:
-            self.report({'ERROR'}, f"Rendering failed: {e}")
-            self.cleanup(context, aborted=True)
+        scene = context.scene
+        cameras = [obj for obj in scene.objects
+                   if obj.type == 'CAMERA' and getattr(obj.data, "render_selected", False)]
+        if not cameras:
+            self.report({'ERROR'}, "No cameras selected for rendering")
             return {'CANCELLED'}
 
-        return {'RUNNING_MODAL'}
+        _state.active = True
+        _state.camera_names = [cam.name for cam in cameras]
+        _state.index = 0
+        _state.original_camera_name = scene.camera.name if scene.camera else None
+        _state.original_filepath = scene.render.filepath
+        _add_handlers()
+
+        self.report({'INFO'}, f"Batch rendering {len(cameras)} cameras. Press Esc to stop")
+        _render_current_camera()
+        return {'FINISHED'}
+
 
 classes = (
     CAM_MANAGER_OT_multi_camera_rendering_handlers,
 )
+
 
 def register():
     """Register the operators with Blender."""
@@ -127,9 +184,18 @@ def register():
     for cls in classes:
         register_class(cls)
 
+    if _forget_batch_on_load not in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(_forget_batch_on_load)
+
+
 def unregister():
     """Unregister the operators from Blender."""
     from bpy.utils import unregister_class
+
+    _state.reset()
+    _remove_handlers()
+    if _forget_batch_on_load in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(_forget_batch_on_load)
 
     for cls in reversed(classes):
         if hasattr(cls, 'bl_rna'):
