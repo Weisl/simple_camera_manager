@@ -3,7 +3,7 @@ import os
 import bpy
 
 from .keymap import get_keymap_string
-from .pie_menu import draw_camera_settings
+from .pie_menu import draw_camera_settings, draw_viewport_tools
 
 
 def get_addon_name():
@@ -142,11 +142,10 @@ class VIEW3D_PT_SimpleCameraManager(bpy.types.Panel):
             cam_obj = context.scene.camera
             draw_camera_settings(context, body, cam_obj, use_subpanel=True)
 
-        layout.label(text='Dolly Zoom', icon='VIEW_CAMERA')
-        col = layout.column(align=True)
-        row = col.row(align=True)
-        row.operator("cam_manager.modal_camera_dolly_zoom", text="Dolly Zoom", icon='CON_CAMERASOLVER')
+        layout.label(text='Viewport Tools', icon='VIEW_CAMERA')
+        draw_viewport_tools(layout)
 
+        col = layout.column(align=True)
         row = col.row(align=True)
         ob = context.object
         if ob and ob.type == 'CAMERA':

@@ -30,8 +30,8 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
   built-in sensor sizes (Full Frame, APS-C, MFT, Arri, RED, Blackmagic,
   phone sensors, …) to the scene camera from the 3D Viewport sidebar and the
   pie menu.
-- [#66](https://github.com/Weisl/simple_camera_manager/issues/66): Added a
-  **camera roll gizmo**. Drag the ring to roll the camera around its view
+- [#66](https://github.com/Weisl/simple_camera_manager/issues/66), [#179](https://github.com/Weisl/simple_camera_manager/issues/179):
+  Added a **camera roll gizmo**. Drag the ring to roll the camera around its view
   axis; hold Ctrl to snap in 5° steps. Rolls can be undone with Ctrl+Z,
   as can drags of the Dolly Zoom target gizmo.
 - [#64](https://github.com/Weisl/simple_camera_manager/issues/64): Added
@@ -51,17 +51,48 @@ cycling, and a reworked update checker. It is tested on Blender 4.2 through
 - [#165](https://github.com/Weisl/simple_camera_manager/issues/165): Added a
   **Show** button next to the "Camera is hidden" warning. It unhides the
   camera and only the collections containing it.
-- [#171](https://github.com/Weisl/simple_camera_manager/issues/171):
+- [#171](https://github.com/Weisl/simple_camera_manager/issues/171), [#178](https://github.com/Weisl/simple_camera_manager/issues/178):
   **Dolly Zoom** now works like the modal tools in Simple Collider. Nothing
   changes until you press a key: **F** focal length, **V** field of view,
   **D** target distance, **W** target width; press the key again to stop.
   Changing the focal length or field of view moves the camera so the target
-  keeps its size in the frame. While no key is active you can drag the
+  keeps its size in the frame (perspective cameras only; on an orthographic
+  camera F and V are greyed out). While no key is active you can drag the
   target gizmo. The viewport overlay got the same look as Simple Collider's.
+  A dashed frame shows the framing the camera started with (**R** toggles
+  it), and the target plane shows where the target distance cuts through the
+  scene. **P** switches the plane between a see-through plane with a cut
+  line, only the cut line, and off; the choice is kept for the next run.
+- [#175](https://github.com/Weisl/simple_camera_manager/issues/175): Reworked
+  the **Alt+C pie menu**. A pie menu closes after any click, so it
+  now only holds one-click actions: **Previous / Next Camera**, **View
+  Camera**, **New Camera from View** (or **Align Camera to View** in camera
+  view), **Dolly Zoom**, and a small box with lens preset, focal length,
+  resolution and composition guide menus, Passepartout, Lock to View, Lock
+  Camera and Select. **Camera Settings…** opens the new camera popover.
+- [#176](https://github.com/Weisl/simple_camera_manager/issues/176): Added a
+  **camera popover** for the scene camera. It stays open while you
+  change settings and has Camera, Background Image, Viewport Display and
+  Render sections. The Background Image section shows each image's
+  visibility, opacity, front/back and framing, with a checkbox to show or
+  hide all of them. Open the popover from the camera button in the 3D
+  Viewport header (can be turned off in the add-on preferences) or from the
+  pie menu, which also has a one-click Background Images toggle.
+- [#177](https://github.com/Weisl/simple_camera_manager/issues/177): Added
+  **Focus Distance**, a modal tool that works like Dolly Zoom. **D**
+  drags the focus distance, **A** the f-stop, and **E** focuses on the surface
+  under the mouse. A see-through plane at the focus distance shows where the
+  focus cuts through the scene (**P** switches between plane, cut line and
+  off), and dashed frames mark the near and far limits of the sharp range
+  (**R** toggles them). Start it from the pie menu, the camera popover or the
+  sidebar.
 - Added Blender 5.3 to the tested versions.
 
 ### Bug Fixes
 
+- [#174](https://github.com/Weisl/simple_camera_manager/issues/174): Fixed the
+  pie menu's **previous** and **next** buttons switching cameras in
+  the wrong direction.
 - [#158](https://github.com/Weisl/simple_camera_manager/issues/158): Fixed
   the add-on's **Open Preferences** button not expanding the add-on's
   preferences when it is installed through the Extensions platform.

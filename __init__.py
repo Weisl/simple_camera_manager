@@ -5,6 +5,7 @@ if "bpy" in locals():
     importlib.reload(camera_controlls)
     importlib.reload(ui_helpers)
     importlib.reload(dolly_zoom_modal)
+    importlib.reload(focus_distance_modal)
     importlib.reload(camera_gizmos)
     importlib.reload(batch_render)
     importlib.reload(version_check)
@@ -20,6 +21,7 @@ else:
     from . import camera_controlls
     from . import ui_helpers
     from . import dolly_zoom_modal
+    from . import focus_distance_modal
     from . import batch_render
     from . import camera_gizmos
     from . import version_check
@@ -35,6 +37,7 @@ files = [
     camera_controlls,
     ui_helpers,
     dolly_zoom_modal,
+    focus_distance_modal,
     batch_render,
     version_check,
     camera_presets,
