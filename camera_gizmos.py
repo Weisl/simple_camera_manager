@@ -9,6 +9,7 @@ from bpy.types import (
     Gizmo
 )
 from bpy_extras.view3d_utils import location_3d_to_region_2d
+from . import dolly_zoom_modal
 from .dolly_zoom_modal import calculate_target_width
 
 import mathutils
@@ -191,6 +192,20 @@ def any_interactive_gizmo_highlighted():
     return highlighted
 
 
+def _push_undo(message):
+    """Record a confirmed gizmo drag as an undo step.
+
+    Blender only adds undo steps for gizmos that run an operator; these
+    gizmos write to the camera directly, so without this Ctrl+Z skips the
+    drag. Skipped while Dolly Zoom runs, whose own undo step covers it."""
+    if dolly_zoom_modal.is_running():
+        return
+    try:
+        bpy.ops.ed.undo_push(message=message)
+    except RuntimeError:
+        pass
+
+
 class MyCustomShapeWidget(Gizmo):
     """Custom gizmo widget that draws the dolly zoom target frame and handles drag interaction."""
 
@@ -237,7 +252,9 @@ class MyCustomShapeWidget(Gizmo):
     def exit(self, context, cancel):
         context.area.header_text_set(None)
         if cancel:
-            self.target_set_value("offset", self.init_value)[0]
+            self.target_set_value("offset", (self.init_value,))
+        elif self.target_get_value('offset')[0] != self.init_value:
+            _push_undo("Dolly Zoom Target Distance")
 
     def modal(self, context, event, tweak):
         delta = (event.mouse_x - self.init_mouse_x) / 10.0
@@ -450,7 +467,7 @@ class CameraRollWidget(Gizmo):
     """Custom gizmo that draws a ring for rolling the camera around its own view axis.
 
     Dragging tracks the mouse angle around the ring's on-screen center, so
-    turning the ring visually matches the drag - holding Shift snaps the
+    turning the ring visually matches the drag - holding Ctrl snaps the
     result to 5-degree increments and the current roll is shown in the
     viewport header while dragging.
 
@@ -511,8 +528,12 @@ class CameraRollWidget(Gizmo):
     def exit(self, context, cancel):
         context.area.header_text_set(None)
         cam = self.group.cam
-        if cancel and cam:
+        if not cam:
+            return
+        if cancel:
             cam.rotation_euler = self.init_quat.to_euler(cam.rotation_mode)
+        elif cam.rotation_euler.to_quaternion().rotation_difference(self.init_quat).angle > 1e-6:
+            _push_undo("Camera Roll")
 
     def modal(self, context, event, tweak):
         cam = self.group.cam
@@ -526,10 +547,11 @@ class CameraRollWidget(Gizmo):
         delta = self.sign * (current_angle - self.init_angle)
         value = self.init_value + delta
 
-        # Read the live modifier state directly rather than the gizmo tweak
-        # system's 'PRECISE' flag - that only fires on a Shift press *during*
-        # the active drag, so Shift held before the click never registers.
-        if event.shift:
+        # Ctrl snaps, as Blender's status bar shows for gizmo drags. Read the
+        # live modifier state rather than the tweak system's 'SNAP' flag,
+        # which only turns on for a Ctrl press *during* the drag, so Ctrl
+        # held before the click would never register.
+        if event.ctrl:
             value = round(value / _ROLL_SNAP_STEP) * _ROLL_SNAP_STEP
 
         _apply_camera_roll_delta(cam, self.init_quat, value - self.init_value)

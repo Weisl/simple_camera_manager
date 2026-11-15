@@ -237,6 +237,11 @@ class CamManagerAddonPreferences(bpy.types.AddonPreferences):
         default=True,
         update=update_panel_category)
 
+    show_header_button: bpy.props.BoolProperty(
+        name="Camera Button in Viewport Header",
+        description="Show a button in the 3D Viewport header that opens the scene camera's settings",
+        default=True)
+
     popup_width: bpy.props.IntProperty(
         name="Popup Width",
         description="Width of the Simple Camera Manager popup window in UI units",
@@ -311,6 +316,7 @@ class CamManagerAddonPreferences(bpy.types.AddonPreferences):
             box.label(text="UI")
             box.prop(self, 'enable_n_panel')
             box.prop(self, 'panel_category')
+            box.prop(self, 'show_header_button')
 
             box = layout.box()
             box.label(text="Updates")

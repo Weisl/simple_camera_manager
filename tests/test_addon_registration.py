@@ -43,6 +43,7 @@ _REPRESENTATIVE_CLASSES = (
     _addon.camera_controlls.OBJECT_OT_create_camera_from_view,
     _addon.ui_helpers.CAM_MANAGER_OT_open_preferences,
     _addon.dolly_zoom_modal.CAM_MANAGER_OT_dolly_zoom,
+    _addon.focus_distance_modal.CAM_MANAGER_OT_focus_distance,
     _addon.batch_render.CAM_MANAGER_OT_multi_camera_rendering_handlers,
     _addon.version_check.CAM_MANAGER_OT_check_for_updates,
     _addon.camera_presets.CAM_MANAGER_OT_camera_preset_add,
@@ -51,6 +52,7 @@ _REPRESENTATIVE_CLASSES = (
     _addon.ui.VIEW3D_PT_SimpleCameraManager,
     _addon.uilist.CAMERA_UL_cameras_popup,
     _addon.pie_menu.CAMERA_MT_pie_menu,
+    _addon.pie_menu.CAM_MANAGER_PT_camera_popover,
     _addon.keymap.REMOVE_OT_hotkey,
     _addon.preferences.CamManagerAddonPreferences,
 )
@@ -94,6 +96,27 @@ class TestDisable(unittest.TestCase):
             still_present, set(),
             f"disabling the addon left classes registered: {[c.__name__ for c in still_present]}",
         )
+
+
+class TestViewportHeaderButton(unittest.TestCase):
+    """The camera popover's header button is appended on enable and removed
+    on disable, so a disable/enable cycle doesn't leave a duplicate."""
+
+    def tearDown(self):
+        if _is_enabled():
+            addon_utils.disable(_ADDON_NAME, default_set=True)
+
+    @staticmethod
+    def _header_buttons():
+        funcs = getattr(bpy.types.VIEW3D_HT_header.draw, "_draw_funcs", [])
+        return [f for f in funcs if f.__name__ == "draw_view3d_header_button"]
+
+    def test_enable_disable_adds_and_removes_one_button(self):
+        for _ in range(2):
+            addon_utils.enable(_ADDON_NAME, default_set=True)
+            self.assertEqual(len(self._header_buttons()), 1)
+            addon_utils.disable(_ADDON_NAME, default_set=True)
+            self.assertEqual(self._header_buttons(), [])
 
 
 class TestEnableDisableCycle(unittest.TestCase):

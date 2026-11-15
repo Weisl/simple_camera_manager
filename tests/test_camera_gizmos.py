@@ -16,6 +16,8 @@ import math
 import os
 import sys
 import unittest
+from types import SimpleNamespace
+from unittest import mock
 
 _ADDON_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _ADDON_SOURCE = os.path.dirname(_ADDON_ROOT)
@@ -100,6 +102,117 @@ class TestRollRingVisibleInCameraView(unittest.TestCase):
 def mathutils_vec(v):
     import mathutils
     return mathutils.Vector(v)
+
+
+class TestGizmoDragsAreUndoable(unittest.TestCase):
+    """Blender only adds undo steps for gizmos that run an operator. These
+    gizmos write to the camera directly, so a confirmed drag must push its
+    own undo step, except while Dolly Zoom runs (one step for the session)."""
+
+    def setUp(self):
+        self.camera_data = bpy.data.cameras.new('UndoGizmoTestCam')
+        self.camera_obj = bpy.data.objects.new('UndoGizmoTestCam', self.camera_data)
+        bpy.context.scene.collection.objects.link(self.camera_obj)
+        self.camera_obj.rotation_euler = (math.radians(80), 0.0, math.radians(20))
+        self.context = SimpleNamespace(area=mock.MagicMock())
+        self.undo_push = mock.MagicMock()
+        fake_bpy = SimpleNamespace(ops=SimpleNamespace(ed=SimpleNamespace(undo_push=self.undo_push)))
+        patcher = mock.patch.object(gizmos, 'bpy', fake_bpy)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        bpy.data.objects.remove(self.camera_obj, do_unlink=True)
+        bpy.data.cameras.remove(self.camera_data)
+
+    def _roll_drag(self, cancel, roll=math.radians(15)):
+        init_quat = self.camera_obj.rotation_euler.to_quaternion()
+        gizmo = SimpleNamespace(group=SimpleNamespace(cam=self.camera_obj), init_quat=init_quat)
+        gizmos._apply_camera_roll_delta(self.camera_obj, init_quat, roll)
+        gizmos.CameraRollWidget.exit(gizmo, self.context, cancel)
+        return init_quat
+
+    def test_confirmed_roll_pushes_undo_step(self):
+        self._roll_drag(cancel=False)
+        self.undo_push.assert_called_once_with(message="Camera Roll")
+
+    def test_cancelled_roll_restores_without_undo_step(self):
+        init_quat = self._roll_drag(cancel=True)
+        self.undo_push.assert_not_called()
+        self.assertAlmostEqual(
+            self.camera_obj.rotation_euler.to_quaternion().rotation_difference(init_quat).angle, 0.0, places=5)
+
+    def test_click_without_roll_pushes_no_undo_step(self):
+        self._roll_drag(cancel=False, roll=0.0)
+        self.undo_push.assert_not_called()
+
+    def test_no_undo_step_while_dolly_zoom_runs(self):
+        dolly = _addon.dolly_zoom_modal
+        dolly._running.add('test')
+        try:
+            self._roll_drag(cancel=False)
+        finally:
+            dolly._running.discard('test')
+        self.undo_push.assert_not_called()
+
+    def _distance_drag(self, cancel, new_value):
+        values = {'offset': 10.0}
+        gizmo = SimpleNamespace(
+            init_value=10.0,
+            target_get_value=lambda name: (values[name],),
+            target_set_value=lambda name, value: values.__setitem__(name, value[0]),
+        )
+        values['offset'] = new_value
+        gizmos.MyCustomShapeWidget.exit(gizmo, self.context, cancel)
+        return values['offset']
+
+    def test_confirmed_target_distance_drag_pushes_undo_step(self):
+        self._distance_drag(cancel=False, new_value=12.0)
+        self.undo_push.assert_called_once_with(message="Dolly Zoom Target Distance")
+
+    def test_cancelled_target_distance_drag_restores_value(self):
+        self.assertEqual(self._distance_drag(cancel=True, new_value=12.0), 10.0)
+        self.undo_push.assert_not_called()
+
+
+class TestRollSnapping(unittest.TestCase):
+    """Ctrl snaps the roll to 5° steps, matching the "Snap: Ctrl" hint
+    Blender shows in the status bar while dragging a gizmo."""
+
+    def setUp(self):
+        self.camera_data = bpy.data.cameras.new('RollSnapTestCam')
+        self.camera_obj = bpy.data.objects.new('RollSnapTestCam', self.camera_data)
+        bpy.context.scene.collection.objects.link(self.camera_obj)
+        self.camera_obj.rotation_euler = (math.radians(90), 0.0, 0.0)
+        bpy.context.view_layer.update()
+
+    def tearDown(self):
+        bpy.data.objects.remove(self.camera_obj, do_unlink=True)
+        bpy.data.cameras.remove(self.camera_data)
+
+    def _drag_to_degrees(self, degrees, ctrl=False, shift=False):
+        """Drag the mouse around the ring's center from 0° to `degrees`."""
+        gizmo = SimpleNamespace(
+            group=SimpleNamespace(cam=self.camera_obj),
+            init_quat=self.camera_obj.rotation_euler.to_quaternion(),
+            init_value=gizmos._get_camera_roll(self.camera_obj),
+            pivot_2d=(0.0, 0.0), init_angle=0.0, sign=1.0,
+        )
+        angle = math.radians(degrees)
+        event = SimpleNamespace(mouse_region_x=100 * math.cos(angle), mouse_region_y=100 * math.sin(angle),
+                                ctrl=ctrl, shift=shift)
+        gizmos.CameraRollWidget.modal(gizmo, SimpleNamespace(area=mock.MagicMock()), event, set())
+        bpy.context.view_layer.update()
+        return math.degrees(gizmos._get_camera_roll(self.camera_obj) - gizmo.init_value)
+
+    def test_ctrl_snaps_to_5_degrees(self):
+        self.assertAlmostEqual(abs(self._drag_to_degrees(12.0, ctrl=True)), 10.0, places=3)
+
+    def test_shift_does_not_snap(self):
+        self.assertAlmostEqual(abs(self._drag_to_degrees(12.0, shift=True)), 12.0, places=3)
+
+    def test_no_modifier_follows_the_mouse(self):
+        self.assertAlmostEqual(abs(self._drag_to_degrees(12.0)), 12.0, places=3)
 
 
 if __name__ == "__main__":

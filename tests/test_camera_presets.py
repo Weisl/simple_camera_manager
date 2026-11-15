@@ -34,8 +34,8 @@ _PRESET_SUBDIR = "simple_camera_manager/camera"
 
 
 class TestCameraPresetRoundTrip(unittest.TestCase):
-    """A saved lens preset restores camera type, focal length / ortho scale
-    and sensor, and leaves every other camera setting alone."""
+    """A saved lens preset restores camera type, focal length / ortho scale,
+    sensor and resolution, and leaves every other camera setting alone."""
 
     def setUp(self):
         self.camera_data = bpy.data.cameras.new('PresetTestCam')
@@ -51,6 +51,8 @@ class TestCameraPresetRoundTrip(unittest.TestCase):
         cam.sensor_fit = 'VERTICAL'
         cam.sensor_width = 44.0
         cam.sensor_height = 33.0
+        cam.resolution_overwrite = True
+        cam.resolution = (1600, 1200)
 
         self._preset_filepath = None
 
@@ -103,6 +105,8 @@ class TestCameraPresetRoundTrip(unittest.TestCase):
         cam.sensor_fit = 'AUTO'
         cam.sensor_width = 36.0
         cam.sensor_height = 24.0
+        cam.resolution_overwrite = False
+        cam.resolution = (640, 480)
 
         self._apply_preset()
 
@@ -112,6 +116,18 @@ class TestCameraPresetRoundTrip(unittest.TestCase):
         self.assertEqual(cam.sensor_fit, 'VERTICAL')
         self.assertEqual(cam.sensor_width, 44.0)
         self.assertEqual(cam.sensor_height, 33.0)
+        self.assertTrue(cam.resolution_overwrite)
+        self.assertEqual(tuple(cam.resolution), (1600, 1200))
+        render = bpy.context.scene.render
+        self.assertEqual((render.resolution_x, render.resolution_y), (1600, 1200),
+                         "the scene camera's preset resolution must reach the render settings")
+
+    def test_saved_file_contains_only_lens_fields(self):
+        self._save_preset()
+        with open(self._preset_filepath) as f:
+            assigned = {line.split('=')[0].strip()[len('cam.'):]
+                        for line in f if line.startswith('cam.')}
+        self.assertEqual(assigned, set(_addon.camera_presets.LENS_PRESET_FIELDS))
 
     def test_apply_leaves_other_settings_alone(self):
         self._save_preset()
@@ -122,7 +138,6 @@ class TestCameraPresetRoundTrip(unittest.TestCase):
         cam.exposure = 1.5
         cam.dof.use_dof = True
         cam.dof.focus_distance = 3.0
-        cam.resolution_overwrite = True
 
         self._apply_preset()
 
@@ -131,7 +146,6 @@ class TestCameraPresetRoundTrip(unittest.TestCase):
         self.assertEqual(cam.exposure, 1.5)
         self.assertTrue(cam.dof.use_dof)
         self.assertEqual(cam.dof.focus_distance, 3.0)
-        self.assertTrue(cam.resolution_overwrite)
 
 
 class TestSensorFormatPresets(unittest.TestCase):
@@ -219,6 +233,30 @@ class TestBuiltinCameraPresets(unittest.TestCase):
         allowed = set(_addon.camera_presets.LENS_PRESET_FIELDS)
         for name, values in _addon.camera_presets.BUILTIN_CAMERA_PRESETS.items():
             self.assertLessEqual(set(values), allowed, f"'{name}' sets fields outside the Lens box")
+
+    def test_every_preset_sets_the_resolution(self):
+        """Built-in presets set the resolution like saved ones, so switching
+        presets never keeps the previous preset's resolution."""
+        for name, values in _addon.camera_presets.BUILTIN_CAMERA_PRESETS.items():
+            self.assertTrue(values.get('resolution_overwrite'), f"'{name}' does not enable Resolution Overwrite")
+            self.assertIn('resolution', values, f"'{name}' does not set the resolution")
+
+    def test_builtin_preset_resolution_matches_sensor_aspect(self):
+        for name, values in _addon.camera_presets.BUILTIN_CAMERA_PRESETS.items():
+            if values['type'] != 'PERSP':
+                continue
+            width, height = values['resolution']
+            self.assertAlmostEqual(width / height, values['sensor_width'] / values['sensor_height'], delta=0.02,
+                                   msg=f"'{name}' resolution doesn't match its sensor")
+
+    def test_builtin_preset_sets_scene_render_resolution(self):
+        self.camera_data.resolution_overwrite = False
+        bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Full Frame 50mm Standard')
+        render = bpy.context.scene.render
+        self.assertTrue(self.camera_data.resolution_overwrite)
+        self.assertEqual((render.resolution_x, render.resolution_y), (1920, 1280))
+        bpy.ops.cam_manager.apply_builtin_camera_preset(preset='Studio Orthographic')
+        self.assertEqual((render.resolution_x, render.resolution_y), (1920, 1080))
 
 
 if __name__ == "__main__":

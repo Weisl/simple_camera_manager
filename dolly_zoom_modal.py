@@ -26,6 +26,15 @@ def generate_target_location(camera, distance):
     return target_location
 
 
+# Running Dolly Zoom operators. While one runs, the gizmos don't push their
+# own undo steps: the operator's single undo step covers the whole session.
+_running = set()
+
+
+def is_running():
+    return bool(_running)
+
+
 def set_cam_values(cam_dic, camera, distance):
     """Store current camera settings in a dictionary """
     # Initial Camera Position and Location Matrix
@@ -57,6 +66,24 @@ def distance_vec(point1: Vector, point2: Vector):
     return (point2 - point1).length
 
 
+def frame_corners_at_distance(camera, scene, distance):
+    """Return the world-space corners of the camera's render frame on the
+    plane `distance` in front of the camera.
+
+    Uses the camera's current lens, sensor fit, shift and the scene's render
+    aspect, so it matches the frame drawn in camera view. The corners go
+    around the frame (top right, bottom right, bottom left, top left)."""
+    matrix = camera.matrix_world.normalized()
+    corners = []
+    for corner in camera.data.view_frame(scene=scene):
+        if camera.data.type == 'ORTHO' or abs(corner.z) < 1e-9:
+            local = Vector((corner.x, corner.y, -distance))
+        else:
+            local = corner * (distance / -corner.z)
+        corners.append(matrix @ local)
+    return corners
+
+
 # ---------------------------------------------------------------------------
 # Viewport overlay
 #
@@ -68,6 +95,9 @@ def distance_vec(point1: Vector, point2: Vector):
 # Simple Collider exposes these colors as preferences; here they are fixed to
 # its defaults.
 # ---------------------------------------------------------------------------
+
+_PERSPECTIVE_ONLY = "Perspective only"
+_ORTHO_MESSAGE = "Focal Length and Field of View need a perspective camera"
 
 _COLOR_DEFAULT = (0.910, 0.914, 0.933, 1.0)
 _COLOR_TITLE = (0.133, 0.773, 0.369, 1.0)
@@ -98,7 +128,7 @@ def _draw_rect(left, right, top, bottom, color):
 
 
 def _draw_row(font_id, font_size, y, left, item, muted):
-    if muted and item['type'] != 'title':
+    if muted and item['type'] != 'title' or item.get('disabled'):
         label_color = _COLOR_MUTED
     elif item.get('highlight'):
         label_color = _COLOR_HIGHLIGHT
@@ -143,6 +173,10 @@ def draw_callback_px(self, _context):
     items = [
         {'label': "Target Gizmo", 'key': '(Drag)', 'type': 'default',
          'value': "Visible" if cam.show_dolly_gizmo else "Hidden"},
+        {'label': "Target Plane", 'key': '(P)', 'type': 'default',
+         'value': _TARGET_PLANE_DISPLAY_LABELS[self.target_plane_display]},
+        {'label': "Start Framing", 'key': '(R)', 'type': 'default',
+         'value': "On" if self.show_start_frame else "Off"},
     ]
     info_row_count = len(items)
 
@@ -156,6 +190,11 @@ def draw_callback_px(self, _context):
         {'label': "Focal Length", 'key': '(F)', 'type': 'modal', 'highlight': self.mode == 'FOCAL',
          'value': "{:.1f} mm  ({:.1f} mm)".format(cam.lens, initial['camera_focal_length'])},
     ]
+    if cam.type == 'ORTHO':
+        # F and V do nothing on an orthographic camera; say so instead of
+        # leaving the keys looking broken.
+        for item in items[-2:]:
+            item.update(disabled=True, value=_PERSPECTIVE_ONLY)
 
     items.append({'label': "Dolly Zoom", 'type': 'title'})
     title_row = len(items)
@@ -198,12 +237,162 @@ def draw_callback_px(self, _context):
         _draw_row(font_id, font_size, row_padding + (i + 1) * row_height, text_left, item, muted)
 
 
+# ---------------------------------------------------------------------------
+# 3D guides
+#
+# Drawn in the scene (POST_VIEW), so they line up in camera view and in any
+# other 3D view:
+# - the framing the camera had when the operator started, as a dashed frame,
+#   so changing the width or field of view can be compared against it;
+# - the target plane at the target distance, depth tested against the
+#   scene, so where it cuts through objects shows where the target is. P
+#   cycles how it is shown: a translucent plane with the cut line, only the
+#   cut line, or nothing.
+# ---------------------------------------------------------------------------
+
+# How the target plane is shown, in the order P cycles through them.
+_TARGET_PLANE_DISPLAYS = ('PLANE', 'LINE', 'OFF')
+_TARGET_PLANE_DISPLAY_LABELS = {'PLANE': "Plane", 'LINE': "Cut Line", 'OFF': "Off"}
+
+# The guide settings last chosen, so the next run starts with them (for the
+# rest of the Blender session).
+_guide_settings = {'target_plane_display': 'PLANE', 'show_start_frame': True}
+
+# Half the depth range, as a fraction of the target distance, counted as "on
+# the plane" when drawing the cut line.
+_CUT_LINE_BAND = 0.004
+
+_COLOR_START_FRAME = (1.0, 1.0, 1.0, 0.75)
+_COLOR_TARGET_PLANE = (_COLOR_ACCENT[0], _COLOR_ACCENT[1], _COLOR_ACCENT[2], 0.12)
+# Stronger while the plane itself is being moved or resized.
+_COLOR_TARGET_PLANE_ACTIVE = (_COLOR_ACCENT[0], _COLOR_ACCENT[1], _COLOR_ACCENT[2], 0.22)
+_START_FRAME_DASHES = 32  # dashes along the longer side of the frame
+_START_FRAME_LINE_WIDTH = 1.5
+
+
+def dashed_loop_segments(corners, dashes_on_longest_edge=_START_FRAME_DASHES):
+    """Return line segment end points for a dashed closed loop through `corners`.
+
+    The dash length is the same on every edge, taken from the longest one."""
+    edges = [(corners[i], corners[(i + 1) % len(corners)]) for i in range(len(corners))]
+    longest = max((b - a).length for a, b in edges)
+    if longest <= 0.0:
+        return []
+    dash = longest / (2 * dashes_on_longest_edge)
+    points = []
+    for a, b in edges:
+        length = (b - a).length
+        if length <= 0.0:
+            continue
+        direction = (b - a) / length
+        start = 0.0
+        while start < length:
+            end = min(start + dash, length)
+            points.append(a + direction * start)
+            points.append(a + direction * end)
+            start += 2 * dash
+    return points
+
+
+def _draw_quad(corners, color):
+    shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+    batch = batch_for_shader(shader, 'TRIS', {"pos": corners}, indices=((0, 1, 2), (0, 2, 3)))
+    shader.bind()
+    shader.uniform_float("color", color)
+    batch.draw(shader)
+
+
+def _draw_lines(points, color, width, region):
+    shader = gpu.shader.from_builtin('POLYLINE_UNIFORM_COLOR')
+    batch = batch_for_shader(shader, 'LINES', {"pos": points})
+    shader.bind()
+    shader.uniform_float("viewportSize", (region.width, region.height))
+    shader.uniform_float("lineWidth", width)
+    shader.uniform_float("color", color)
+    batch.draw(shader)
+
+
+def cut_line_quads(corners, band, eye=None, view_direction=None):
+    """Return the two quads _draw_cut_line() draws: `corners` moved `band`
+    toward and away from the viewer.
+
+    Both must cover exactly the same pixels, or the rim where only one of
+    them is drawn shows up as a line too, so each corner moves along its own
+    view ray: from `eye` in a perspective view, along `view_direction` in an
+    orthographic one."""
+    rays = [(c - eye).normalized() if eye is not None else view_direction for c in corners]
+    return ([c - r * band for c, r in zip(corners, rays)],
+            [c + r * band for c, r in zip(corners, rays)])
+
+
+def _draw_cut_line(corners, distance, rv3d):
+    """Mark the surfaces that lie on the target plane given by `corners`.
+
+    Inverts the colors behind a copy of the plane just in front of it, then
+    inverts them back behind a copy just past it. Both inversions cancel
+    everywhere except on surfaces between the two copies, which leaves a line
+    where the target plane cuts through the scene, without reading or writing
+    the depth buffer. Expects the depth test to be on."""
+    view = rv3d.view_matrix.inverted()
+    if rv3d.is_perspective:
+        quads = cut_line_quads(corners, distance * _CUT_LINE_BAND, eye=view.translation)
+    else:
+        direction = (view.to_3x3() @ Vector((0.0, 0.0, -1.0))).normalized()
+        quads = cut_line_quads(corners, distance * _CUT_LINE_BAND, view_direction=direction)
+    gpu.state.blend_set('INVERT')
+    for quad in quads:
+        _draw_quad(quad, (1.0, 1.0, 1.0, 1.0))
+    gpu.state.blend_set('ALPHA')
+
+
+def draw_callback_view(self, _context):
+    """Draw the start framing and the target plane in the 3D Viewport."""
+    context = bpy.context
+    try:
+        self.as_pointer()
+    except ReferenceError:
+        return
+
+    camera = self.camera
+    try:
+        camera.name
+    except ReferenceError:
+        return
+
+    # The plane is see-through: it must not hide what is drawn after it
+    # (e.g. the target gizmo, which sits on the same plane).
+    depth_mask = gpu.state.depth_mask_get()
+    gpu.state.blend_set('ALPHA')
+    gpu.state.depth_mask_set(False)
+
+    if self.target_plane_display != 'OFF':
+        distance = camera.data.dolly_zoom_target_distance
+        corners = frame_corners_at_distance(camera, context.scene, distance)
+        gpu.state.depth_test_set('LESS_EQUAL')
+        _draw_cut_line(corners, distance, context.region_data)
+        if self.target_plane_display == 'PLANE':
+            color = _COLOR_TARGET_PLANE_ACTIVE if self.mode in {'DISTANCE', 'WIDTH'} else _COLOR_TARGET_PLANE
+            _draw_quad(corners, color)
+        gpu.state.depth_test_set('NONE')
+
+    if self.show_start_frame and self.start_frame_corners:
+        points = dashed_loop_segments(self.start_frame_corners)
+        if points:
+            _draw_lines(points, _COLOR_START_FRAME, _START_FRAME_LINE_WIDTH, context.region)
+
+    gpu.state.depth_mask_set(depth_mask)
+    gpu.state.blend_set('NONE')
+
+
 _NAVIGATION_EVENTS = {
     'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE', 'TRACKPADPAN', 'TRACKPADZOOM',
     'NDOF_MOTION', 'NDOF_BUTTON_FIT',
 }
 
 _MODE_KEYS = {'F': 'FOCAL', 'V': 'FOV', 'D': 'DISTANCE', 'W': 'WIDTH'}
+
+# Keys that change how the 3D guides are shown.
+_GUIDE_KEYS = {'P', 'R'}
 
 # Modes that change the lens and move the camera to keep the target's size.
 _DOLLY_MODES = {'FOCAL', 'FOV'}
@@ -213,7 +402,8 @@ _MAX_FOV = math.radians(170.0)
 _MIN_LENS = 1.0
 
 _HEADER_TEXT = ("Dolly Zoom: F Focal Length, V Field of View, D Target Distance, W Target Width, "
-                "drag the gizmo to move the target, Shift/Ctrl Slower/Faster, Alt Ignore Mouse, "
+                "drag the gizmo to move the target, P Target Plane Display, R Start Framing, "
+                "Shift/Ctrl Slower/Faster, Alt Ignore Mouse, "
                 "LMB/Enter Confirm, RMB/Esc Cancel")
 
 
@@ -225,7 +415,12 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
     length (F) or field of view (V) moves the camera along its view axis so
     the target keeps its size in the frame. While no value is
     active, mouse movement passes through to the viewport, so the dolly zoom
-    target gizmo can be hovered and dragged."""
+    target gizmo can be hovered and dragged.
+
+    Two guides are drawn in the scene while it runs: the starting framing as
+    a dashed frame (R toggles it) and a see-through plane at the target
+    distance that shows where the target cuts through objects (P cycles
+    Plane, Cut Line and Off)."""
 
     bl_idname = "cam_manager.modal_camera_dolly_zoom"
     bl_label = "Dolly Zoom"
@@ -273,6 +468,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
     def _set_mode(self, mode, event, context):
         if mode in _DOLLY_MODES and self.camera.data.type == 'ORTHO':
             # An orthographic camera has no focal length or field of view.
+            self.report({'WARNING'}, _ORTHO_MESSAGE)
             return
         self.mode = None if self.mode == mode else mode
         self._capture_reference(event)
@@ -280,16 +476,29 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         # wouldn't update until the next mouse move without this.
         self._redraw(context)
 
+    def _cycle_guide(self, key, context):
+        """P cycles the target plane display, R shows or hides the start framing."""
+        if key == 'P':
+            index = _TARGET_PLANE_DISPLAYS.index(self.target_plane_display)
+            self.target_plane_display = _TARGET_PLANE_DISPLAYS[(index + 1) % len(_TARGET_PLANE_DISPLAYS)]
+        elif key == 'R':
+            self.show_start_frame = not self.show_start_frame
+        _guide_settings['target_plane_display'] = self.target_plane_display
+        _guide_settings['show_start_frame'] = self.show_start_frame
+        self._redraw(context)
+
     def _finish(self, context):
+        _running.discard(id(self))
         self.camera.data.show_dolly_gizmo = self.initial_gizmo_state
         context.area.header_text_set(None)
-        handle = getattr(self, '_handle', None)
-        if handle is not None:
-            try:
-                bpy.types.SpaceView3D.draw_handler_remove(handle, 'WINDOW')
-            except ValueError:
-                pass
-            self._handle = None
+        for attr in ('_handle', '_handle_view'):
+            handle = getattr(self, attr, None)
+            if handle is not None:
+                try:
+                    bpy.types.SpaceView3D.draw_handler_remove(handle, 'WINDOW')
+                except ValueError:
+                    pass
+                setattr(self, attr, None)
         self._redraw(context)
 
     def _init_state(self, camera, event):
@@ -301,12 +510,22 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         self.initial_gizmo_state = cam.show_dolly_gizmo
         self.initial_target_scale = cam.dolly_zoom_target_scale
         self.initial_lens = cam.lens
+        # The roll gizmo can be used while the operator runs.
+        self.initial_rotation = camera.rotation_euler.copy()
         cam.show_dolly_gizmo = True
+        _running.add(id(self))
 
         self.mode = None
         self.ignore_input = False
         self.navigation = False
         self.mouse_initial_x = event.mouse_x
+
+        self.target_plane_display = _guide_settings['target_plane_display']
+        self.show_start_frame = _guide_settings['show_start_frame']
+        # Fixed in the world: the frame the camera saw when the operator
+        # started, on the target plane of that moment.
+        self.start_frame_corners = frame_corners_at_distance(camera, bpy.context.scene,
+                                                             cam.dolly_zoom_target_distance)
 
         cam.dolly_zoom_target_scale = calculate_target_width(cam.dolly_zoom_target_distance, cam.angle)
 
@@ -333,6 +552,8 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
         self._init_state(camera, event)
 
+        self._handle_view = bpy.types.SpaceView3D.draw_handler_add(draw_callback_view, (self, context), 'WINDOW',
+                                                                   'POST_VIEW')
         self._handle = bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, (self, context), 'WINDOW',
                                                               'POST_PIXEL')
         context.area.header_text_set(_HEADER_TEXT)
@@ -365,6 +586,7 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
         if event.type in {'RIGHTMOUSE', 'ESC'} and event.value == 'PRESS':
             init = self.initial_cam_settings
             camera.location = init['cam_location']
+            camera.rotation_euler = self.initial_rotation
             camera.data.lens = self.initial_lens
             camera.data.dolly_zoom_target_distance = init['distance']
             camera.data.dolly_zoom_target_scale = self.initial_target_scale
@@ -403,6 +625,10 @@ class CAM_MANAGER_OT_dolly_zoom(bpy.types.Operator):
 
         if event.type in _MODE_KEYS and event.value == 'RELEASE':
             self._set_mode(_MODE_KEYS[event.type], event, context)
+            return {'RUNNING_MODAL'}
+
+        if event.type in _GUIDE_KEYS and event.value == 'RELEASE':
+            self._cycle_guide(event.type, context)
             return {'RUNNING_MODAL'}
 
         if event.type == 'MOUSEMOVE':
